@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 from PIL import Image
+import matplotlib.pyplot as plt
+import altair as alt
 
 #Cambiamos el directorio en terminal para darle 
 #la ruta de imagen
@@ -68,6 +70,23 @@ if not cte_list:
 df_filtered = df_ventas[(df_ventas['Cve_factu'].isin(emp_list)) & (df_ventas['Lugar'].isin(alm_list)) & (df_ventas['Anio'].isin(ano_list)) & 
 (df_ventas['Mes'].isin(mes_list)) & (df_ventas['Nom_cliente'].isin(cte_list))]
 
+df_filtered = df_filtered[['Nom_cliente','Producto','Cant_surt','Utilidad_mov']]
 
-st.write(df_filtered.head(5))
+tabla, grafica =st.columns([10,10])
+with tabla:
+	df_group = df_filtered.groupby(['Producto']).sum()
+	df_group = df_group.sort_values(by=['Utilidad_mov'],ascending=False)
+	st.write(df_group)
+with grafica:
+	top_5 = df_filtered[['Producto','Utilidad_mov']]
+	st.altair_chart(alt.Chart(top_5, title='Top 5 Utilidad').transform_aggregate(
+		Utilidad_mov = 'sum(Utilidad_mov)',
+		groupby = ['Producto']
+		).mark_arc().encode(
+	 	theta=alt.Theta(field="Utilidad_mov", type="quantitative"),
+     	color=alt.Color(field="Producto",type="nominal"),
+	 tooltip = ['Producto', 'Utilidad_mov']))
+		#tooltip=alt.Tooltip("Producto","Utilidad_mov"))
+	#top_5.plot(kind='pie',y='Utilidad_mov',title='Top 5 Utilidad')
+	
 
