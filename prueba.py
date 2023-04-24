@@ -46,26 +46,28 @@ if st.checkbox("Raw data"):
 
 #Separamos en dos frames de lado izquiero los filtros
 #De lado derecho imprimiremos la tabla filtrada
-df_filtered = df_ventas
 st.sidebar.title("Filtros")	
 emp_list =	st.sidebar.multiselect("Empresa", df_ventas['Cve_factu'].unique())
 alm_list =  st.sidebar.multiselect("Almacén", df_ventas['Lugar'].unique())
 ano_list =  st.sidebar.multiselect("Año", sorted(df_ventas['Anio'].unique()))
 mes_list =  st.sidebar.multiselect("Mes", sorted(df_ventas['Mes'].unique()))
 cte_list =  st.sidebar.multiselect("Cliente", sorted(df_ventas['Nom_cliente'].unique()))
+
 	# if st.checkbox("Aplicar Filtros"):
-	# 	df_filtered = df_ventas[(df_ventas['Cve_factu'].isin(emp_list) & df_ventas['Lugar'].isin(alm_list) & df_ventas['Anio'].isin(ano_list)
-	# 	& df_ventas['Nom_cliente'].isin(cte_list))]
-	# else:
-	# 	df_filtered=df_ventas
-#with col2:	
-	# if alm_list!=[]:
-	#    	df_filtered = df_ventas[(df_ventas['Lugar'].isin(alm_list))]
-	# if ano_list!=[]:
-	#     df_filtered = df_ventas[(df_ventas['Anio'].isin(ano_list))]
-#if cte_list!=[]:
-#    df_filtered = df_ventas[(df_ventas['Nom_cliente'].isin(cte_list))]
-		#st.write(df_filtered.head(5))
-df_filtered = df_ventas[(df_ventas['Cve_factu'].isin(emp_list)) & (df_ventas['Lugar'].isin(alm_list)) & (df_ventas['Anio'].isin(ano_list)) & (df_ventas['Nom_cliente'].isin(cte_list))]
-st.write(df_filtered)
+if not emp_list:
+	emp_list =	df_ventas['Cve_factu'].unique()
+if not alm_list:
+	alm_list = df_ventas['Lugar'].unique()
+if not ano_list:
+	ano_list = df_ventas['Anio'].unique()
+if not mes_list:
+	mes_list = df_ventas['Mes'].unique()
+if not cte_list:
+	cte_list = df_ventas['Nom_cliente'].unique()	
+ 
+df_filtered = df_ventas[(df_ventas['Cve_factu'].isin(emp_list)) & (df_ventas['Lugar'].isin(alm_list)) & (df_ventas['Anio'].isin(ano_list)) & 
+(df_ventas['Mes'].isin(mes_list)) & (df_ventas['Nom_cliente'].isin(cte_list))]
+
+
+st.write(df_filtered.head(5))
 
