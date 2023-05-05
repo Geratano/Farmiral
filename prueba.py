@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 from PIL import Image
-import matplotlib.pyplot as plt
 import altair as alt
+from datetime import datetime
 
 def main():	
 	#Cambiamos el directorio en terminal para darle 
@@ -47,6 +47,23 @@ def main():
 	if st.checkbox("Raw data"):
 		st.write(df_ventas.head(5))
 
+	st.header("Avance diario")
+	# Creacion del grupo canal_prod
+	fac_act = df_ventas.groupby(['Anio','Mes','Canal_prod']).agg({'Cant_surt':'sum',
+												'Subt_fac':'sum',
+												'Utilidad_mov':'sum',
+												'Margen':'mean'}).reset_index()
+	
+	# se creó un diccionario el cual contiene los meses del año 
+	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
+		    			7:'jul',8:'ago',9:'sep',10:'oct',11:'nov',12:'dic'}
+	now = datetime.now() # se guarda la fecha actual
+	act = now.year # de la fecha actual se guarda solo el año en curso
+	m = now.month # de la fecha actual se guarda el mes en curso(esto solo devolverá un numero) 
+	mes = mes_diccioanrio[m]  # el numero que se guardó en la variable 'm' corresponde al mes en curso, de esta forma se manda a llamar el nombre del mes, que ya esta identificado en el diccionario 
+	a_act = fac_act[fac_act['Anio']== act].drop(columns=['Anio']) # se aplica el filto por año, el cual se almacenará e la variable a_act
+	st.write(a_act[a_act['Mes']== mes].drop(columns=['Mes'])) # se muestra la tabla filtrando por mes actual
+
 	#Separamos en dos frames de lado izquiero los filtros
 	#De lado derecho imprimiremos la tabla filtrada
 	st.sidebar.title("Filtros")	
@@ -68,12 +85,19 @@ def main():
 	if not cte_list:
 		cte_list = df_ventas['Nom_cliente'].unique()	
  
-	df_filtered = df_ventas[(df_ventas['Cve_factu'].isin(emp_list)) & (df_ventas['Lugar'].isin(alm_list)) & (df_ventas['Anio'].isin(ano_list)) & 
-	(df_ventas['Mes'].isin(mes_list)) & (df_ventas['Nom_cliente'].isin(cte_list))]
+	df_filtered = df_ventas[
+			 (df_ventas['Cve_factu'].isin(emp_list)) & 
+			 (df_ventas['Lugar'].isin(alm_list)) & 
+			 (df_ventas['Anio'].isin(ano_list)) & 
+			 (df_ventas['Mes'].isin(mes_list)) &
+			 (df_ventas['Nom_cliente'].isin(cte_list))]
 
 	df_filtered = df_filtered[['Nom_cliente','Producto','Cant_surt','Utilidad_mov','Margen']]
+	
 	st.subheader('Tabla beneficio por producto')
-	df_group = df_filtered.groupby(['Producto']).agg({'Cant_surt':'sum', 'Utilidad_mov':'sum', 'Margen':'mean'})
+	df_group = df_filtered.groupby(['Producto']).agg({'Cant_surt':'sum', 
+						   							  'Utilidad_mov':'sum', 
+													  'Margen':'mean'})
 	df_group = df_group.sort_values(by=['Utilidad_mov'],ascending=False)
 	st.write(df_group)
 
@@ -84,7 +108,9 @@ def main():
 		#Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
 		alt.data_transformers.enable('default', max_rows=None)
 		#Agrupamos los datos, ordenamos de mayor a menor por la utilidad y extraemos 5 datos
-		top_5 = df_filtered.groupby(['Producto'], as_index = False).agg({'Cant_surt':'sum', 'Utilidad_mov':'sum', 'Margen':'mean'})
+		top_5 = df_filtered.groupby(['Producto'], as_index = False).agg({'Cant_surt':'sum', 
+								   										'Utilidad_mov':'sum', 
+																		'Margen':'mean'})
 		top_5 = df_group.sort_values(by=['Utilidad_mov'],ascending=False).head(5).reset_index()
 		#top_6 = top_6.rename_axis(index=['Producto','Cant_surt','Utilidad_mov','Margen'])
 		#top_5 = df_filtered[['Producto','Utilidad_mov']]
@@ -101,7 +127,9 @@ def main():
 		#Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
 		alt.data_transformers.enable('default', max_rows=None)
 		#Agrupamos los datos, ordenamos de mayor a menor por la utilidad y extraemos 5 datos
-		bottom_5 = df_filtered.groupby(['Producto'], as_index = False).agg({'Cant_surt':'sum', 'Utilidad_mov':'sum', 'Margen':'mean'})
+		bottom_5 = df_filtered.groupby(['Producto'], as_index = False).agg({'Cant_surt':'sum', 
+								      										'Utilidad_mov':'sum',
+																			'Margen':'mean'})
 		bottom_5 = df_group.sort_values(by=['Utilidad_mov'],ascending=True).head(5).reset_index()
 		#top_6 = top_6.rename_axis(index=['Producto','Cant_surt','Utilidad_mov','Margen'])
 		#top_5 = df_filtered[['Producto','Utilidad_mov']]
@@ -136,13 +164,27 @@ def main():
 	#Siguiente sección con datos de ventas historicos
 	st.subheader('Tabla históricos por año')
 	#Agrupamos primero nuestro dataframe por factura para poder descontar las notas de crédito
-	sub_fac =df_ventas.groupby(['No_fac']).agg({'Subt_fac':'sum','Cant_surt':'sum','N_cred':'mean','Costo':'sum','Utilidad_mov':'sum','Margen':'mean','Anio':'max','Mes':'max'}).reset_index()
+	sub_fac =df_ventas.groupby(['No_fac']).agg({'Subt_fac':'sum',
+					     						'Cant_surt':'sum',
+												'N_cred':'mean',
+												'Costo':'sum',
+												'Utilidad_mov':'sum',
+												'Margen':'mean',
+												'Anio':'max',
+												'Mes':'max'}).reset_index()
+	
 	#Para poder restar las notas de crédito eliminamos los NAS
 	sub_fac['N_cred'] = sub_fac['N_cred'].fillna(0)
 	sub_fac['Subt_fac'] = sub_fac['Subt_fac'] + sub_fac['N_cred']
-	sub_fac = sub_fac.groupby(['Anio','Mes']).agg({'Subt_fac':'sum','Cant_surt':'sum','Costo':'sum','Utilidad_mov':'sum','Margen':'mean'}).reset_index()
+
+	sub_fac = sub_fac.groupby(['Anio','Mes']).agg({'Subt_fac':'sum',
+													'Cant_surt':'sum',
+													'Costo':'sum',
+													'Utilidad_mov':'sum',
+													'Margen':'mean'}).reset_index()
+	
 	anio = st.selectbox('Año',sub_fac['Anio'].unique())
 	sub_fac.columns = ['Anio','Mes','Venta ($)','Venta (Pza)','Costo total','Utilidad','Margen (%)']
-	st.write(sub_fac[sub_fac['Anio']==anio].drop(columns=['Anio']))
+	st.write(sub_fac[sub_fac['Anio']== anio].drop(columns=['Anio']))
 if __name__ == '__main__':
 	main()
