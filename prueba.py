@@ -48,11 +48,19 @@ def main():
 		st.write(df_ventas.head(5))
 
 	st.header("Avance diario")
+
+	#st.write(fac_act.iloc[:,2].sum(axis=0))
+	#st.write(a_act.head(5))
 	# Creacion del grupo canal_prod
-	fac_act = df_ventas.groupby(['Anio','Mes','Canal_prod']).agg({'Cant_surt':'sum',
+	#fac_act = df_ventas.groupby(['Anio','Mes','Canal_prod']).agg({'Cant_surt':'sum',
+	#											'Subt_fac':'sum',
+	#											'Utilidad_mov':'sum',
+	#											'Margen':'mean'}).reset_index()
+	fac_act = df_ventas.groupby(['Anio','Mes','Canal_cliente']).agg({'Cant_surt':'sum',
 												'Subt_fac':'sum',
 												'Utilidad_mov':'sum',
 												'Margen':'mean'}).reset_index()
+	fac_act = fac_act.sort_values(by=['Utilidad_mov'],ascending=False)
 	
 	# se creó un diccionario el cual contiene los meses del año 
 	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
@@ -62,6 +70,9 @@ def main():
 	m = now.month # de la fecha actual se guarda el mes en curso(esto solo devolverá un numero) 
 	mes = mes_diccioanrio[m]  # el numero que se guardó en la variable 'm' corresponde al mes en curso, de esta forma se manda a llamar el nombre del mes, que ya esta identificado en el diccionario 
 	a_act = fac_act[fac_act['Anio']== act].drop(columns=['Anio']) # se aplica el filto por año, el cual se almacenará e la variable a_act
+	#st.write(a_act.iloc[:,4].sum(axis=0))
+	d_act = a_act[a_act['Mes'] == mes].drop(columns=['Mes'])
+	st.write('$ ', d_act.iloc[:,2].sum(axis=0))
 	st.write(a_act[a_act['Mes']== mes].drop(columns=['Mes'])) # se muestra la tabla filtrando por mes actual
 
 	#Separamos en dos frames de lado izquiero los filtros
