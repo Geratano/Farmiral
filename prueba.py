@@ -43,11 +43,27 @@ def main():
 	df_ventas = df[['No_fac','Falta_fac','Subt_fac','Cve_factu','Cse_prod','Cant_surt','Lugar','Costo','Utilidad_mov','Margen',
 	'Categoria','Canal_prod','Canal_cliente','KAM','Subdirec','N_cred','Anio','Mes','Dia','Nom_cliente','Producto']]
 	
+
+
 	#imprimimos como prueba los primeros cinco datos de la tabla
 	if st.checkbox("Raw data"):
 		st.write(df_ventas.head(5))
 
 	st.header("Avance diario")
+
+	#Agrupamos primero nuestro dataframe por factura para poder descontar las notas de crédito
+	sub_fac1 =df_ventas.groupby(['No_fac','Canal_cliente']).agg({'Subt_fac':'sum',
+					     						'Cant_surt':'sum',
+												'N_cred':'mean',
+												'Costo':'sum',
+												'Utilidad_mov':'sum',
+												'Margen':'mean',
+												'Anio':'max',
+												'Mes':'max'}).reset_index()
+	
+	#Para poder restar las notas de crédito eliminamos los NAS
+	sub_fac1['N_cred'] = sub_fac1['N_cred'].fillna(0)
+	sub_fac1['Subt_fac'] = sub_fac1['Subt_fac'] + sub_fac1['N_cred']
 
 	#st.write(fac_act.iloc[:,2].sum(axis=0))
 	#st.write(a_act.head(5))
@@ -56,7 +72,10 @@ def main():
 	#											'Subt_fac':'sum',
 	#											'Utilidad_mov':'sum',
 	#											'Margen':'mean'}).reset_index()
-	fac_act = df_ventas.groupby(['Anio','Mes','Canal_cliente']).agg({'Cant_surt':'sum',
+
+
+
+	fac_act = sub_fac1.groupby(['Anio','Mes','Canal_cliente']).agg({'Cant_surt':'sum',
 												'Subt_fac':'sum',
 												'Utilidad_mov':'sum',
 												'Margen':'mean'}).reset_index()
@@ -197,5 +216,7 @@ def main():
 	anio = st.selectbox('Año',sub_fac['Anio'].unique())
 	sub_fac.columns = ['Anio','Mes','Venta ($)','Venta (Pza)','Costo total','Utilidad','Margen (%)']
 	st.write(sub_fac[sub_fac['Anio']== anio].drop(columns=['Anio']))
+
+	
 if __name__ == '__main__':
 	main()
