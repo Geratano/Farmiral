@@ -4,7 +4,6 @@ import streamlit as st
 from PIL import Image
 import altair as alt
 from datetime import datetime
-from colorama import init,Fore,Back,Style
 
 
 def main():
@@ -53,12 +52,12 @@ def main():
         df_formulas_n.columns = ['SKU', 'Componente', 'Cantidad', 'Tipo', 'Atributo', 'Version pt', 'Partida', 'Unidad componente'
                                     , 'Nombre', 'Cve_mon', 'Tipo_x', 'Tipcam','Tip_cam', 'Rendimiento','Costo', 'Unidad'
                                     , 'Cve_prod_y', 'Formula', 'Unidad pt', 'Cto_ent_y', 'Tipo_prod']
-        st.write()
         #Eliminamos las versiones V1, V2, V3 y V4
         df_formulas_n = df_formulas_n.loc[(df_formulas_n['Version pt']!='V1') & (df_formulas_n['Version pt']!='V2') 
             & (df_formulas_n['Version pt']!='V3') & (df_formulas_n['Version pt']!='V4')]
         #Creamos el filtro para seleccionar la formula a análizar
-        formula = st.selectbox('Formula', df_formulas_n['Formula'].unique())
+        df_formulas_prueba = df_formulas_n[df_formulas_n.SKU.str.startswith('51')].reset_index()
+        formula = st.selectbox('Formula', df_formulas_prueba['Formula'].sort_values().unique())        
         #Esta tabla nos da todo lo que contiene la formula "51"
         pt = df_formulas_n[df_formulas_n.Formula == formula]
         pt = pt[pt.SKU.str.startswith('51')].reset_index()
@@ -120,7 +119,7 @@ def main():
         #st.write(semt)
 
     if st.checkbox('Formulador'):
-        st.write(df_productos.head(5))
+        st.warning('Formulador en construcción')
 
 #    col1, col2 = st.columns([15,15])
 #    with col1:
