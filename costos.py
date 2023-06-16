@@ -61,20 +61,63 @@ def main():
         formula = st.selectbox('Formula', df_formulas_n['Formula'].unique())
         #Esta tabla nos da todo lo que contiene la formula "51"
         pt = df_formulas_n[df_formulas_n.Formula == formula]
-        pt = pt[pt.SKU.str.startswith('51')]
+        pt = pt[pt.SKU.str.startswith('51')].reset_index()
         #Nos quedamos solo con las columnas necesarias de la base
-        pt = pt[['SKU','Componente','Cantidad','Unidad componente','Nombre','Rendimiento','Costo','Unidad pt']]
+        pt = pt[['SKU','Componente','Nombre','Cantidad','Costo','Unidad componente','Rendimiento','Unidad pt']]
+        #Calculamos cantidades y costos unitarios
+        pt['Cantidad'] = pt['Cantidad']/pt['Rendimiento']
+        pt['Costo total'] = pt['Cantidad'] * pt['Costo']
         #Filtramos la tabla pt para obtener todos los materiales que se utilizan en el semiterminado
-        semt = pt[pt.Componente.str.startswith('41')]['Nombre']
+        semt = pt[pt.Componente.str.startswith('41')]['Nombre'].reset_index()
         #Obtenemos del filtro un simple valor para usar en la extracción de componentes
-        semt = semt.iloc[0]
+        semt = semt.iloc[0]['Nombre']
         semit = df_formulas_n[df_formulas_n.Formula == semt]
-        semit = semit[semit.SKU.str.startswith('41')]
-        st.subheader('Costos Producto terminado')
-        st.write(pt)
-        st.subheader('Costos Semiterminado')
-        st.write(semit)
+        semit = semit[semit.SKU.str.startswith('41')].reset_index()
+        semit = semit[['SKU','Componente','Nombre','Cantidad','Costo','Unidad componente','Rendimiento','Unidad pt']]
+        semit['Cantidad'] = semit['Cantidad']/semit['Rendimiento']
+        semit['Costo total'] = semit['Cantidad'] * semit['Costo']
+        st.subheader('Costos')
+        col1, col2 = st.columns([15,15])
+        with col1:
+            st.write('Rendimiento: $' ,pt.iloc[0]['Rendimiento'])
+            st.write('Unidad Base: ' ,pt.iloc[0]['Unidad pt'])    
+        with col2:
+            costo_n1 = semit.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']
+            cantidad_n1 = pt[pt.Componente.str.startswith('41')]['Cantidad'].reset_index().iloc[0]['Cantidad']
+            costo_total_n1 = costo_n1 * cantidad_n1
+            costo_total_pt = pt.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']
+            st.write('Costo nivel 1: $' ,round(costo_total_n1 ,2))
+            st.write('Costo ME: $' , round(costo_total_pt - costo_total_n1,2))
+            st.write('Costo total: $' , round(costo_total_pt,2))
+        left, right = st.columns([20,20])
+        with left:
+            #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
+            alt.data_transformers.enable('default', max_rows=None)
+            chart_pt = pt.groupby(['Componente','Nombre']).agg({'Costo total':'sum'}).reset_index()
+            pie_pt = alt.Chart(chart_pt, title='Costos pt').mark_arc().encode(
+                                theta=alt.Theta(field='Costo total', type="quantitative"),
+                                color=alt.Color(field='Nombre', type="nominal"),
+                                tooltip = ['Nombre','Costo total']
+                                )
+            #Mostramos el objeto en streamlit
+            st.altair_chart(pie_pt, use_container_width=True)
+        with right:
+            #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
+            alt.data_transformers.enable('default', max_rows=None)
+            chart_st = semit.groupby(['Componente','Nombre']).agg({'Costo total':'sum'}).reset_index()
+            pie_st = alt.Chart(chart_st, title='Costos st').mark_arc().encode(
+                                theta=alt.Theta(field='Costo total', type="quantitative"),
+                                color=alt.Color(field='Nombre', type="nominal"),
+                                tooltip = ['Nombre','Costo total']
+                                )
+            #Mostramos el objeto en streamlit
+            st.altair_chart(pie_st, use_container_width=True)
 
+        st.subheader('Materiales Producto Terminado por unidad')
+        st.write(pt)
+        st.subheader('Materiales Semiterminado por unidad')
+        st.write(semit)
+        #st.write(semt)
 
     if st.checkbox('Formulador'):
         st.write(df_productos.head(5))
