@@ -50,24 +50,32 @@ def main():
     #Hacemos merge con los nombres de las formulas para facilitar la busqueda del producto a costear
         df_formulas_n = df_formulas.merge(df_productos.rename({'Desc_prod':'Formula'},axis=1), left_on='Cve_copr', 
             right_on='Cve_prod', how='left')
+        df_formulas_n.columns = ['SKU', 'Componente', 'Cantidad', 'Tipo', 'Atributo', 'Version pt', 'Partida', 'Unidad componente'
+                                    , 'Nombre', 'Cve_mon', 'Tipo_x', 'Tipcam','Tip_cam', 'Rendimiento','Costo', 'Unidad'
+                                    , 'Cve_prod_y', 'Formula', 'Unidad pt', 'Cto_ent_y', 'Tipo_prod']
+        st.write()
         #Eliminamos las versiones V1, V2, V3 y V4
-        df_formulas_n = df_formulas_n.loc[(df_formulas_n['New_copr']!='V1') & (df_formulas_n['New_copr']!='V2') 
-            & (df_formulas_n['New_copr']!='V3') & (df_formulas_n['New_copr']!='V4')]
+        df_formulas_n = df_formulas_n.loc[(df_formulas_n['Version pt']!='V1') & (df_formulas_n['Version pt']!='V2') 
+            & (df_formulas_n['Version pt']!='V3') & (df_formulas_n['Version pt']!='V4')]
         #Creamos el filtro para seleccionar la formula a análizar
         formula = st.selectbox('Formula', df_formulas_n['Formula'].unique())
         #Esta tabla nos da todo lo que contiene la formula "51"
         pt = df_formulas_n[df_formulas_n.Formula == formula]
-        pt = pt[pt.Cve_copr.str.startswith('51')]
+        pt = pt[pt.SKU.str.startswith('51')]
         #Nos quedamos solo con las columnas necesarias de la base
-        pt = pt[['Cve_copr','Cve_prod_x','Can_copr','Undfor','Desc_prod','Ren_copr','Cto_ent_x','Uni_med']]
+        pt = pt[['SKU','Componente','Cantidad','Unidad componente','Nombre','Rendimiento','Costo','Unidad pt']]
         #Filtramos la tabla pt para obtener todos los materiales que se utilizan en el semiterminado
-        semt = pt[pt.Cve_prod_x.str.startswith('41')]['Desc_prod']
+        semt = pt[pt.Componente.str.startswith('41')]['Nombre']
+        #Obtenemos del filtro un simple valor para usar en la extracción de componentes
+        semt = semt.iloc[0]
+        semit = df_formulas_n[df_formulas_n.Formula == semt]
+        semit = semit[semit.SKU.str.startswith('41')]
         st.subheader('Costos Producto terminado')
         st.write(pt)
         st.subheader('Costos Semiterminado')
-        semit = df_formulas_n[df_formulas_n.Formula == semt]
-        semit = semit[semit.Cve_copr.str.startswith('41')]
-        st.write(st)
+        st.write(semit)
+
+
     if st.checkbox('Formulador'):
         st.write(df_productos.head(5))
 
