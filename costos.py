@@ -4,6 +4,7 @@ import streamlit as st
 from PIL import Image
 import altair as alt
 from datetime import datetime
+import re
 
 
 def main():
@@ -119,13 +120,28 @@ def main():
         #st.write(semt)
 
     if st.checkbox('Formulador'):
-        st.warning('Formulador en construcción')
+        #st.warning('Formulador en construcción')
+        materias_lista = st.multiselect('Materia Prima', df_productos['Desc_prod'].sort_values().unique())
+        df_filtered = df_productos[df_productos['Desc_prod'].isin(materias_lista)]
+        df_formulador = df_filtered[['Cve_prod', 'Desc_prod', 'Uni_med', 'Cto_ent']]
+        df_formulador.columns = ['SKU','Materia prima','Unidad','Costo']
+        duplist = df_productos[df_productos.duplicated('Desc_prod')]
+        cantidades_lista = st.text_input('Ingresa las cantidades en orden separados por una coma (,)')
+        c_lista = re.split(",",cantidades_lista)
+        df_formulador['Cantidad'] = c_lista
+        st.write(duplist)
+        st.write(df_formulador)
 
-#    col1, col2 = st.columns([15,15])
-#    with col1:
-#        st.write(df_formulas.head(5))
-#    with col2:
-#        st.write(df_productos.head(5))
+
+
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
     main()
   
