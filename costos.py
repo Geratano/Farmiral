@@ -129,7 +129,7 @@ def main():
         cantidades_lista = st.text_input('Ingresa las cantidades en orden separados por una coma (,)')
         c_lista = re.split(",",cantidades_lista)
         df_formulador['Cantidad'] = c_lista
-        st.write(duplist)
+        #st.write(duplist)
         st.write(df_formulador)
 
 
