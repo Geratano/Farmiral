@@ -126,10 +126,25 @@ def main():
         df_formulador = df_filtered[['Cve_prod', 'Desc_prod', 'Uni_med', 'Cto_ent']]
         df_formulador.columns = ['SKU','Materia prima','Unidad','Costo']
         duplist = df_productos[df_productos.duplicated('Desc_prod')]
-        cantidades_lista = st.text_input('Ingresa las cantidades en orden separados por una coma (,)')
+        cantidades_lista = st.text_input('Ingresa las cantidades necesarias por unidad en orden separados por una coma (,)')
         c_lista = re.split(",",cantidades_lista)
-        df_formulador['Cantidad'] = c_lista
-        #st.write(duplist)
+        unidad_caja = st.text_input('Cuantas unidades contiene la presentación')
+        if len(unidad_caja) != 0: 
+            unidad_caja = float(unidad_caja)
+        unidad_lote = st.text_input('Cuantas unidades contiene el lote de producción')
+        if len(unidad_lote) != 0:
+            unidad_lote = float(unidad_lote)
+        margen = st.text_input('Cual será el margen de costo para el precio')
+        if len(margen) != 0:
+            margen = float(margen)
+        n_lista=[]
+        #Tiene un +1 en lo que se resuelve lo de los duplicados
+        if len(materias_lista) != 0:
+           for i in range(len(materias_lista)+1):
+               n = float(c_lista[i])
+               n_lista.append(n)
+        df_formulador['Cantidad'] = n_lista
+        df_formulador['Costo unitario'] = df_formulador['Costo'] * df_formulador['Cantidad']
         st.write(df_formulador)
 
 
