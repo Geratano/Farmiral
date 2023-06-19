@@ -129,6 +129,7 @@ def main():
         duplist = df_productos[df_productos.duplicated('Desc_prod')]
         cantidades_lista = st.text_input('Ingresa las cantidades necesarias por unidad en orden separados por una coma (,)')
         c_lista = re.split(",",cantidades_lista)
+        unidad_base = st.text_input('Ingresa la unidad base del producto a formular')
         unidad_caja = st.text_input('Cuantas unidades contiene la presentación')
         if len(unidad_caja) != 0: 
             unidad_caja = float(unidad_caja)
@@ -158,6 +159,18 @@ def main():
                                 tooltip = ['Materia prima','Costo unitario']
                                 )
 
+        col1, col2 = st.columns([15,15])
+        with col1:
+            st.write('Rendimiento: ' ,unidad_lote)
+            st.write('Unidad Base: ' ,unidad_base)    
+        with col2:
+            costo_unitario = df_formulador['Costo unitario'].sum()
+            costo_caja = df_formulador['Costo caja'].sum()
+            costo_lote = df_formulador['Costo lote'].sum()
+            precio = costo_unitario*(1+margen) 
+            st.write('Costo unitario: $' ,round(costo_unitario ,2))
+            st.write('Costo por caja: $' , round(costo_caja,2))
+            st.write('Costo por lote: $' , round(costo_lote,2))
         st.write(df_formulador)
         st.altair_chart(pie_formulador, use_container_width=True) 
 
