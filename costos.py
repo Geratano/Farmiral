@@ -79,7 +79,7 @@ def main():
         st.subheader('Costos')
         col1, col2 = st.columns([15,15])
         with col1:
-            st.write('Rendimiento: $' ,pt.iloc[0]['Rendimiento'])
+            st.write('Rendimiento: ' ,pt.iloc[0]['Rendimiento'])
             st.write('Unidad Base: ' ,pt.iloc[0]['Unidad pt'])    
         with col2:
             costo_n1 = semit.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']
@@ -121,6 +121,7 @@ def main():
 
     if st.checkbox('Formulador'):
         #st.warning('Formulador en construcción')
+        nombre_producto = st.text_input('Nombre del producto a formular')
         materias_lista = st.multiselect('Materia Prima', df_productos['Desc_prod'].sort_values().unique())
         df_filtered = df_productos[df_productos['Desc_prod'].isin(materias_lista)]
         df_formulador = df_filtered[['Cve_prod', 'Desc_prod', 'Uni_med', 'Cto_ent']]
@@ -139,21 +140,26 @@ def main():
             margen = float(margen)
         n_lista=[]
         #Tiene un +1 en lo que se resuelve lo de los duplicados
-        if len(materias_lista) != 0:
+        if len(cantidades_lista) != 0:
            for i in range(len(materias_lista)+1):
                n = float(c_lista[i])
                n_lista.append(n)
         df_formulador['Cantidad'] = n_lista
         df_formulador['Costo unitario'] = df_formulador['Costo'] * df_formulador['Cantidad']
+        df_formulador['Costo caja'] = [i * unidad_caja for i in df_formulador['Costo unitario']]
+        df_formulador['Costo lote'] = [i * unidad_lote for i in df_formulador['Costo unitario']]
+
+        #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
+        alt.data_transformers.enable('default', max_rows=None)
+        chart_formulador = df_formulador.groupby(['SKU','Materia prima']).agg({'Costo unitario':'sum'}).reset_index()
+        pie_formulador = alt.Chart(chart_formulador, title=nombre_producto).mark_arc().encode(
+                                theta=alt.Theta(field='Costo unitario', type="quantitative"),
+                                color=alt.Color(field='Materia prima', type="nominal"),
+                                tooltip = ['Materia prima','Costo unitario']
+                                )
+
         st.write(df_formulador)
-
-
-
-
-
-
-
-
+        st.altair_chart(pie_formulador, use_container_width=True) 
 
 
 
