@@ -142,7 +142,7 @@ def main():
         n_lista=[]
         #Tiene un +1 en lo que se resuelve lo de los duplicados
         if len(cantidades_lista) != 0:
-           for i in range(len(materias_lista)+1):
+           for i in range(len(materias_lista)):
                n = float(c_lista[i])
                n_lista.append(n)
         df_formulador['Cantidad'] = n_lista
