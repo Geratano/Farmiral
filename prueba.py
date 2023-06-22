@@ -4,7 +4,7 @@ import streamlit as st
 from PIL import Image
 import altair as alt
 from datetime import datetime, timedelta
-from millify import millify, prettify
+from millify import millify
 
 def main():	
 	#Cambiamos el directorio en terminal para darle 
