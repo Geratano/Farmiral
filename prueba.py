@@ -3,7 +3,8 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 import altair as alt
-from datetime import datetime
+from datetime import datetime, timedelta
+from millify import millify, prettify
 
 def main():	
 	#Cambiamos el directorio en terminal para darle 
@@ -36,6 +37,8 @@ def main():
 	#Usamos el encoding latin-1 porque si no arroja error
 	#ya que puede haber "ñ's" o acentos
 	df = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/base.csv',encoding='latin-1')
+	#Objetivos del mes
+	objetivos = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/objetivos.csv',encoding='latin-1')
 	#Quitamos espacios a los nombres de columnas
 	df.columns = df.columns.str.strip()
 	#Filtramos la base para obtener solo las columnas
@@ -59,7 +62,8 @@ def main():
 												'Utilidad_mov':'sum',
 												'Margen':'mean',
 												'Anio':'max',
-												'Mes':'max'}).reset_index()
+												'Mes':'max',
+												'Dia':'max'}).reset_index()
 	
 	#Para poder restar las notas de crédito eliminamos los NAS
 	sub_fac1['N_cred'] = sub_fac1['N_cred'].fillna(0)
@@ -80,19 +84,50 @@ def main():
 												'Utilidad_mov':'sum',
 												'Margen':'mean'}).reset_index()
 	fac_act = fac_act.sort_values(by=['Utilidad_mov'],ascending=False)
-	
+	#Función para obtener el ultimo dia del mes
+	def last_day_of_month(date):
+		if date.month == 12:
+			return date.replace(day=31)
+		return date.replace(month=date.month+1, day=1) - timedelta(days=1)
+
 	# se creó un diccionario el cual contiene los meses del año 
 	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
 		    			7:'jul',8:'ago',9:'sep',10:'oct',11:'nov',12:'dic'}
 	now = datetime.now() # se guarda la fecha actual
+	yesterday = now.replace(month = now.month, day = now.day - 1)
 	act = now.year # de la fecha actual se guarda solo el año en curso
 	m = now.month # de la fecha actual se guarda el mes en curso(esto solo devolverá un numero) 
 	mes = mes_diccioanrio[m]  # el numero que se guardó en la variable 'm' corresponde al mes en curso, de esta forma se manda a llamar el nombre del mes, que ya esta identificado en el diccionario 
 	a_act = fac_act[fac_act['Anio']== act].drop(columns=['Anio']) # se aplica el filto por año, el cual se almacenará e la variable a_act
+	last_day = last_day_of_month(now)
 	#st.write(a_act.iloc[:,4].sum(axis=0))
 	d_act = a_act[a_act['Mes'] == mes].drop(columns=['Mes'])
-	st.write('$ ', d_act.iloc[:,2].sum(axis=0))
-	st.write(a_act[a_act['Mes']== mes].drop(columns=['Mes'])) # se muestra la tabla filtrando por mes actual
+	obj_canal = objetivos.groupby(['Cliente','Desc_prod','Canal']).agg({'Objetivos pesos':'sum',
+																		'Objetivo piezas':'sum'})
+	v_dia = d_act.iloc[:,2].sum(axis=0)
+	#Calculamos el avance porcentual en tiempo
+	por_tiempo = (now.day/last_day.day)*100
+	obj_canal = obj_canal.groupby(['Canal']).agg({'Objetivos pesos':'sum',
+													'Objetivo piezas':'sum'})
+	avance_mes = a_act[a_act['Mes']== mes].drop(columns=['Mes'])
+	avance = pd.merge(obj_canal, avance_mes, how='left', right_on=['Canal_cliente'], left_index=True).reset_index()
+	avance = avance[['Canal_cliente', 'Cant_surt', 'Subt_fac', 'Utilidad_mov', 'Margen', 'Objetivos pesos', 'Objetivo piezas']]
+	avance.columns = ['Canal', 'Venta(PZA)', 'Venta($)', 'Utilidad', 'Margen', 'Objetivo($)', 'Objetivo(PZA)']
+	avance = avance.sort_values(by=['Objetivo($)'],ascending=False)
+	v_objetivo = avance.iloc[:,5].sum(axis=0)
+	avance_objetivo = v_dia - v_objetivo
+	avance_objetivo_por = (v_dia/v_objetivo)*100
+	dif_avance_por = avance_objetivo_por - por_tiempo
+	uno, dos = st.columns([1,1])
+	with uno:
+		st.metric('Ventas al dia ($)', millify(v_dia), delta=millify(avance_objetivo))
+	with dos:
+		prefixes = ['%']
+		st.metric('Avance en tiempo (%)', millify(por_tiempo), delta = millify(dif_avance_por))
+	#st.write('$ ', d_act.iloc[:,2].sum(axis=0))
+
+	st.write(avance)
+	#st.write(avance_mes) # se muestra la tabla filtrando por mes actual
 
 	#Separamos en dos frames de lado izquiero los filtros
 	#De lado derecho imprimiremos la tabla filtrada
