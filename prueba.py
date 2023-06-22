@@ -4,6 +4,7 @@ import streamlit as st
 from PIL import Image
 import altair as alt
 from datetime import datetime, timedelta
+import millify
 from millify import millify
 
 def main():	
