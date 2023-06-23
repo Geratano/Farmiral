@@ -130,6 +130,7 @@ def main():
         cantidades_lista = st.text_input('Ingresa las cantidades necesarias por unidad en orden separados por una coma (,)')
         c_lista = re.split(",",cantidades_lista)
         
+        sku=[]
         m_lista=[]
         u_lista=[]
         c2_lista=[]
