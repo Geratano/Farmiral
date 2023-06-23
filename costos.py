@@ -122,13 +122,52 @@ def main():
     if st.checkbox('Formulador'):
         #st.warning('Formulador en construcción')
         nombre_producto = st.text_input('Nombre del producto a formular')
-        materias_lista = st.multiselect('Materia Prima', df_productos['Desc_prod'].sort_values().unique())
+        materias_lista = st.multiselect('Materia Prima ALPHA', df_productos['Desc_prod'].sort_values().unique())
         df_filtered = df_productos[df_productos['Desc_prod'].isin(materias_lista)]
         df_formulador = df_filtered[['Cve_prod', 'Desc_prod', 'Uni_med', 'Cto_ent']]
         df_formulador.columns = ['SKU','Materia prima','Unidad','Costo']
         duplist = df_productos[df_productos.duplicated('Desc_prod')]
         cantidades_lista = st.text_input('Ingresa las cantidades necesarias por unidad en orden separados por una coma (,)')
         c_lista = re.split(",",cantidades_lista)
+        
+        m_lista=[]
+        u_lista=[]
+        c2_lista=[]
+        c3_lista=[]
+        if st.checkbox('Ingresar materias primas nuevas'):     
+            materias_nuevas = st.text_input('(MPN) Ingresa los nombres de las materias primas nuevas separados por una coma (,)')
+            unidad_nueva = st.text_input('(MPN) Ingresa las unidades por orden separados por una coma (,)')
+            costo_nuevo = st.text_input('(MPN) Ingresa el costo por orden separado por una coma (,)')
+            cantidad_nueva = st.text_input('(MPN) Ingresa las cantidades de las nuevas materias en orden separados po una coma (,)')
+            
+            if len(materias_nuevas) != 0:
+                materias_nuevas = re.split(",",materias_nuevas)
+                for i in range(len(materias_nuevas)):
+                    m = materias_nuevas[i]
+                    m_lista.append(m)
+                    sku = list(range(len(m_lista)))
+            if len(unidad_nueva) != 0:
+                unidad_nueva = re.split(",",unidad_nueva)
+                for i in range(len(unidad_nueva)):
+                    u = unidad_nueva[i]
+                    u_lista.append(u)
+            if len(costo_nuevo) != 0:
+                costo_nuevo = re.split(",",costo_nuevo)
+                for i in range(len(costo_nuevo)):
+                    c3 = float(costo_nuevo[i])
+                    c3_lista.append(c3)
+            if len(cantidad_nueva) != 0:
+                cantidad_nueva = re.split(",",cantidad_nueva)
+                for i in range(len(cantidad_nueva)):
+                    c = float(cantidad_nueva[i])
+                    c2_lista.append(c)
+        sku = pd.Series(sku) 
+        m_lista = pd.Series(m_lista)
+        u_lista = pd.Series(u_lista)
+        c3_lista = pd.Series(c3_lista)
+        c2_lista = pd.Series(c2_lista)
+        d = {'SKU':sku, 'Materia prima':m_lista, 'Unidad':u_lista, 'Costo':c3_lista, 'Cantidad':c2_lista}
+        df = pd.DataFrame(data=d)
         unidad_base = st.text_input('Ingresa la unidad base del producto a formular')
         unidad_caja = st.text_input('Cuantas unidades contiene la presentación')
         if len(unidad_caja) != 0: 
@@ -140,15 +179,17 @@ def main():
         if len(margen) != 0:
             margen = float(margen)
         n_lista=[]
-        #Tiene un +1 en lo que se resuelve lo de los duplicados
         if len(cantidades_lista) != 0:
            for i in range(len(materias_lista)):
                n = float(c_lista[i])
                n_lista.append(n)
         df_formulador['Cantidad'] = n_lista
+        df_formulador = df_formulador.append(df).reset_index(drop=True)
         df_formulador['Costo unitario'] = df_formulador['Costo'] * df_formulador['Cantidad']
         df_formulador['Costo caja'] = [i * unidad_caja for i in df_formulador['Costo unitario']]
         df_formulador['Costo lote'] = [i * unidad_lote for i in df_formulador['Costo unitario']]
+        #Agregamos las materias nuevas a los dataframes
+
 
         #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
         alt.data_transformers.enable('default', max_rows=None)
