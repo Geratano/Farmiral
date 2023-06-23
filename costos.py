@@ -185,7 +185,7 @@ def main():
                n = float(c_lista[i])
                n_lista.append(n)
         df_formulador['Cantidad'] = n_lista
-        df_formulador = df_formulador.append(df).reset_index(drop=True)
+        df_formulador = pd.concat([df_formulador,df]).reset_index(drop=True)
         df_formulador['Costo unitario'] = df_formulador['Costo'] * df_formulador['Cantidad']
         df_formulador['Costo caja'] = [i * unidad_caja for i in df_formulador['Costo unitario']]
         df_formulador['Costo lote'] = [i * unidad_lote for i in df_formulador['Costo unitario']]
