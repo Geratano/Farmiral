@@ -56,6 +56,7 @@ def main():
         #Eliminamos las versiones V1, V2, V3 y V4
         df_formulas_n = df_formulas_n.loc[(df_formulas_n['Version pt']!='V1') & (df_formulas_n['Version pt']!='V2') 
             & (df_formulas_n['Version pt']!='V3') & (df_formulas_n['Version pt']!='V4')]
+        
         #Creamos el filtro para seleccionar la formula a análizar
         df_formulas_prueba = df_formulas_n[df_formulas_n.SKU.str.startswith('51')].reset_index()
         formula = st.selectbox('Formula', df_formulas_prueba['Formula'].sort_values().unique())        
@@ -122,7 +123,7 @@ def main():
     if st.checkbox('Formulador'):
         #st.warning('Formulador en construcción')
         nombre_producto = st.text_input('Nombre del producto a formular')
-        materias_lista = st.multiselect('Materia Prima ALPHA', df_productos['Desc_prod'].sort_values().unique())
+        materias_lista = st.multiselect('Materia Prima ALPHA', df_productos['Desc_prod'].unique())
         df_filtered = df_productos[df_productos['Desc_prod'].isin(materias_lista)]
         df_formulador = df_filtered[['Cve_prod', 'Desc_prod', 'Uni_med', 'Cto_ent']]
         df_formulador.columns = ['SKU','Materia prima','Unidad','Costo']
