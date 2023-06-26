@@ -50,22 +50,9 @@ def main():
     #Hacemos merge con los nombres de las formulas para facilitar la busqueda del producto a costear
         df_formulas_n = df_formulas.merge(df_productos.rename({'Desc_prod':'Formula'},axis=1), left_on='Cve_copr', 
             right_on='Cve_prod', how='left')
-        df_formulas_n.columns = ['SKU', 'Componente', 'Cantidad', 'Tipo', 'Atributo', 'Version pt', 'Partida', 'Unidad_componente'
+        df_formulas_n.columns = ['SKU', 'Componente', 'Cantidad', 'Tipo', 'Atributo', 'Version pt', 'Partida', 'Unidad componente'
                                     , 'Nombre', 'Cve_mon', 'Tipo_x', 'Tipcam','Tip_cam', 'Rendimiento','Costo', 'Unidad'
                                     , 'Cve_prod_y', 'Formula', 'Unidad pt', 'Cto_ent_y', 'Tipo_prod']
-        
-        # convertimos la cantidad de KG a GR multiplicandola por 1000
-        gramos = df_formulas_n[['Cantidad','Unidad_componente']] # filto por cantidad y unidad de componente
-        for i in range(len(df_formulas_n['Cantidad'])): # creo un for que recorra una columna entera, en este  caso la de cantidad 
-            if gramos['Unidad_componente'][i] == "KG": # if donde evalua, en la iteracion actual, si en la columna unidad_componente hay un KG
-                gramos['Cantidad'][i] = (gramos['Cantidad'][i])*1000 # Si lo anterior se cumple, se multiplica por 1000 la columna Cantidad en la iteracion actual
-                gramos['Unidad_componente'][i]="GR" # Se reemplaza lo que hay en la columna Unidad_componente por el string GR
-            else:
-                gramos['Cantidad'][i] = gramos['Cantidad'][i]  # si no se cumple se deja tal cual
-                gramos['Unidad_componente'][i]=gramos['Unidad_componente'][i]
-        # fin for
-        df_formulas_n[['Cantidad','Unidad_componente']] = gramos[['Cantidad','Unidad_componente']] # una vez termindo el proceso se reemplazan los nuevos datos en df_formulas_n
-
         #Eliminamos las versiones V1, V2, V3 y V4
         df_formulas_n = df_formulas_n.loc[(df_formulas_n['Version pt']!='V1') & (df_formulas_n['Version pt']!='V2') 
             & (df_formulas_n['Version pt']!='V3') & (df_formulas_n['Version pt']!='V4')]
@@ -76,7 +63,7 @@ def main():
         pt = df_formulas_n[df_formulas_n.Formula == formula]
         pt = pt[pt.SKU.str.startswith('51')].reset_index()
         #Nos quedamos solo con las columnas necesarias de la base
-        pt = pt[['SKU','Componente','Nombre','Cantidad','Costo','Unidad_componente','Rendimiento','Unidad pt']]
+        pt = pt[['SKU','Componente','Nombre','Cantidad','Costo','Unidad componente','Rendimiento','Unidad pt']]
         #Calculamos cantidades y costos unitarios
         pt['Cantidad'] = pt['Cantidad']/pt['Rendimiento']
         pt['Costo total'] = pt['Cantidad'] * pt['Costo']
@@ -86,7 +73,7 @@ def main():
         semt = semt.iloc[0]['Nombre']
         semit = df_formulas_n[df_formulas_n.Formula == semt]
         semit = semit[semit.SKU.str.startswith('41')].reset_index()
-        semit = semit[['SKU','Componente','Nombre','Cantidad','Costo','Unidad_componente','Rendimiento','Unidad pt']]
+        semit = semit[['SKU','Componente','Nombre','Cantidad','Costo','Unidad componente','Rendimiento','Unidad pt']]
         semit['Cantidad'] = semit['Cantidad']/semit['Rendimiento']
         semit['Costo total'] = semit['Cantidad'] * semit['Costo']
         st.subheader('Costos')
