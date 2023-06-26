@@ -129,6 +129,12 @@ def main():
         duplist = df_productos[df_productos.duplicated('Desc_prod')]
         cantidades_lista = st.text_input('Ingresa las cantidades necesarias por unidad en orden separados por una coma (,)')
         c_lista = re.split(",",cantidades_lista)
+
+        mm = pd.Series(materias_lista)
+        cc = pd.Series(c_lista)
+        datamc = {'Materia prima': mm, 'Cantidad':cc}
+        inter = pd.DataFrame(datamc)
+        st.write(inter)
         
         sku=[]
         m_lista=[]
@@ -141,6 +147,8 @@ def main():
             costo_nuevo = st.text_input('(MPN) Ingresa el costo por orden separado por una coma (,)')
             cantidad_nueva = st.text_input('(MPN) Ingresa las cantidades de las nuevas materias en orden separados po una coma (,)')
             
+            
+
             if len(materias_nuevas) != 0:
                 materias_nuevas = re.split(",",materias_nuevas)
                 for i in range(len(materias_nuevas)):
@@ -162,6 +170,15 @@ def main():
                 for i in range(len(cantidad_nueva)):
                     c = float(cantidad_nueva[i])
                     c2_lista.append(c)
+
+            mmn = pd.Series(m_lista)
+            uun = pd.Series(u_lista)
+            ccn = pd.Series(c3_lista)
+            c2n = pd.Series(c2_lista)
+            datanc = {'Materia prima nueva': mmn, 'Unidad':uun, 'Costo':ccn, 'Cantidad':c2n}
+            inter2 = pd.DataFrame(datanc)
+            st.write(inter2)
+
         sku = pd.Series(sku) 
         m_lista = pd.Series(m_lista)
         u_lista = pd.Series(u_lista)
@@ -176,9 +193,11 @@ def main():
         unidad_lote = st.text_input('Cuantas unidades contiene el lote de producción')
         if len(unidad_lote) != 0:
             unidad_lote = float(unidad_lote)
-        margen = st.text_input('Cual será el margen de costo para el precio')
-        if len(margen) != 0:
-            margen = float(margen)
+        #margen = st.text_input('Cual será el margen de costo para el precio')
+        margen = st.select_slider('Selecciona margen de costo',
+                    options=[25,50,75,90,100])
+        #if len(margen) != 0:
+        #    margen = float(margen)
         n_lista=[]
         if len(cantidades_lista) != 0:
            for i in range(len(materias_lista)):
@@ -204,7 +223,8 @@ def main():
         col1, col2 = st.columns([15,15])
         with col1:
             st.write('Rendimiento: ' ,unidad_lote)
-            st.write('Unidad Base: ' ,unidad_base)    
+            st.write('Unidad Base: ' ,unidad_base)
+            st.write('Precio sugerido: $', (df_formulador['Costo unitario'].sum())*(1+(margen/100))) 
         with col2:
             costo_unitario = df_formulador['Costo unitario'].sum()
             costo_caja = df_formulador['Costo caja'].sum()
