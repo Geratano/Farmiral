@@ -166,17 +166,18 @@ def main():
                n = float(c_lista[i])
                temp_lista.append(n)
 
-        cc = pd.Series(temp_lista)
-        datamc = {'Materia prima': mm, 'Cantidad':cc}
-        inter = pd.DataFrame(datamc)
-        cantidad_total = inter['Cantidad'].sum()
-        inter['Porcentaje (%)'] = round(((inter['Cantidad'])/cantidad_total)*100,2)
-        inter_temp = inter.merge(df_formulador, on='Materia prima', how='left')
-        inter_temp = inter_temp[['Materia prima', 'Cantidad', 'Porcentaje (%)', 'Unidad', 'Costo']]
-        st.write(inter_temp)
+        if len(temp_lista) !=0:
+            cc = pd.Series(temp_lista)
+            datamc = {'Materia prima': mm, 'Cantidad':cc}
+            inter = pd.DataFrame(datamc)
+            cantidad_total = inter['Cantidad'].sum()
+            inter['Porcentaje (%)'] = round(((inter['Cantidad'])/cantidad_total)*100,2)
+            inter_temp = inter.merge(df_formulador, on='Materia prima', how='left')
+            inter_temp = inter_temp[['Materia prima', 'Cantidad', 'Porcentaje (%)', 'Unidad', 'Costo']]
+            st.write(inter_temp)
 
-        ###
-        df_formulador = inter.merge(df_formulador, on='Materia prima', how='left')
+            ###
+            df_formulador = inter.merge(df_formulador, on='Materia prima', how='left')
             
         sku=[]
         m_lista=[]
@@ -245,41 +246,51 @@ def main():
            for i in range(len(materias_lista)):
                n = float(c_lista[i])
                n_lista.append(n)
-        df_formulador['Cantidad'] = n_lista
-        df_formulador = pd.concat([df_formulador,df]).reset_index(drop=True)
-        df_formulador['Costo unitario'] = df_formulador['Costo'] * df_formulador['Cantidad']
-        df_formulador['Porcentaje (%)'] = round(((df_formulador['Costo unitario'])/(df_formulador['Costo unitario'].sum()))*100,2)
-        df_formulador['Costo caja'] = [i * unidad_caja for i in df_formulador['Costo unitario']]
-        df_formulador['Costo lote'] = [i * unidad_lote for i in df_formulador['Costo unitario']]
-        #Agregamos las materias nuevas a los dataframes
+            
+        if len(n_lista) !=0:    
+            df_formulador['Cantidad'] = n_lista
+            df_formulador = pd.concat([df_formulador,df]).reset_index(drop=True)
+            df_formulador['Costo unitario'] = df_formulador['Costo'] * df_formulador['Cantidad']
+            df_formulador['Porcentaje (%)'] = round(((df_formulador['Costo unitario'])/(df_formulador['Costo unitario'].sum()))*100,2)
+            if unidad_caja != 0:
+                df_formulador['Costo caja'] = [i * unidad_caja for i in df_formulador['Costo unitario']]
+            else:
+                df_formulador['Costo caja'] = [0] * len(df_formulador['Materia prima'])
+            if unidad_lote != 0:    
+                df_formulador['Costo lote'] = [i * unidad_lote for i in df_formulador['Costo unitario']]
+            else:
+                df_formulador['Costo lote'] = [0] * len(df_formulador['Materia prima'])
+            #Agregamos las materias nuevas a los dataframes
 
 
-        #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
-        alt.data_transformers.enable('default', max_rows=None)
-        chart_formulador = df_formulador.groupby(['SKU','Materia prima']).agg({'Costo unitario':'sum'}).reset_index()
-        pie_formulador = alt.Chart(chart_formulador, title=nombre_producto).mark_arc().encode(
+            #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
+            alt.data_transformers.enable('default', max_rows=None)
+            chart_formulador = df_formulador.groupby(['SKU','Materia prima']).agg({'Costo unitario':'sum', 'Porcentaje (%)':'sum'}).reset_index()
+            pie_formulador = alt.Chart(chart_formulador, title=nombre_producto).mark_arc().encode(
                                 theta=alt.Theta(field='Costo unitario', type="quantitative"),
                                 color=alt.Color(field='Materia prima', type="nominal"),
-                                tooltip = ['Materia prima','Costo unitario']
+                                tooltip = ['Materia prima','Costo unitario','Porcentaje (%)']
                                 ).interactive()
 
-        col1, col2 = st.columns([15,15])
-        with col1:
-            st.write('Rendimiento: ' ,unidad_lote)
-            st.write('Unidad Base: ' ,unidad_base)
-            st.write('Precio sugerido: $', (df_formulador['Costo unitario'].sum())*(1+(margen/100))) 
-        with col2:
-            costo_unitario = df_formulador['Costo unitario'].sum()
-            costo_caja = df_formulador['Costo caja'].sum()
-            costo_lote = df_formulador['Costo lote'].sum()
-            precio = costo_unitario*(1+margen) 
-            st.write('Costo unitario: $' ,round(costo_unitario ,2))
-            st.write('Costo por caja: $' , round(costo_caja,2))
-            st.write('Costo por lote: $' , round(costo_lote,2))
-        df_formulador = df_formulador[['Materia prima', 'Cantidad', 'SKU', 'Unidad', 'Costo', 'Costo unitario', 'Porcentaje (%)'
+            col1, col2 = st.columns([15,15])
+            with col1:
+                st.write('Rendimiento: ' ,unidad_lote)
+                st.write('Unidad Base: ' ,unidad_base)
+                st.write('Precio sugerido: $', (df_formulador['Costo unitario'].sum())*(1+(margen/100))) 
+            with col2:
+                costo_unitario = df_formulador['Costo unitario'].sum()
+                precio = costo_unitario*(1+margen) 
+                st.write('Costo unitario: $' ,round(costo_unitario ,2))
+                if unidad_caja != 0:
+                    costo_caja = df_formulador['Costo caja'].sum()
+                    st.write('Costo por caja: $' , round(costo_caja,2))
+                if unidad_lote != 0:
+                    costo_lote = df_formulador['Costo lote'].sum()
+                    st.write('Costo por lote: $' , round(costo_lote,2))
+            df_formulador = df_formulador[['Materia prima', 'Cantidad', 'SKU', 'Unidad', 'Costo', 'Costo unitario', 'Porcentaje (%)'
                                         ,'Costo caja', 'Costo lote']]
-        st.write(df_formulador)
-        st.altair_chart(pie_formulador, use_container_width=True) 
+            st.write(df_formulador)
+            st.altair_chart(pie_formulador, use_container_width=True) 
 
 
 
