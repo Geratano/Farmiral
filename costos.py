@@ -5,7 +5,7 @@ from PIL import Image
 import altair as alt
 from datetime import datetime
 import re
-
+st.set_page_config(layout="wide")
 
 def main():
     img = Image.open('logo_farmiral.jpg')
@@ -42,6 +42,17 @@ def main():
     df_productos['Desc_prod'] = df_productos['Desc_prod'].str.strip()
     df_productos['Uni_med'] = df_productos['Uni_med'].str.strip()
 
+    gramform = df_productos[['Uni_med', 'Cto_ent']] # Filtro las columnas correspondientes a cantidad y Unidad componente
+    for i in range (len(df_productos['Uni_med'])): # recorro la una columna entera 
+        if  gramform['Uni_med'][i] == "KG": # si en el recorrido encuentra un KG
+            gramform['Uni_med'][i] = "GR" # lo reemplaza por "GR"
+            gramform['Cto_ent'][i]=(gramform['Cto_ent'][i])/1000 # divido entre 1000
+        else:
+            gramform['Uni_med'][i]=gramform['Uni_med'][i] # en caso que no coinsida queda talcual
+            gramform['Cto_ent'][i] = gramform['Cto_ent'][i]
+    # fin for   
+    df_productos[['Uni_med', 'Cto_ent']] = gramform[['Uni_med', 'Cto_ent']]
+
     #Titulo del documento
     st.title('Costos Farmiral')
 
@@ -50,9 +61,23 @@ def main():
     #Hacemos merge con los nombres de las formulas para facilitar la busqueda del producto a costear
         df_formulas_n = df_formulas.merge(df_productos.rename({'Desc_prod':'Formula'},axis=1), left_on='Cve_copr', 
             right_on='Cve_prod', how='left')
-        df_formulas_n.columns = ['SKU', 'Componente', 'Cantidad', 'Tipo', 'Atributo', 'Version pt', 'Partida', 'Unidad componente'
+        df_formulas_n.columns = ['SKU', 'Componente', 'Cantidad', 'Tipo', 'Atributo', 'Version pt', 'Partida', 'Unidad_componente'
                                     , 'Nombre', 'Cve_mon', 'Tipo_x', 'Tipcam','Tip_cam', 'Rendimiento','Costo', 'Unidad'
                                     , 'Cve_prod_y', 'Formula', 'Unidad pt', 'Cto_ent_y', 'Tipo_prod']
+
+         # convertimos la cantidad de KG a GR multiplicandola por 1000
+        gramos = df_formulas_n[['Cantidad','Unidad_componente','Costo']] # filto por cantidad y unidad de componente
+        for i in range(len(df_formulas_n['Cantidad'])): # creo un for que recorra una columna entera, en este  caso la de cantidad 
+            if gramos['Unidad_componente'][i] == "KG": # if donde evalua, en la iteracion actual, si en la columna unidad_componente hay un KG
+                gramos['Cantidad'][i] = (gramos['Cantidad'][i])*1000 # Si lo anterior se cumple, se multiplica por 1000 la columna Cantidad en la iteracion actual
+                gramos['Unidad_componente'][i]="GR" # Se reemplaza lo que hay en la columna Unidad_componente por el string GR
+                gramos['Costo'][i]=  ( gramos['Costo'][i])/1000
+            else:
+                gramos['Cantidad'][i] = gramos['Cantidad'][i]  # si no se cumple se deja tal cual
+                gramos['Unidad_componente'][i]=gramos['Unidad_componente'][i]
+                gramos['Costo'][i]= gramos['Costo'][i]
+        # fin for
+        df_formulas_n[['Cantidad','Unidad_componente','Costo']] = gramos[['Cantidad','Unidad_componente','Costo']] # una vez termindo el proceso se reemplazan los nuevos datos en df_formulas_n
         #Eliminamos las versiones V1, V2, V3 y V4
         df_formulas_n = df_formulas_n.loc[(df_formulas_n['Version pt']!='V1') & (df_formulas_n['Version pt']!='V2') 
             & (df_formulas_n['Version pt']!='V3') & (df_formulas_n['Version pt']!='V4')]
@@ -64,7 +89,7 @@ def main():
         pt = df_formulas_n[df_formulas_n.Formula == formula]
         pt = pt[pt.SKU.str.startswith('51')].reset_index()
         #Nos quedamos solo con las columnas necesarias de la base
-        pt = pt[['SKU','Componente','Nombre','Cantidad','Costo','Unidad componente','Rendimiento','Unidad pt']]
+        pt = pt[['SKU','Componente','Nombre','Cantidad','Costo','Unidad_componente','Rendimiento','Unidad pt']]
         #Calculamos cantidades y costos unitarios
         pt['Cantidad'] = pt['Cantidad']/pt['Rendimiento']
         pt['Costo total'] = pt['Cantidad'] * pt['Costo']
@@ -74,7 +99,7 @@ def main():
         semt = semt.iloc[0]['Nombre']
         semit = df_formulas_n[df_formulas_n.Formula == semt]
         semit = semit[semit.SKU.str.startswith('41')].reset_index()
-        semit = semit[['SKU','Componente','Nombre','Cantidad','Costo','Unidad componente','Rendimiento','Unidad pt']]
+        semit = semit[['SKU','Componente','Nombre','Cantidad','Costo','Unidad_componente','Rendimiento','Unidad pt']]
         semit['Cantidad'] = semit['Cantidad']/semit['Rendimiento']
         semit['Costo total'] = semit['Cantidad'] * semit['Costo']
         st.subheader('Costos')
@@ -132,10 +157,23 @@ def main():
         c_lista = re.split(",",cantidades_lista)
 
         mm = pd.Series(materias_lista)
-        cc = pd.Series(c_lista)
+        
+
+        ###
+        temp_lista=[]
+        if len(cantidades_lista) != 0:
+           for i in range(len(materias_lista)):
+               n = float(c_lista[i])
+               temp_lista.append(n)
+
+        cc = pd.Series(temp_lista)
         datamc = {'Materia prima': mm, 'Cantidad':cc}
         inter = pd.DataFrame(datamc)
-        st.write(inter)
+        cantidad_total = inter['Cantidad'].sum()
+        inter['Porcentaje (%)'] = round(((inter['Cantidad'])/cantidad_total)*100,2)
+        inter_temp = inter.merge(df_formulador, on='Materia prima', how='left')
+        inter_temp = inter_temp[['Materia prima', 'Cantidad', 'Porcentaje (%)', 'Unidad', 'Costo']]
+        st.write(inter_temp)
 
         ###
         df_formulador = inter.merge(df_formulador, on='Materia prima', how='left')
@@ -210,6 +248,7 @@ def main():
         df_formulador['Cantidad'] = n_lista
         df_formulador = pd.concat([df_formulador,df]).reset_index(drop=True)
         df_formulador['Costo unitario'] = df_formulador['Costo'] * df_formulador['Cantidad']
+        df_formulador['Porcentaje (%)'] = round(((df_formulador['Costo unitario'])/(df_formulador['Costo unitario'].sum()))*100,2)
         df_formulador['Costo caja'] = [i * unidad_caja for i in df_formulador['Costo unitario']]
         df_formulador['Costo lote'] = [i * unidad_lote for i in df_formulador['Costo unitario']]
         #Agregamos las materias nuevas a los dataframes
@@ -222,7 +261,7 @@ def main():
                                 theta=alt.Theta(field='Costo unitario', type="quantitative"),
                                 color=alt.Color(field='Materia prima', type="nominal"),
                                 tooltip = ['Materia prima','Costo unitario']
-                                )
+                                ).interactive()
 
         col1, col2 = st.columns([15,15])
         with col1:
@@ -237,6 +276,8 @@ def main():
             st.write('Costo unitario: $' ,round(costo_unitario ,2))
             st.write('Costo por caja: $' , round(costo_caja,2))
             st.write('Costo por lote: $' , round(costo_lote,2))
+        df_formulador = df_formulador[['Materia prima', 'Cantidad', 'SKU', 'Unidad', 'Costo', 'Costo unitario', 'Porcentaje (%)'
+                                        ,'Costo caja', 'Costo lote']]
         st.write(df_formulador)
         st.altair_chart(pie_formulador, use_container_width=True) 
 
