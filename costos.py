@@ -123,8 +123,8 @@ def main():
     if st.checkbox('Formulador'):
         #st.warning('Formulador en construcción')
         nombre_producto = st.text_input('Nombre del producto a formular')
-        materias_lista = st.multiselect('Materia Prima ALPHA', df_productos['Desc_prod'].unique())
-        df_filtered = df_productos[df_productos['Desc_prod'].isin(materias_lista)]
+        materias_lista = st.multiselect('Materia Prima ALPHA', df_productos['Desc_prod'].sort_values().unique())
+        df_filtered = df_productos[df_productos['Desc_prod'].isin(materias_lista)].reset_index()
         df_formulador = df_filtered[['Cve_prod', 'Desc_prod', 'Uni_med', 'Cto_ent']]
         df_formulador.columns = ['SKU','Materia prima','Unidad','Costo']
         duplist = df_productos[df_productos.duplicated('Desc_prod')]
@@ -136,7 +136,10 @@ def main():
         datamc = {'Materia prima': mm, 'Cantidad':cc}
         inter = pd.DataFrame(datamc)
         st.write(inter)
-        
+
+        ###
+        df_formulador = inter.merge(df_formulador, on='Materia prima', how='left')
+            
         sku=[]
         m_lista=[]
         u_lista=[]
@@ -180,12 +183,12 @@ def main():
             inter2 = pd.DataFrame(datanc)
             st.write(inter2)
 
-        sku = pd.Series(sku) 
-        m_lista = pd.Series(m_lista)
-        u_lista = pd.Series(u_lista)
-        c3_lista = pd.Series(c3_lista)
-        c2_lista = pd.Series(c2_lista)
-        d = {'SKU':sku, 'Materia prima':m_lista, 'Unidad':u_lista, 'Costo':c3_lista, 'Cantidad':c2_lista}
+        skus = pd.Series(sku) 
+        mm_lista = pd.Series(m_lista)
+        uu_lista = pd.Series(u_lista)
+        c3c_lista = pd.Series(c3_lista)
+        c2c_lista = pd.Series(c2_lista)
+        d = {'SKU':skus, 'Materia prima':mm_lista, 'Unidad':uu_lista, 'Costo':c3c_lista, 'Cantidad':c2c_lista}
         df = pd.DataFrame(data=d)
         unidad_base = st.text_input('Ingresa la unidad base del producto a formular')
         unidad_caja = st.text_input('Cuantas unidades contiene la presentación')
