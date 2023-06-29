@@ -17,9 +17,18 @@ def main():
         st.image(img,width=250)
     with col3:
         st.write("")
-	#Cargamos las bases que vamos a utilizar desde aqui    
-    df_formulas = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/formulas.csv',encoding='latin-1')
-    df_productos = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/productos.csv',encoding='latin-1')
+
+        #Cargamos las bases que vamos a utilizar desde aqui  
+    @st.cache_resource
+    def load_model():
+        checkpoints = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/formulas.csv',encoding='latin-1')
+        return checkpoints
+    df_formulas = load_model()  
+    @st.cache_resource
+    def load_model2():
+        checkpoints = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/productos.csv',encoding='latin-1')
+        return checkpoints
+    df_productos = load_model2() 
 
     #Quitamos espacios a los nombres de las columnas
     df_formulas.columns = df_formulas.columns.str.strip()
@@ -42,18 +51,38 @@ def main():
     df_productos['Desc_prod'] = df_productos['Desc_prod'].str.strip()
     df_productos['Uni_med'] = df_productos['Uni_med'].str.strip()
 
-    #gramform = df_productos[['Uni_med', 'Cto_ent']] # Filtro las columnas correspondientes a cantidad y Unidad componente
-    #for i in range (len(df_productos['Uni_med'])): # recorro la una columna entera 
-    #    if  gramform['Uni_med'][i] == "KG": # si en el recorrido encuentra un KG
-    #        gramform['Uni_med'][i] = "GR" # lo reemplaza por "GR"
-    #        gramform['Cto_ent'][i]=(gramform['Cto_ent'][i])/1000 # divido entre 1000
-    #    else:
-    #        gramform['Uni_med'][i]=gramform['Uni_med'][i] # en caso que no coinsida queda talcual
-    #        gramform['Cto_ent'][i] = gramform['Cto_ent'][i]
-    # fin for   
-    #df_productos[['Uni_med', 'Cto_ent']] = gramform[['Uni_med', 'Cto_ent']]
+     # convertimos la cantidad de KG a GR multiplicandola por 1000
+    @st.cache_resource
+    def gramos():
+        gramos = df_formulas[['Can_copr','Undfor','Cto_ent']] # filto por cantidad y unidad de componente
+        for i in range(len(df_formulas['Can_copr'])): # creo un for que recorra una columna entera, en este  caso la de cantidad 
+            if gramos['Undfor'][i] == "KG": # if donde evalua, en la iteracion actual, si en la columna unidad_componente hay un KG
+                 gramos['Can_copr'][i] = (gramos['Can_copr'][i])*1000 # Si lo anterior se cumple, se multiplica por 1000 la columna Cantidad en la iteracion actual
+                 gramos['Undfor'][i]="GR" # Se reemplaza lo que hay en la columna Unidad_componente por el string GR
+                 gramos['Cto_ent'][i]=  ( gramos['Cto_ent'][i])/1000
+            else:
+                gramos['Can_copr'][i] = gramos['Can_copr'][i]  # si no se cumple se deja tal cual
+                gramos['Undfor'][i]=gramos['Undfor'][i]
+                gramos['Cto_ent'][i]= gramos['Cto_ent'][i]
+        return gramos
+        #fin for
+    df_formulas[['Can_copr','Undfor','Cto_ent']] = gramos() # una vez termindo el proceso se reemplazan los nuevos datos en df_formulas_n
 
-    #Titulo del documento
+    @st.cache_resource
+    def gramos2():
+        gramform = df_productos[['Uni_med', 'Cto_ent']] # Filtro las columnas correspondientes a cantidad y Unidad componente
+        for i in range (len(df_productos['Uni_med'])): # recorro la una columna entera 
+            if  gramform['Uni_med'][i] == "KG": # si en el recorrido encuentra un KG
+                gramform['Uni_med'][i] = "GR" # lo reemplaza por "GR"
+                gramform['Cto_ent'][i]=(gramform['Cto_ent'][i])/1000 # divido entre 1000
+            else:
+                gramform['Uni_med'][i]=gramform['Uni_med'][i] # en caso que no coinsida queda talcual
+                gramform['Cto_ent'][i] = gramform['Cto_ent'][i]
+        return gramform
+        #fin for   
+    df_productos[['Uni_med', 'Cto_ent']] = gramos2()
+
+
     st.title('Costos Farmiral')
 
     #Seleccionar si se va a consultar costos desglosados o costear
@@ -65,19 +94,7 @@ def main():
                                     , 'Nombre', 'Cve_mon', 'Tipo_x', 'Tipcam','Tip_cam', 'Rendimiento','Costo', 'Unidad'
                                     , 'Cve_prod_y', 'Formula', 'Unidad pt', 'Cto_ent_y', 'Tipo_prod']
 
-         # convertimos la cantidad de KG a GR multiplicandola por 1000
-        #gramos = df_formulas_n[['Cantidad','Unidad_componente','Costo']] # filto por cantidad y unidad de componente
-        #for i in range(len(df_formulas_n['Cantidad'])): # creo un for que recorra una columna entera, en este  caso la de cantidad 
-        #    if gramos['Unidad_componente'][i] == "KG": # if donde evalua, en la iteracion actual, si en la columna unidad_componente hay un KG
-        #        gramos['Cantidad'][i] = (gramos['Cantidad'][i])*1000 # Si lo anterior se cumple, se multiplica por 1000 la columna Cantidad en la iteracion actual
-        #        gramos['Unidad_componente'][i]="GR" # Se reemplaza lo que hay en la columna Unidad_componente por el string GR
-        #        gramos['Costo'][i]=  ( gramos['Costo'][i])/1000
-        #    else:
-        #        gramos['Cantidad'][i] = gramos['Cantidad'][i]  # si no se cumple se deja tal cual
-        #        gramos['Unidad_componente'][i]=gramos['Unidad_componente'][i]
-        #        gramos['Costo'][i]= gramos['Costo'][i]
-        # fin for
-        #df_formulas_n[['Cantidad','Unidad_componente','Costo']] = gramos[['Cantidad','Unidad_componente','Costo']] # una vez termindo el proceso se reemplazan los nuevos datos en df_formulas_n
+    
         #Eliminamos las versiones V1, V2, V3 y V4
         df_formulas_n = df_formulas_n.loc[(df_formulas_n['Version pt']!='V1') & (df_formulas_n['Version pt']!='V2') & (df_formulas_n['Version pt']!='V3') & (df_formulas_n['Version pt']!='V4')]
         
@@ -107,7 +124,7 @@ def main():
             st.write('Rendimiento: ' ,pt.iloc[0]['Rendimiento'])
             st.write('Unidad Base: ' ,pt.iloc[0]['Unidad pt'])    
         with col2:
-            costo_n1 = semit.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']
+            costo_n1 = semit.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']/1000
             costo_st = pt[pt.Componente.str.startswith('41')]['Costo'].reset_index().iloc[0]['Costo']
             pt.Costo = pt.Costo.replace({costo_st:costo_n1})
             pt['Costo total'] = pt['Cantidad'] * pt['Costo']
