@@ -4,8 +4,11 @@ import streamlit as st
 from PIL import Image
 import altair as alt
 from datetime import datetime, timedelta
+#import streamlit_card as st_card
 import millify
 from millify import millify
+st.set_page_config(layout="wide")
+
 
 def main():	
 	#Cambiamos el directorio en terminal para darle 
@@ -122,6 +125,7 @@ def main():
 	uno, dos = st.columns([1,1])
 	with uno:
 		st.metric('Ventas al dia ($)', millify(v_dia), delta=millify(avance_objetivo))
+		#st_card('Ventas al dia ($)', v_dia, show_progress=True)
 	with dos:
 		prefixes = ['%']
 		st.metric('Avance en tiempo (%)', millify(por_tiempo), delta = millify(dif_avance_por))
