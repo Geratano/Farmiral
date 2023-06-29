@@ -108,10 +108,16 @@ def main():
             st.write('Unidad Base: ' ,pt.iloc[0]['Unidad pt'])    
         with col2:
             costo_n1 = semit.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']
+            costo_st = pt[pt.Componente.str.startswith('41')]['Costo'].reset_index().iloc[0]['Costo']
+            pt.Costo = pt.Costo.replace({costo_st:costo_n1})
+            pt['Costo total'] = pt['Cantidad'] * pt['Costo']
             cantidad_n1 = pt[pt.Componente.str.startswith('41')]['Cantidad'].reset_index().iloc[0]['Cantidad']
-            st.write(cantidad_n1)
             costo_total_n1 = costo_n1 * cantidad_n1
             costo_total_pt = pt.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']
+            
+            
+            #pt[pt.Componente.str.startswith('41')]['Costo'].reset_index().iloc[0]['Costo'] = costo_n1
+            #st.write(pt[pt.Componente.str.startswith('41')])
             st.write('Costo nivel 1: $' ,round(costo_total_n1 ,2))
             st.write('Costo ME: $' , round(costo_total_pt - costo_total_n1,2))
             st.write('Costo total: $' , round(costo_total_pt,2))
