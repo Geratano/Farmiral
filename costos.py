@@ -124,7 +124,11 @@ def main():
             st.write('Rendimiento: ' ,pt.iloc[0]['Rendimiento'])
             st.write('Unidad Base: ' ,pt.iloc[0]['Unidad pt'])    
         with col2:
-            costo_n1 = semit.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']/1000
+            unidad_st = pt[pt.Componente.str.startswith('41')]['Unidad_componente'].reset_index().iloc[0]['Unidad_componente']
+            if unidad_st == "GR":
+                costo_n1 = semit.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']/1000
+            else:
+                costo_n1 = semit.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']
             costo_st = pt[pt.Componente.str.startswith('41')]['Costo'].reset_index().iloc[0]['Costo']
             pt.Costo = pt.Costo.replace({costo_st:costo_n1})
             pt['Costo total'] = pt['Cantidad'] * pt['Costo']
