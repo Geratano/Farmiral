@@ -40,10 +40,20 @@ def main():
 	#Leeremos la base de datos desde Github con pandas
 	#Usamos el encoding latin-1 porque si no arroja error
 	#ya que puede haber "ñ's" o acentos
-	df = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/base.csv',encoding='latin-1')
+	@st.cache_resource
+	def cargar1():
+		base1 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/base.csv',encoding='latin-1')
+		return  base1
+	df = cargar1()
 	#Objetivos del mes
-	objetivos = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/objetivos.csv',encoding='latin-1')
-	#Quitamos espacios a los nombres de columnas
+	@st.cache_resource
+	def cargar2():
+		base2 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/objetivos.csv',encoding='latin-1')
+		return base2
+	objetivos = cargar2()
+
+
+
 	df.columns = df.columns.str.strip()
 	#Filtramos la base para obtener solo las columnas
 	#importantes
