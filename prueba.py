@@ -51,14 +51,33 @@ def main():
 		base2 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/objetivos.csv',encoding='latin-1')
 		return base2
 	objetivos = cargar2()
-
-
-
+	@st.cache_resource
+	def cargar3():
+		base3 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/remisiones.csv',encoding='latin-1')
+		return  base3
+	remisiones = cargar3()
+	@st.cache_resource
+	def cargar4():
+		base4 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/pedidos.csv',encoding='latin-1')
+		return  base4
+	pedidos = cargar4()
+	@st.cache_resource
+	def cargar5():
+		base5 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/canalcliente.csv',encoding='latin-1')
+		return base5
+	canal = cargar5()
 	df.columns = df.columns.str.strip()
+	remisiones.columns = remisiones.columns.str.strip()
+	pedidos.columns = pedidos.columns.str.strip()
+	canal.columns = canal.columns.str.strip()
 	#Filtramos la base para obtener solo las columnas
 	#importantes
 	df_ventas = df[['No_fac','Falta_fac','Subt_fac','Cve_factu','Cse_prod','Cant_surt','Lugar','Costo','Utilidad_mov','Margen',
 	'Categoria','Canal_prod','Canal_cliente','KAM','Subdirec','N_cred','Anio','Mes','Dia','Nom_cliente','Producto']]
+	df_remisiones = remisiones[['No_rem', 'Cve_cte', 'Nom_cte', 'Cve_prod', 'Cant_surt', 'Desc_prod', 'Valor_prod']]
+	df_remisiones.columns = ['No_rem', 'Cve_cte', 'Cliente', 'SKU', 'Cantidad', 'Producto', 'Precio']
+	canal.columns = ['Cve_cte', 'Cliente', 'Canal', 'Kam', 'Subdirector']
+	remisiones = df_remisiones.merge(canal, on='Cve_cte', how='left')
 	
 
 
