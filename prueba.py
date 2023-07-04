@@ -3,7 +3,7 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 import altair as alt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 #import streamlit_card as st_card
 import millify
 from millify import millify
@@ -74,12 +74,26 @@ def main():
 	#importantes
 	df_ventas = df[['No_fac','Falta_fac','Subt_fac','Cve_factu','Cse_prod','Cant_surt','Lugar','Costo','Utilidad_mov','Margen',
 	'Categoria','Canal_prod','Canal_cliente','KAM','Subdirec','N_cred','Anio','Mes','Dia','Nom_cliente','Producto']]
+	###TRATAMIENTO BASE REMISIONES###
 	df_remisiones = remisiones[['No_rem', 'Cve_cte', 'Nom_cte', 'Cve_prod', 'Cant_surt', 'Desc_prod', 'Valor_prod']]
 	df_remisiones.columns = ['No_rem', 'Cve_cte', 'Cliente', 'SKU', 'Cantidad', 'Producto', 'Precio']
 	canal.columns = ['Cve_cte', 'Cliente', 'Canal', 'Kam', 'Subdirector']
 	remisiones = df_remisiones.merge(canal, on='Cve_cte', how='left')
-	
-
+	remisiones['importe'] = remisiones['Cantidad'] * remisiones['Precio']
+	remisiones.columns = ['No_rem', 'Cve_cte', 'Cliente', 'SKU', 'Cantidad', 'Producto', 'Precio', 'CTE', 'Canal', 'Kam', 'Subdirector', 'importe']
+	remisiones = remisiones.groupby(['Canal']).agg({'Cantidad':'sum',
+													'importe':'sum'})
+	remisiones.columns = ['Remision (PZA)', 'Remision ($)']
+	###TRATAMIENTO BASE PEDIDOS###
+	df_pedidos = pedidos[['No_ped', 'F_alta_ped', 'Cve_cte', 'Nom_cte', 'Status', 'Cve_prod', 'Fecha_ent_a', 'Cant_prod', 
+						  'Cant_surtp', 'Liquidado', 'Saldo', 'Valor_prod', 'Uni_med', 'Desc_prod']]
+	df_pedidos.columns = ['No_ped', 'Fecha_alta', 'Cve_cte', 'Cliente', 'Estatus', 'SKU', 'Fecha_entrega', 'Cantidad_pedida',
+						  'Cantidad_surtida', 'Liquidado', 'Saldo', 'Precio', 'Unidad', 'Producto']
+	pedidos = df_pedidos.merge(canal, on='Cve_cte', how='left')
+	for i in range(len(pedidos.loc[:,'Saldo'])):
+		if pedidos.loc[i,'Saldo'] < 0:
+			pedidos.loc[i,'Saldo'] = 0
+	pedidos['importe'] = pedidos['Saldo'] * pedidos['Precio']
 
 	#imprimimos como prueba los primeros cinco datos de la tabla
 	if st.checkbox("Raw data"):
@@ -151,6 +165,45 @@ def main():
 	avance_objetivo = v_dia - v_objetivo
 	avance_objetivo_por = (v_dia/v_objetivo)*100
 	dif_avance_por = avance_objetivo_por - por_tiempo
+	###Computaremos el back order anterior (ant) si la fecha de entrega es antes del mes actual posterior (pos) si es despues del mes actual
+	###y el mes si es el corriente
+	pedidos['Mes_alta'] = pedidos['Fecha_alta']
+	pedidos['Mes_ent'] = pedidos['Fecha_entrega']
+	pedidos['Back_month'] = pedidos['Mes_alta']
+	for i in range(len(pedidos.loc[:,'Fecha_alta'])):
+		try:
+			pedidos.loc[i,'Fecha_alta'] = pd.to_datetime(pedidos.loc[i,'Fecha_alta'], format='%d/%m/%Y')
+			pedidos.loc[i,'Mes_alta'] = pedidos.loc[i,'Fecha_alta'].month
+			pedidos.loc[i,'Fecha_entrega'] = pd.to_datetime(pedidos.loc[i,'Fecha_entrega'], format='%d/%m/%Y')
+			pedidos.loc[i,'Mes_ent'] = pedidos.loc[i, 'Fecha_entrega'].month
+		except ValueError:
+			pedidos.loc[i, 'Mes_ent'] = pedidos.loc[i, 'Mes_alta']
+		if pedidos.loc[i,'Mes_alta'] == m:
+			pedidos.loc[i,'Back_month'] = m
+		elif  pedidos.loc[i, 'Mes_ent'] > m:
+			pedidos.loc[i, 'Back_month'] = 'POS'
+		else: 
+			pedidos.loc[i, 'Back_month'] = 'ANT'
+	#st.write(pedidos.columns)
+	#st.write(remisiones.head(5))
+	#st.write(pedidos[pedidos['Back_month'] == 'ANT']['Back_month'])
+	
+	back_ant = pedidos[pedidos['Back_month'] == 'ANT']
+	back_ant = back_ant.groupby(['Canal']).agg({'importe':'sum'})
+	back_ant.columns = ['Back anterior']
+	back_pos = pedidos[pedidos['Back_month'] == 'POS']
+	back_pos = back_pos.groupby(['Canal']).agg({'importe':'sum'})
+	back_pos.columns = ['Back posterior']
+	back_act = pedidos[pedidos['Back_month'] == m]
+	back_act = back_act.groupby(['Canal']).agg({'importe':'sum'})
+	back_act.columns = ['Back Mes']
+	#st.write(pedidos.head(5))
+	#st.write(pedidos.head(5))
+	avance = avance.merge(remisiones, on='Canal', how='left')
+	avance = avance.merge(back_ant, on='Canal', how='left')
+	avance = avance.merge(back_pos, on='Canal', how='left')
+	avance = avance.merge(back_act, on='Canal', how='left')
+	st.write(avance.head(5))
 	uno, dos = st.columns([1,1])
 	with uno:
 		st.metric('Ventas al dia ($)', millify(v_dia), delta=millify(avance_objetivo))
