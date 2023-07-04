@@ -203,7 +203,6 @@ def main():
 	avance = avance.merge(back_ant, on='Canal', how='left')
 	avance = avance.merge(back_pos, on='Canal', how='left')
 	avance = avance.merge(back_act, on='Canal', how='left')
-	st.write(avance.head(5))
 	uno, dos = st.columns([1,1])
 	with uno:
 		st.metric('Ventas al dia ($)', millify(v_dia), delta=millify(avance_objetivo))
