@@ -316,8 +316,29 @@ def main():
                     st.write('Costo por lote: $' , round(costo_lote,2))
             df_formulador = df_formulador[['Materia prima', 'Cantidad', 'SKU', 'Unidad', 'Costo', 'Costo unitario', 'Porcentaje (%)'
                                         ,'Costo caja', 'Costo lote']]
+            
             st.write(df_formulador)
-            st.altair_chart(pie_formulador, use_container_width=True) 
+            # converir primeros tres encabezados en dataframe para poder descargarlos 
+            diccionario = [unidad_lote, unidad_base,prsuge] #en la variable diccionario mando a llamr a los datos Rendimiento, aunidad base y precio sugerido 
+            convert= pd.DataFrame(data=diccionario)# convierto los tados a un data frame
+            convert.columns=['Data'] # renombramos la columna
+            titu= pd.DataFrame(['Rendimiento: ','Unidad Base: ', 'Precio sugerido: $']) # creamos otro dataframe que va a servir de encavezados
+            titu.columns=[' '] # renombro en blanco para que no enumere la columna 
+            #convertir los ultimos 3 ecabezados en dataframe 
+            diccionario2=[csto,cstoca,cstolo] # en la variable diccionario2 mando a llamar los datos de costo unitario, costo por caja y costo por lote
+            convert2=pd.DataFrame(data=diccionario2) # Converto a dataframe
+            convert2.columns=[' Data'] # renombro la columna
+            titu2 = pd.DataFrame(['Costo unitario: $', 'Costo por caja: $', 'Costo por lote: $'])#creamos dataframe con los encabezados
+            titu2.columns=['   '] # espacio en blanco
+
+            espacio= pd.DataFrame([' ']) # este dataframe es para separar una columna entera y que quede en blanco
+            espacio.columns=['  '] # dejamos en blanco la columna para que no muestre ningun numero
+
+            nuevo=pd.concat([df_formulador,espacio,titu,convert,titu2,convert2], axis=1,) # concatenamos todos los dataframe en uno solo 
+          
+            st.download_button(label="Descargar", data=nuevo.to_csv(), mime="text/csv") # creamos el boton para descargar el nuevo dataframe con los datos
+            st.altair_chart(pie_formulador, use_container_width=True)  
+
 
 
 
