@@ -243,13 +243,15 @@ def main():
 			 (df_ventas['Mes'].isin(mes_list)) &
 			 (df_ventas['Nom_cliente'].isin(cte_list))]
 
-	df_filtered = df_filtered[['Nom_cliente','Producto','Cant_surt','Utilidad_mov','Margen']]
+	df_filtered = df_filtered[['Nom_cliente','Producto','Cant_surt', 'Subt_fac', 'Utilidad_mov','Margen']]
 	
 	st.subheader('Tabla beneficio por producto')
-	df_group = df_filtered.groupby(['Producto']).agg({'Cant_surt':'sum', 
+	df_group = df_filtered.groupby(['Producto']).agg({'Cant_surt':'sum',
+													  'Subt_fac':'sum',
 						   							  'Utilidad_mov':'sum', 
 													  'Margen':'mean'})
 	df_group = df_group.sort_values(by=['Utilidad_mov'],ascending=False)
+	df_group.columns = ['Venta (PZA)', 'Venta ($)', 'Utilidad', 'Margen']
 	st.write(df_group)
 
 	#top, bottom=st.columns([10,10])
@@ -262,14 +264,14 @@ def main():
 		top_5 = df_filtered.groupby(['Producto'], as_index = False).agg({'Cant_surt':'sum', 
 								   										'Utilidad_mov':'sum', 
 																		'Margen':'mean'})
-		top_5 = df_group.sort_values(by=['Utilidad_mov'],ascending=False).head(5).reset_index()
+		top_5 = df_group.sort_values(by=['Utilidad'],ascending=False).head(5).reset_index()
 		#top_6 = top_6.rename_axis(index=['Producto','Cant_surt','Utilidad_mov','Margen'])
 		#top_5 = df_filtered[['Producto','Utilidad_mov']]
 		#Construimos el gráfico con altair 
 		pie_top = alt.Chart(top_5, title='Top 5 Utilidad').mark_arc().encode(
-	    theta=alt.Theta(field='Utilidad_mov', type="quantitative"),
+	    theta=alt.Theta(field='Utilidad', type="quantitative"),
 	   	color=alt.Color(field='Producto', type="nominal"),
-	   	tooltip = ['Producto','Utilidad_mov']
+	   	tooltip = ['Producto','Utilidad']
 	   	)
 	    #Mostramos el objeto en streamlit
 		st.altair_chart(pie_top, use_container_width=True)
@@ -281,14 +283,14 @@ def main():
 		bottom_5 = df_filtered.groupby(['Producto'], as_index = False).agg({'Cant_surt':'sum', 
 								      										'Utilidad_mov':'sum',
 																			'Margen':'mean'})
-		bottom_5 = df_group.sort_values(by=['Utilidad_mov'],ascending=True).head(5).reset_index()
+		bottom_5 = df_group.sort_values(by=['Utilidad'],ascending=True).head(5).reset_index()
 		#top_6 = top_6.rename_axis(index=['Producto','Cant_surt','Utilidad_mov','Margen'])
 		#top_5 = df_filtered[['Producto','Utilidad_mov']]
 		#Construimos el gráfico con altair 
 		pie_bottom = alt.Chart(bottom_5, title='Bottom 5 Utilidad').mark_arc().encode(
-	    theta=alt.Theta(field='Utilidad_mov', type="quantitative"),
+	    theta=alt.Theta(field='Utilidad', type="quantitative"),
 	   	color=alt.Color(field='Producto', type="nominal"),
-	   	tooltip = ['Producto','Utilidad_mov']
+	   	tooltip = ['Producto','Utilidad']
 	   	)
 	    #Mostramos el objeto en streamlit
 		st.altair_chart(pie_bottom, use_container_width=True)
