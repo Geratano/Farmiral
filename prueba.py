@@ -96,8 +96,11 @@ def main():
 	pedidos['importe'] = pedidos['Saldo'] * pedidos['Precio']
 
 	#imprimimos como prueba los primeros cinco datos de la tabla
-	if st.checkbox("Raw data"):
-		st.write(df_ventas.head(5))
+	#if st.checkbox("Raw data"):
+	#	st.write(df_ventas.head(5))
+
+	if st.button('Actualizar data'):
+		st.cache_resource.clear()
 
 	st.header("Avance diario")
 
@@ -244,14 +247,22 @@ def main():
 			 (df_ventas['Nom_cliente'].isin(cte_list))]
 
 	df_filtered = df_filtered[['Nom_cliente','Producto','Cant_surt', 'Subt_fac', 'Utilidad_mov','Margen']]
+
+	#Agregamos la columna porcentaje que será la venta ($) entre el total de ventas
 	
+	tot_vta = df_filtered.iloc[:,3].sum(axis=0)
+
+	df_filtered['Porcentaje'] = (df_filtered['Subt_fac']/tot_vta)*100 
+	###BENEFICIO POR PRODUCTO###
 	st.subheader('Tabla beneficio por producto')
 	df_group = df_filtered.groupby(['Producto']).agg({'Cant_surt':'sum',
 													  'Subt_fac':'sum',
 						   							  'Utilidad_mov':'sum', 
-													  'Margen':'mean'})
+													  'Margen':'mean',
+													  'Porcentaje':'sum'})
 	df_group = df_group.sort_values(by=['Utilidad_mov'],ascending=False)
-	df_group.columns = ['Venta (PZA)', 'Venta ($)', 'Utilidad', 'Margen']
+	df_group = df_group[['Cant_surt', 'Subt_fac', 'Utilidad_mov', 'Porcentaje']]
+	df_group.columns = ['Venta (PZA)', 'Venta ($)', 'Utilidad', 'Porcentaje']
 	st.write(df_group)
 
 	#top, bottom=st.columns([10,10])
@@ -262,16 +273,16 @@ def main():
 		alt.data_transformers.enable('default', max_rows=None)
 		#Agrupamos los datos, ordenamos de mayor a menor por la utilidad y extraemos 5 datos
 		top_5 = df_filtered.groupby(['Producto'], as_index = False).agg({'Cant_surt':'sum', 
-								   										'Utilidad_mov':'sum', 
+								   										'Subt_fac':'sum', 
 																		'Margen':'mean'})
-		top_5 = df_group.sort_values(by=['Utilidad'],ascending=False).head(5).reset_index()
+		top_5 = df_group.sort_values(by=['Venta ($)'],ascending=False).head(5).reset_index()
 		#top_6 = top_6.rename_axis(index=['Producto','Cant_surt','Utilidad_mov','Margen'])
 		#top_5 = df_filtered[['Producto','Utilidad_mov']]
 		#Construimos el gráfico con altair 
-		pie_top = alt.Chart(top_5, title='Top 5 Utilidad').mark_arc().encode(
-	    theta=alt.Theta(field='Utilidad', type="quantitative"),
+		pie_top = alt.Chart(top_5, title='Top 5 Ventas por Producto').mark_arc().encode(
+	    theta=alt.Theta(field='Venta ($)', type="quantitative"),
 	   	color=alt.Color(field='Producto', type="nominal"),
-	   	tooltip = ['Producto','Utilidad']
+	   	tooltip = ['Producto','Venta ($)', 'Porcentaje']
 	   	)
 	    #Mostramos el objeto en streamlit
 		st.altair_chart(pie_top, use_container_width=True)
@@ -281,43 +292,83 @@ def main():
 		alt.data_transformers.enable('default', max_rows=None)
 		#Agrupamos los datos, ordenamos de mayor a menor por la utilidad y extraemos 5 datos
 		bottom_5 = df_filtered.groupby(['Producto'], as_index = False).agg({'Cant_surt':'sum', 
-								      										'Utilidad_mov':'sum',
+								      										'Subt_fac':'sum',
 																			'Margen':'mean'})
-		bottom_5 = df_group.sort_values(by=['Utilidad'],ascending=True).head(5).reset_index()
+		bottom_5 = df_group.sort_values(by=['Venta ($)'],ascending=True).head(5).reset_index()
 		#top_6 = top_6.rename_axis(index=['Producto','Cant_surt','Utilidad_mov','Margen'])
 		#top_5 = df_filtered[['Producto','Utilidad_mov']]
 		#Construimos el gráfico con altair 
-		pie_bottom = alt.Chart(bottom_5, title='Bottom 5 Utilidad').mark_arc().encode(
-	    theta=alt.Theta(field='Utilidad', type="quantitative"),
-	   	color=alt.Color(field='Producto', type="nominal"),
-	   	tooltip = ['Producto','Utilidad']
+		pie_bottom = alt.Chart(bottom_5, title='Bottom 5 Ventas por Producto').mark_arc().encode(
+	    theta=alt.Theta(field='Venta ($)', type="quantitative"),
+	   	color=alt.Color(field='Producto', type="nominal", scale=alt.Scale(scheme='tableau10')),
+	   	tooltip = ['Producto','Venta ($)', 'Porcentaje']
 	   	)
 	    #Mostramos el objeto en streamlit
 		st.altair_chart(pie_bottom, use_container_width=True)
-		#GRAFICA BOTTOM 5
-		# bottom_5 = df_filtered.groupby(['Producto'], as_index = False).agg({'Cant_surt':'sum', 'Utilidad_mov':'sum', 'Margen':'mean'})
-		# bottom_5 = df_group.sort_values(by=['Utilidad_mov'],ascending=True).head(5).reset_index()	
-		# pie_bottom = alt.Chart(bottom_5, title='Bottom 5 Utilidad').mark_arc().encode(
-      	# theta=alt.Theta(field='Utilidad_mov', type="quantitative"),
-      	# color=alt.Color(field='Producto', type="nominal"),
-      	# tooltip = ['Producto','Utilidad_mov'])
-      	# st.altair_chart(pie_bottom, use_container_width=True)
+	############################
+	###BENEFICIO POR CLIENTE###
+	st.subheader('Tabla beneficio por cliente')
+	df_group = df_filtered.groupby(['Nom_cliente']).agg({'Cant_surt':'sum',
+													  'Subt_fac':'sum',
+						   							  'Utilidad_mov':'sum', 
+													  'Margen':'mean',
+													  'Porcentaje':'sum'})
+	df_group = df_group.sort_values(by=['Subt_fac'],ascending=False)
+	df_group = df_group[['Cant_surt', 'Subt_fac', 'Utilidad_mov', 'Porcentaje']]
+	df_group.columns = ['Venta (PZA)', 'Venta ($)', 'Utilidad', 'Porcentaje']
+	st.write(df_group)
 
-		
-		#st.altair_chart(alt.Chart(top_5, title='Top 5 Utilidad').transform_aggregate(
-		# 	Utilidad_mov = 'sum(Utilidad_mov)',
-		# 	groupby = ['Producto'],
-		# 	).mark_arc().encode(
-	 	# 	theta=alt.Theta(field="Utilidad_mov", type="quantitative"),
-     	# 	color=alt.Color(field="Producto",type="nominal"),
-	 	# tooltip = ['Producto', 'Utilidad_mov']))
-		#tooltip=alt.Tooltip("Producto","Utilidad_mov"))
-		
-		#top_5.plot(kind='pie',y='Utilidad_mov',title='Top 5 Utilidad')
+	#top, bottom=st.columns([10,10])
+	top, bottom=st.columns(2)
+	with top:
+		#GRAFICA TOP 5
+		#Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
+		alt.data_transformers.enable('default', max_rows=None)
+		#Agrupamos los datos, ordenamos de mayor a menor por la utilidad y extraemos 5 datos
+		top_5 = df_filtered.groupby(['Nom_cliente'], as_index = False).agg({'Cant_surt':'sum', 
+								   										'Subt_fac':'sum', 
+																		'Margen':'mean'})
+		top_5 = df_group.sort_values(by=['Venta ($)'],ascending=False).head(5).reset_index()
+		#top_6 = top_6.rename_axis(index=['Producto','Cant_surt','Utilidad_mov','Margen'])
+		#top_5 = df_filtered[['Producto','Utilidad_mov']]
+		#Construimos el gráfico con altair 
+		pie_top = alt.Chart(top_5, title='Top 5 Ventas por Cliente').mark_arc().encode(
+	    theta=alt.Theta(field='Venta ($)', type="quantitative"),
+	   	color=alt.Color(field='Nom_cliente', type="nominal"),
+	   	tooltip = ['Nom_cliente','Venta ($)', 'Porcentaje']
+	   	)
+	    #Mostramos el objeto en streamlit
+		st.altair_chart(pie_top, use_container_width=True)
+	with bottom:
+		#GRAFICA BOTTOM 5
+		#Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
+		alt.data_transformers.enable('default', max_rows=None)
+		#Agrupamos los datos, ordenamos de mayor a menor por la utilidad y extraemos 5 datos
+		bottom_5 = df_filtered.groupby(['Nom_cliente'], as_index = False).agg({'Cant_surt':'sum', 
+								      										'Subt_fac':'sum',
+																			'Margen':'mean'})
+		bottom_5 = df_group.sort_values(by=['Venta ($)'],ascending=True).head(5).reset_index()
+		#top_6 = top_6.rename_axis(index=['Producto','Cant_surt','Utilidad_mov','Margen'])
+		#top_5 = df_filtered[['Producto','Utilidad_mov']]
+		#Construimos el gráfico con altair 
+		pie_bottom = alt.Chart(bottom_5, title='Bottom 5 Ventas por Cliente').mark_arc().encode(
+	    theta=alt.Theta(field='Venta ($)', type="quantitative"),
+	   	color=alt.Color(field='Nom_cliente', type="nominal", scale=alt.Scale(scheme='tableau10')),
+	   	tooltip = ['Nom_cliente','Venta ($)', 'Porcentaje']
+	   	)
+	    #Mostramos el objeto en streamlit
+		st.altair_chart(pie_bottom, use_container_width=True)
+	############################
+
+
 	#Siguiente sección con datos de ventas historicos
 	st.subheader('Tabla históricos por año')
 	#Agrupamos primero nuestro dataframe por factura para poder descontar las notas de crédito
-	sub_fac =df_ventas.groupby(['No_fac']).agg({'Subt_fac':'sum',
+	df_filtered_2 = df_ventas[
+			 (df_ventas['Cve_factu'].isin(emp_list)) & 
+			 (df_ventas['Nom_cliente'].isin(cte_list))]
+
+	sub_fac =df_filtered_2.groupby(['No_fac']).agg({'Subt_fac':'sum',
 					     						'Cant_surt':'sum',
 												'N_cred':'mean',
 												'Costo':'sum',
@@ -337,6 +388,8 @@ def main():
 													'Margen':'mean'}).reset_index()
 	
 	anio = st.selectbox('Año',sub_fac['Anio'].unique())
+
+	#sub_fac = sub_fac[(sub_fac['Nom_cliente'].isin(cte_list))]
 	sub_fac.columns = ['Anio','Mes','Venta ($)','Venta (Pza)','Costo total','Utilidad','Margen (%)']
 	st.write(sub_fac[sub_fac['Anio']== anio].drop(columns=['Anio']))
 
