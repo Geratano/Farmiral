@@ -327,11 +327,29 @@ def main():
 		st.write(chart_data)
 	bar_data = chart_data[['Producto', 'Back del mes (PZA)', 'Existencia total']]
 
-	
-	barr = alt.Chart(bar_data).mark_bar(color='salmon').encode(
-		x=alt.X('Producto', title='Producto'),
-		y=alt.Y('Back del mes (PZA)', axis=alt.Axis(title='Back Order')),	
+	base = alt.Chart(bar_data).transform_calculate(
+		BackOrder = "'BackOrder'",
+		Existencia = "'Existencia'",
 	)
+	scale = alt.Scale(domain=['BackOrder', 'Existencia'], range=['salmon', 'DarkCyan'])
+
+	barr = base.mark_bar(color='salmon').encode(
+		x=alt.X('Producto', title='Producto'),
+		y=alt.Y('Back del mes (PZA)', axis=alt.Axis(title='Back Order')),
+		color=alt.Color('BackOrder:N', scale=scale, title=''),
+	)
+	barr2 = base.mark_bar(color='DarkCyan').encode(
+		x=alt.X('Producto', title='Producto'),
+		y=alt.Y('Existencia total', axis=alt.Axis(title='Existencia')),
+		color=alt.Color('Existencia:N', scale=scale, title=''),
+	)
+	stack = alt.layer(
+		barr + barr2)
+	st.altair_chart(stack)
+	#barr = alt.Chart(bar_data).mark_bar(color='salmon').encode(
+	#	x=alt.X('Producto', title='Producto'),
+	#	y=alt.Y('Back del mes (PZA)', axis=alt.Axis(title='Back Order')),	
+	#)
 	#barr_2 = alt.Chart(bar_data).mark_tick(
 	#	color='red',
 	#	thickness=3,
@@ -340,12 +358,12 @@ def main():
 	#	x='Producto',
 	#	y='Existencia total'
 	#	)
-	barr_3 = alt.Chart(bar_data).mark_bar(color='DarkCyan').encode(
-		x=alt.X('Producto', title='Producto'),
-		y=alt.Y('Existencia total', axis=alt.Axis(title='Existencia')),
-	)
+	#barr_3 = alt.Chart(bar_data).mark_bar(color='DarkCyan').encode(
+	#	x=alt.X('Producto', title='Producto'),
+	#	y=alt.Y('Existencia total', axis=alt.Axis(title='Existencia')),
+	#)
 
-	st.altair_chart(barr + barr_3)
+	#st.altair_chart(barr + barr_3)
 
 
 	#st.write(avance_mes) # se muestra la tabla filtrando por mes actual
