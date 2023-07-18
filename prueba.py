@@ -330,7 +330,7 @@ def main():
 	
 	barr = alt.Chart(bar_data).mark_bar(color='salmon').encode(
 		x=alt.X('Producto', title='Producto'),
-		y=alt.Y('Back del mes (PZA)'),	
+		y=alt.Y('Back del mes (PZA)', axis=alt.Axis(title='Back Order')),	
 	)
 	#barr_2 = alt.Chart(bar_data).mark_tick(
 	#	color='red',
