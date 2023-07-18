@@ -66,14 +66,29 @@ def main():
 		base5 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/canalcliente.csv',encoding='latin-1')
 		return base5
 	canal = cargar5()
+	@st.cache_resource
+	def cargar6():
+		base6 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/existencias.csv',encoding='latin-1')
+		return base6
+	existencias = cargar6()
 	df.columns = df.columns.str.strip()
 	remisiones.columns = remisiones.columns.str.strip()
 	pedidos.columns = pedidos.columns.str.strip()
 	canal.columns = canal.columns.str.strip()
+	existencias.columns = existencias.columns.str.strip()
 	#Filtramos la base para obtener solo las columnas
 	#importantes
 	df_ventas = df[['No_fac','Falta_fac','Subt_fac','Cve_factu','Cse_prod','Cant_surt','Lugar','Costo','Utilidad_mov','Margen',
 	'Categoria','Canal_prod','Canal_cliente','KAM','Subdirec','N_cred','Anio','Mes','Dia','Nom_cliente','Producto']]
+	###TRATAMIENTO BASE EXISTENCIAS###
+	df_existencias = existencias[['Cve_prod', 'Lote', 'Lugar', 'Cto_ent', 'Existencia', 'Fech_venc', 'Desc_prod', 'Uni_med']]
+	df_existencias.columns = ['SKU', 'Lote', 'Lugar', 'Costo', 'Existencia', 'Vencimiento', 'Producto', 'Unidad']
+	df_existencias_4 = df_existencias[(df_existencias['Lugar']==4)]
+	df_existencias_5 = df_existencias[(df_existencias['Lugar']==5)]
+	df_existencias_4 = df_existencias_4.groupby(['Producto']).agg({'Costo':'mean', 'Existencia':'sum'}).reset_index()
+	df_existencias_4.columns = ['Producto', 'Costo', 'Existencia proceso']
+	df_existencias_5 = df_existencias_5.groupby(['Producto']).agg({'Costo':'mean', 'Existencia':'sum'}).reset_index()
+	df_existencias_5.columns = ['Producto', 'Costo', 'Existencia pt']
 	###TRATAMIENTO BASE REMISIONES###
 	df_remisiones = remisiones[['No_rem', 'Cve_cte', 'Nom_cte', 'Cve_prod', 'Cant_surt', 'Desc_prod', 'Valor_prod']]
 	df_remisiones.columns = ['No_rem', 'Cve_cte', 'Cliente', 'SKU', 'Cantidad', 'Producto', 'Precio']
@@ -85,16 +100,51 @@ def main():
 													'importe':'sum'})
 	remisiones.columns = ['Remision (PZA)', 'Remision ($)']
 	###TRATAMIENTO BASE PEDIDOS###
+	###MESES REPETIDO VERIFICAR DESPUES###
+	# se creó un diccionario el cual contiene los meses del año 
+	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
+		    			7:'jul',8:'ago',9:'sep',10:'oct',11:'nov',12:'dic'}
+	now = datetime.now() # se guarda la fecha actual
+	yesterday = now.replace(month = now.month, day = now.day - 1)
+	act = now.year # de la fecha actual se guarda solo el año en curso
+	m = now.month # de la fecha actual se guarda el mes en curso(esto solo devolverá un numero) 
+	################################################################
 	df_pedidos = pedidos[['No_ped', 'F_alta_ped', 'Cve_cte', 'Nom_cte', 'Status', 'Cve_prod', 'Fecha_ent_a', 'Cant_prod', 
 						  'Cant_surtp', 'Liquidado', 'Saldo', 'Valor_prod', 'Uni_med', 'Desc_prod']]
 	df_pedidos.columns = ['No_ped', 'Fecha_alta', 'Cve_cte', 'Cliente', 'Estatus', 'SKU', 'Fecha_entrega', 'Cantidad_pedida',
 						  'Cantidad_surtida', 'Liquidado', 'Saldo', 'Precio', 'Unidad', 'Producto']
+	###Computaremos el back order anterior (ant) si la fecha de entrega es antes del mes actual posterior (pos) si es despues del mes actual
+	###y el mes si es el corriente
+	df_pedidos['Mes_alta'] = df_pedidos['Fecha_alta']
+	df_pedidos['Mes_ent'] = df_pedidos['Fecha_entrega']
+	df_pedidos['Back_month'] = df_pedidos['Mes_alta']
+
+	for i in range(len(df_pedidos.loc[:,'Fecha_alta'])):
+		try:
+			df_pedidos.loc[i,'Fecha_alta'] = pd.to_datetime(df_pedidos.loc[i,'Fecha_alta'], format='%d/%m/%Y')
+			df_pedidos.loc[i,'Mes_alta'] = df_pedidos.loc[i,'Fecha_alta'].month
+			df_pedidos.loc[i,'Fecha_entrega'] = pd.to_datetime(df_pedidos.loc[i,'Fecha_entrega'], format='%d/%m/%Y')
+			df_pedidos.loc[i,'Mes_ent'] = df_pedidos.loc[i, 'Fecha_entrega'].month
+		except ValueError:
+			df_pedidos.loc[i, 'Mes_ent'] = df_pedidos.loc[i, 'Mes_alta']
+	
+		if df_pedidos.loc[i,'Mes_alta'] == m:
+			df_pedidos.loc[i,'Back_month'] = m
+		elif  df_pedidos.loc[i, 'Mes_ent'] > m:
+			df_pedidos.loc[i, 'Back_month'] = 'POS'
+		else: 
+			df_pedidos.loc[i, 'Back_month'] = 'ANT'
+	#st.write(df_pedidos)
+	###st.write(pedidos.columns)
+	#st.write(remisiones.head(5))
+	#st.write(pedidos[pedidos['Back_month'] == 'ANT']['Back_month'])
+
 	pedidos = df_pedidos.merge(canal, on='Cve_cte', how='left')
 	for i in range(len(pedidos.loc[:,'Saldo'])):
 		if pedidos.loc[i,'Saldo'] < 0:
 			pedidos.loc[i,'Saldo'] = 0
 	pedidos['importe'] = pedidos['Saldo'] * pedidos['Precio']
-
+	#st.write(pedidos)
 	#imprimimos como prueba los primeros cinco datos de la tabla
 	#if st.checkbox("Raw data"):
 	#	st.write(df_ventas.head(5))
@@ -168,28 +218,7 @@ def main():
 	avance_objetivo = v_dia - v_objetivo
 	avance_objetivo_por = (v_dia/v_objetivo)*100
 	dif_avance_por = avance_objetivo_por - por_tiempo
-	###Computaremos el back order anterior (ant) si la fecha de entrega es antes del mes actual posterior (pos) si es despues del mes actual
-	###y el mes si es el corriente
-	pedidos['Mes_alta'] = pedidos['Fecha_alta']
-	pedidos['Mes_ent'] = pedidos['Fecha_entrega']
-	pedidos['Back_month'] = pedidos['Mes_alta']
-	for i in range(len(pedidos.loc[:,'Fecha_alta'])):
-		try:
-			pedidos.loc[i,'Fecha_alta'] = pd.to_datetime(pedidos.loc[i,'Fecha_alta'], format='%d/%m/%Y')
-			pedidos.loc[i,'Mes_alta'] = pedidos.loc[i,'Fecha_alta'].month
-			pedidos.loc[i,'Fecha_entrega'] = pd.to_datetime(pedidos.loc[i,'Fecha_entrega'], format='%d/%m/%Y')
-			pedidos.loc[i,'Mes_ent'] = pedidos.loc[i, 'Fecha_entrega'].month
-		except ValueError:
-			pedidos.loc[i, 'Mes_ent'] = pedidos.loc[i, 'Mes_alta']
-		if pedidos.loc[i,'Mes_alta'] == m:
-			pedidos.loc[i,'Back_month'] = m
-		elif  pedidos.loc[i, 'Mes_ent'] > m:
-			pedidos.loc[i, 'Back_month'] = 'POS'
-		else: 
-			pedidos.loc[i, 'Back_month'] = 'ANT'
-	#st.write(pedidos.columns)
-	#st.write(remisiones.head(5))
-	#st.write(pedidos[pedidos['Back_month'] == 'ANT']['Back_month'])
+	
 	
 	back_ant = pedidos[pedidos['Back_month'] == 'ANT']
 	back_ant = back_ant.groupby(['Canal']).agg({'importe':'sum'})
@@ -200,12 +229,57 @@ def main():
 	back_act = pedidos[pedidos['Back_month'] == m]
 	back_act = back_act.groupby(['Canal']).agg({'importe':'sum'})
 	back_act.columns = ['Back Mes']
-	#st.write(pedidos.head(5))
+
+	#st.write(back_ant.sum())
 	#st.write(pedidos.head(5))
 	avance = avance.merge(remisiones, on='Canal', how='left')
 	avance = avance.merge(back_ant, on='Canal', how='left')
 	avance = avance.merge(back_pos, on='Canal', how='left')
 	avance = avance.merge(back_act, on='Canal', how='left')
+	#p_pedidos = pedidos.groupby(['Producto']).agg({''})
+	#st.write(df_existencias.head(5))
+	p_pedidos = pedidos.groupby(['Producto', 'Back_month']).agg({'Cantidad_pedida':'sum',
+																			'Cantidad_surtida':'sum',
+																			'Liquidado':'sum',
+																			'Saldo':'sum',
+																			'Precio':'mean',
+																			'importe':'sum'}).reset_index()
+	p_pedidos = p_pedidos.merge(df_existencias_4, on='Producto', how='outer')
+	p_pedidos = p_pedidos.merge(df_existencias_5, on='Producto', how='outer')
+
+	back_ant = p_pedidos[(p_pedidos['Back_month'] == 'ANT')][['Producto','Saldo','Precio','importe']]
+	back_pos = p_pedidos[(p_pedidos['Back_month'] == 'POS')][['Producto','Saldo','Precio','importe']]
+	back_act = p_pedidos[(p_pedidos['Back_month'] == m)][['Producto','Saldo','Precio','importe']]	
+	produccion = back_ant.merge(back_pos, on='Producto', how='outer')
+	produccion = produccion.merge(back_act, on='Producto', how='outer')
+	produccion = produccion.merge(df_existencias_4, on='Producto', how='left')
+	produccion = produccion.merge(df_existencias_5, on='Producto', how='left')
+	produccion.columns = ['Producto', 'Back Ant (PZA)', 'Precio BA', 'Importe BA', 'Back Pos (PZA)', 'Precio BP', 'Importe BP',
+						  'Back Act (PZA)', 'Precio B_ACT', 'Importe B_ACT', 'Costo proc', 'Existencia proceso', 'Costo Pt', 
+						  'Existencia PT']
+	produccion = produccion.fillna(0)
+	#Añadimos las columnas que serviran de metrica para el avance de producción
+	produccion['Existencia total'] = produccion['Existencia proceso'] + produccion['Existencia PT']
+	produccion['Back del mes ($)'] = produccion['Importe B_ACT'] + produccion['Importe BA']
+	produccion['Back del mes (PZA)'] = produccion['Back Act (PZA)'] + produccion['Back Ant (PZA)']
+	produccion['Avance proceso'] = produccion['Existencia proceso']/produccion['Back del mes (PZA)']
+	produccion['Avance terminado'] = produccion['Existencia PT']/produccion['Back del mes (PZA)']
+	produccion['Avance produccion'] = produccion['Avance proceso'] + produccion['Avance terminado']
+	#st.write(df_existencias_5.head(5))
+	#st.write(back_ant.head(5))
+	#produccion.replace(None, 0)
+	#produccion = produccion.fillna(0)
+	#produccion['Back Ant ($)'] = produccion['Back Ant (PZA)'] * produccion['Precio BA']
+	#produccion['Back Pos ($)'] = produccion['Back Pos (PZA)'] * produccion['Precio BP']
+	#produccion['Back Act ($)'] = produccion['Back Act (PZA)'] * produccion['Precio B_ACT']
+	#produccion['Back total (PZA)'] = produccion['Back Ant (PZA)'] + produccion['Back Pos (PZA)'] + produccion['Back Act (PZA)']
+	#produccion['Back total ($)'] = produccion['Back Ant ($)'] + produccion['Back Pos ($)'] + produccion['Back Act ($)']
+	produccion['Existencia total'] = produccion['Existencia proceso'] + produccion['Existencia PT']
+	#pp1 = produccion['Importe BA'].sum()
+	#pp2 = produccion['Importe B_ACT'].sum()
+	#pp3 = produccion['Importe BP'].sum()
+	
+	#st.write(pp3)
 	uno, dos = st.columns([1,1])
 	with uno:
 		st.metric('Ventas al dia ($)', millify(v_dia), delta=millify(avance_objetivo))
@@ -216,6 +290,64 @@ def main():
 	#st.write('$ ', d_act.iloc[:,2].sum(axis=0))
 
 	st.write(avance)
+	
+	st.header('Avance Producción')
+	
+	produccion = produccion.fillna(0)
+	produccion = produccion.replace([np.inf,-np.inf],0)
+	
+	
+
+	chart_data = produccion[['Producto','Back del mes (PZA)', 'Existencia proceso', 'Existencia PT', 'Existencia total']]
+	chart_data = chart_data[chart_data['Back del mes (PZA)'] > 0]
+	chart_data['Avance terminado'] = chart_data['Existencia PT']/chart_data['Back del mes (PZA)']
+	chart_data['Avance proceso'] = chart_data['Existencia proceso']/chart_data['Back del mes (PZA)']
+	chart_data['Avance produccion'] = chart_data['Avance terminado'] + chart_data['Avance proceso']
+	chart_data = chart_data.sort_values(by=['Back del mes (PZA)'],ascending=False)
+	#avancept = chart_data['Avance terminado'].mean()*100
+	#avancepro = chart_data['Avance proceso'].mean()*100
+	#avancetot = chart_data['Avance produccion'].mean()*100
+	#st.write(chart_data)
+
+	uno, dos = st.columns([1,1])
+	with uno:
+		st.metric('Pedidos del mes ($)', millify(produccion['Importe B_ACT'].sum()))
+		st.metric('Pedidos Acumulados sin entregar ($)', millify(produccion['Importe BA'].sum()))
+		st.metric('Pedidos a entregar después ($)', millify(produccion['Importe BP'].sum()))
+	with dos:
+		st.metric('Pedidos del mes (PZA)', millify(produccion['Back Act (PZA)'].sum()))
+		st.metric('Pedidos Acumulados sin entregar (PZA)', millify(produccion['Back Ant (PZA)'].sum()))
+		st.metric('Pedidos a entregar después (PZA)', millify(produccion['Back Pos (PZA)'].sum()))
+	#with tres:
+	#	st.metric('Avance promedio PT (%)', avancept)
+	#	st.metric('Avance promedio Proceso (%)', avancepro)
+	#	st.metric('Avance promedio total (%)', avancetot)
+
+	if st.checkbox('Ver tabla completa de avance producción, pedidos y existencia por producto'):
+		st.write(chart_data)
+	bar_data = chart_data[['Producto', 'Back del mes (PZA)', 'Existencia total']]
+
+	
+	barr = alt.Chart(bar_data).mark_bar(color='salmon').encode(
+		x=alt.X('Producto', title='Producto'),
+		y=alt.Y('Back del mes (PZA)'),	
+	)
+	#barr_2 = alt.Chart(bar_data).mark_tick(
+	#	color='red',
+	#	thickness=3,
+	#	size=40 * 0.9,
+	#	).encode(
+	#	x='Producto',
+	#	y='Existencia total'
+	#	)
+	barr_3 = alt.Chart(bar_data).mark_bar(color='DarkCyan').encode(
+		x=alt.X('Producto', title='Producto'),
+		y=alt.Y('Existencia total', axis=alt.Axis(title='Existencia')),
+	)
+
+	st.altair_chart(barr + barr_3)
+
+
 	#st.write(avance_mes) # se muestra la tabla filtrando por mes actual
 
 	#Separamos en dos frames de lado izquiero los filtros
