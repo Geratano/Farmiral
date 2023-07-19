@@ -346,6 +346,23 @@ def main():
 	stack = alt.layer(
 		barr + barr2)
 	st.altair_chart(stack)
+	faltantes = chart_data.copy()
+	faltantes['Faltantes'] = faltantes['Back del mes (PZA)'] - faltantes['Existencia total']
+	faltantes = faltantes[['Producto','Back del mes (PZA)', 'Existencia total', 'Faltantes']]
+	faltantes = faltantes[faltantes['Faltantes']>0].reset_index(drop=True)
+	#faltantes['Faltantes'] = faltantes['Faltantes']*(-1)
+	faltantes = faltantes[['Producto', 'Back del mes (PZA)', 'Faltantes', 'Existencia total']]
+	faltantes = faltantes.sort_values(by=['Faltantes'], ascending=False)
+	if st.checkbox('Piezas faltantes'):
+		tabla, grafico = st.columns([1,1])
+		with tabla:
+			st.write(faltantes)
+		with grafico:
+			g_falt = alt.Chart(faltantes).mark_bar(color='salmon').encode(
+				x=alt.X('Faltantes', title='Faltantes'),
+				y=alt.Y('Producto', title='Producto')
+				)
+			st.altair_chart(g_falt)
 	#barr = alt.Chart(bar_data).mark_bar(color='salmon').encode(
 	#	x=alt.X('Producto', title='Producto'),
 	#	y=alt.Y('Back del mes (PZA)', axis=alt.Axis(title='Back Order')),	
