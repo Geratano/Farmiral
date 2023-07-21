@@ -85,6 +85,7 @@ def main():
 	pedidos.columns = pedidos.columns.str.strip()
 	canal.columns = canal.columns.str.strip()
 	existencias.columns = existencias.columns.str.strip()
+	
 	alfred.columns = alfred.columns.str.strip()
 	forecast.columns = forecast.columns.str.strip()
 	forecast.columns = ['Cve_prod', 'Producto', 'Tamano lotes', 'Presentacion', 'Cliente', 'Stock', 'Plan Julio', 'Forecast', 'Lotes origin', 'Lotes', 'Nota','NO']
@@ -97,14 +98,15 @@ def main():
 	###TRATAMIENTO BASE EXISTENCIAS###
 	df_existencias = existencias[['Cve_prod', 'Lote', 'Lugar', 'Cto_ent', 'Existencia', 'Fech_venc', 'Desc_prod', 'Uni_med']]
 	df_existencias.columns = ['SKU', 'Lote', 'Lugar', 'Costo', 'Existencia', 'Vencimiento', 'Producto', 'Unidad']
-	df_existencias = df_existencias[(df_existencias['Lugar']==5) | (df_existencias['Lugar']==4)]
-	df_existencias_4 = df_existencias[(df_existencias['Lugar']==4)]
-	df_existencias_5 = df_existencias[(df_existencias['Lugar']==5)]
+	#df_existencias['Lugar'] = df_existencias['Lugar'].str.strip()
+	df_existencias = df_existencias[(df_existencias['Lugar']=='5') | (df_existencias['Lugar']=='4')]
+	df_existencias_4 = df_existencias[(df_existencias['Lugar']=='4')]
+	df_existencias_5 = df_existencias[(df_existencias['Lugar']=='5')]
 	df_existencias_4 = df_existencias_4.groupby(['Producto']).agg({'Costo':'mean', 'Existencia':'sum'}).reset_index()
 	df_existencias_4.columns = ['Producto', 'Costo', 'Existencia proceso']
 	df_existencias_5 = df_existencias_5.groupby(['Producto']).agg({'Costo':'mean', 'Existencia':'sum'}).reset_index()
 	df_existencias_5.columns = ['Producto', 'Costo', 'Existencia pt']
-	
+	#st.write(existencias[(existencias['Lugar']=='5')])
 	###TRATAMIENTO BASE REMISIONES###
 	df_remisiones = remisiones[['No_rem', 'Cve_cte', 'Nom_cte', 'Cve_prod', 'Cant_surt', 'Desc_prod', 'Valor_prod']]
 	df_remisiones.columns = ['No_rem', 'Cve_cte', 'Cliente', 'SKU', 'Cantidad', 'Producto', 'Precio']
