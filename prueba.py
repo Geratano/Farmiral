@@ -71,11 +71,25 @@ def main():
 		base6 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/existencias.csv',encoding='latin-1')
 		return base6
 	existencias = cargar6()
+	def cargar8():
+		base8 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/Plan2023.csv',encoding='latin-1')
+		return base8
+	forecast = cargar8()
+	def cargar7():
+		base7 = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vTSWo4ymE0xBaN-Yx0a9PFAwkD5L5CHK8duCdevjwdgt-bFyXpGQZjuzq9FLnBLFg/pub?gid=1655033046&single=true&output=csv',encoding='latin-1')
+		return base7
+	alfred = cargar7()
+
 	df.columns = df.columns.str.strip()
 	remisiones.columns = remisiones.columns.str.strip()
 	pedidos.columns = pedidos.columns.str.strip()
 	canal.columns = canal.columns.str.strip()
 	existencias.columns = existencias.columns.str.strip()
+	alfred.columns = alfred.columns.str.strip()
+	forecast.columns = forecast.columns.str.strip()
+	forecast.columns = ['Cve_prod', 'Producto', 'Tamano lotes', 'Presentacion', 'Cliente', 'Stock', 'Plan Julio', 'Forecast', 'Lotes origin', 'Lotes', 'Nota','NO']
+	forecast = forecast[['Cve_prod', 'Producto', 'Plan Julio', 'Forecast', 'Lotes origin']]
+
 	#Filtramos la base para obtener solo las columnas
 	#importantes
 	df_ventas = df[['No_fac','Falta_fac','Subt_fac','Cve_factu','Cse_prod','Cant_surt','Lugar','Costo','Utilidad_mov','Margen',
@@ -83,12 +97,14 @@ def main():
 	###TRATAMIENTO BASE EXISTENCIAS###
 	df_existencias = existencias[['Cve_prod', 'Lote', 'Lugar', 'Cto_ent', 'Existencia', 'Fech_venc', 'Desc_prod', 'Uni_med']]
 	df_existencias.columns = ['SKU', 'Lote', 'Lugar', 'Costo', 'Existencia', 'Vencimiento', 'Producto', 'Unidad']
+	df_existencias = df_existencias[(df_existencias['Lugar']==5) | (df_existencias['Lugar']==4)]
 	df_existencias_4 = df_existencias[(df_existencias['Lugar']==4)]
 	df_existencias_5 = df_existencias[(df_existencias['Lugar']==5)]
 	df_existencias_4 = df_existencias_4.groupby(['Producto']).agg({'Costo':'mean', 'Existencia':'sum'}).reset_index()
 	df_existencias_4.columns = ['Producto', 'Costo', 'Existencia proceso']
 	df_existencias_5 = df_existencias_5.groupby(['Producto']).agg({'Costo':'mean', 'Existencia':'sum'}).reset_index()
 	df_existencias_5.columns = ['Producto', 'Costo', 'Existencia pt']
+	
 	###TRATAMIENTO BASE REMISIONES###
 	df_remisiones = remisiones[['No_rem', 'Cve_cte', 'Nom_cte', 'Cve_prod', 'Cant_surt', 'Desc_prod', 'Valor_prod']]
 	df_remisiones.columns = ['No_rem', 'Cve_cte', 'Cliente', 'SKU', 'Cantidad', 'Producto', 'Precio']
@@ -148,10 +164,56 @@ def main():
 	#imprimimos como prueba los primeros cinco datos de la tabla
 	#if st.checkbox("Raw data"):
 	#	st.write(df_ventas.head(5))
+	alfred = alfred.fillna(0)
+	alfred = alfred[alfred['SKU'] != 0]
+	n_capt = alfred[(alfred['RESULTADO 41'] == 0) | (alfred['ORDEN 51'] == 0) | (alfred['RESULTADO 51'] == 0)]
+	alfred.columns = ['SKU', 'Producto', 'Lote', 'Caducidad', 'Cantidad', 'Tamano lote', 'Fecha', 'Contenedor',
+	 'Observacion', 'Resultado 41', 'Orden 51', 'Resultado 51']
+	for i in range(len(alfred['Cantidad'])):
+		#alfred.loc[i,'Cantidad'] = alfred.loc[i,'Cantidad'].replace('.',';').replace(',','.').replace(';','')
+		alfred.loc[i,'Cantidad'] = float(alfred.loc[i,'Cantidad'])
+	#alfred['Cantidad'].replace('.',',')
+	#alfred['Cantidad'] = float(alfred['Cantidad'])
+	alfred = alfred.groupby(['Producto','SKU']).agg({'Cantidad':'sum'}).reset_index()
+	existe = df_existencias.groupby(['Producto','SKU']).agg({'Existencia':'sum'
+													   }).reset_index()
+	forecast = forecast.fillna(0)
+	forecast = forecast[forecast['Cve_prod'] != 0]
+	existe['SKU'] = existe['SKU'].str.strip()
+	forecast['SKU'] = forecast['Cve_prod'].str.strip()
+	forecast = forecast[['SKU', 'Producto', 'Forecast']]
+
+	t_existe = existe.merge(alfred, on='SKU', how='outer')
+	t_existe = t_existe.fillna(0)
+	t_existe['Producto'] = t_existe['Producto_x']
+	for i in range(len(t_existe['Producto'])):
+		if t_existe.loc[i,'Producto_x'] == 0:
+			t_existe.loc[i,'Producto'] = t_existe.loc[i,'Producto_y']
+
+	t_existe['Existencia'] = t_existe['Existencia'] + t_existe['Cantidad']
+
+	t_existe = t_existe[['SKU', 'Producto', 'Existencia']]
+
+	t_forecast = forecast.merge(t_existe, on='SKU', how='outer').fillna(0)
+
+	t_forecast['Producto'] = t_forecast['Producto_x']
+
+
+
+	for i in range(len(t_forecast['Producto'])):
+		if t_forecast.loc[i,'Producto_x']==0:
+			t_forecast.loc[i,'Producto'] = t_forecast.loc[i,'Producto_y']
+			#t_forecast.loc[i,'Forecast'] = str(t_forecast.loc[i,'Forecast']).strip().replace('-','0')
+
+	t_forecast = t_forecast[['SKU', 'Producto', 'Forecast', 'Existencia']]
+	t_forecast['Faltantes'] = t_forecast['Forecast'] - t_forecast['Existencia']
+	t_forecast = t_forecast[t_forecast['Faltantes'] != 0]
 
 	if st.button('Actualizar data'):
 		st.cache_resource.clear()
 
+	#st.write(alfred)
+	#st.write(t_forecast)
 	st.header("Avance diario")
 
 	#Agrupamos primero nuestro dataframe por factura para poder descontar las notas de crédito
@@ -309,6 +371,7 @@ def main():
 	#avancetot = chart_data['Avance produccion'].mean()*100
 	#st.write(chart_data)
 
+
 	uno, dos = st.columns([1,1])
 	with uno:
 		st.metric('Pedidos del mes ($)', millify(produccion['Importe B_ACT'].sum()))
@@ -353,7 +416,9 @@ def main():
 	#faltantes['Faltantes'] = faltantes['Faltantes']*(-1)
 	faltantes = faltantes[['Producto', 'Back del mes (PZA)', 'Faltantes', 'Existencia total']]
 	faltantes = faltantes.sort_values(by=['Faltantes'], ascending=False)
-	if st.checkbox('Piezas faltantes'):
+	fcst_faltantes = t_forecast[['Producto', 'Forecast', 'Faltantes', 'Existencia']]
+	fcst_faltantes = fcst_faltantes[fcst_faltantes['Faltantes']>0]
+	if st.checkbox('Piezas faltantes Back Order'):
 		tabla, grafico = st.columns([1,1])
 		with tabla:
 			st.write(faltantes)
@@ -363,6 +428,18 @@ def main():
 				y=alt.Y('Producto', title='Producto')
 				)
 			st.altair_chart(g_falt)
+	if st.checkbox('Piezas faltantes Forecast'):
+		tabla, grafico = st.columns([1,1])
+		with tabla:
+			st.write(fcst_faltantes)
+		with grafico:
+			f_falt = alt.Chart(fcst_faltantes).mark_bar(color='DarkCyan').encode(
+			x=alt.X('Faltantes', title='Faltantes'),
+			y=alt.Y('Producto', title='Producto')
+			)
+			st.altair_chart(f_falt)
+	#if st.checkbox('Piezas faltantes Forecast'):
+
 	#barr = alt.Chart(bar_data).mark_bar(color='salmon').encode(
 	#	x=alt.X('Producto', title='Producto'),
 	#	y=alt.Y('Back del mes (PZA)', axis=alt.Axis(title='Back Order')),	
@@ -389,7 +466,6 @@ def main():
 	#De lado derecho imprimiremos la tabla filtrada
 	st.sidebar.title("Filtros")	
 	emp_list =	st.sidebar.multiselect("Empresa", df_ventas['Cve_factu'].unique())
-	alm_list =  st.sidebar.multiselect("Almacén", df_ventas['Lugar'].unique())
 	ano_list =  st.sidebar.multiselect("Año", sorted(df_ventas['Anio'].unique()))
 	mes_list =  st.sidebar.multiselect("Mes", sorted(df_ventas['Mes'].unique()))
 	cte_list =  st.sidebar.multiselect("Cliente", sorted(df_ventas['Nom_cliente'].unique()))
@@ -397,8 +473,6 @@ def main():
 		# if st.checkbox("Aplicar Filtros"):
 	if not emp_list:
 		emp_list =	df_ventas['Cve_factu'].unique()
-	if not alm_list:
-		alm_list = df_ventas['Lugar'].unique()
 	if not ano_list:
 		ano_list = df_ventas['Anio'].unique()
 	if not mes_list:
@@ -408,7 +482,6 @@ def main():
  
 	df_filtered = df_ventas[
 			 (df_ventas['Cve_factu'].isin(emp_list)) & 
-			 (df_ventas['Lugar'].isin(alm_list)) & 
 			 (df_ventas['Anio'].isin(ano_list)) & 
 			 (df_ventas['Mes'].isin(mes_list)) &
 			 (df_ventas['Nom_cliente'].isin(cte_list))]
