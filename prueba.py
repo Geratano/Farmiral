@@ -128,7 +128,7 @@ def main():
 	formulas = formulas[['Cve_copr', 'Cve_prod', 'Can_copr', 'New_med', 'Undfor', 'Desc_prod', 'Ren_copr', 'Uncfor']]
 	formulas.columns = ['SKU', 'Cve_prod', 'Cantidad rendimiento', 'New_med', 'Unidad mp', 'MP', 'Rendimiento', 'Unidad']
 	formulas['Cantidad'] = formulas['Cantidad rendimiento']/formulas['Rendimiento']
-	st.write(formulas)
+	#st.write(formulas)
 	###MESES REPETIDO VERIFICAR DESPUES###
 	# se creó un diccionario el cual contiene los meses del año 
 	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
