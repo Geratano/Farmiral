@@ -75,22 +75,28 @@ def main():
 		base8 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/Plan2023.csv',encoding='latin-1')
 		return base8
 	forecast = cargar8()
+	def cargar9():
+		base9 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/formulas.csv',encoding='latin-1')
+		return base9
+	formulas = cargar9()
 	def cargar7():
 		base7 = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vTSWo4ymE0xBaN-Yx0a9PFAwkD5L5CHK8duCdevjwdgt-bFyXpGQZjuzq9FLnBLFg/pub?gid=1655033046&single=true&output=csv',encoding='latin-1')
 		return base7
 	alfred = cargar7()
+
 
 	df.columns = df.columns.str.strip()
 	remisiones.columns = remisiones.columns.str.strip()
 	pedidos.columns = pedidos.columns.str.strip()
 	canal.columns = canal.columns.str.strip()
 	existencias.columns = existencias.columns.str.strip()
-	
+	formulas.columns = formulas.columns.str.strip()
 	alfred.columns = alfred.columns.str.strip()
 	forecast.columns = forecast.columns.str.strip()
 	forecast.columns = ['Cve_prod', 'Producto', 'Tamano lotes', 'Presentacion', 'Cliente', 'Stock', 'Plan Julio', 'Forecast', 'Lotes origin', 'Lotes', 'Nota','NO']
 	forecast = forecast[['Cve_prod', 'Producto', 'Plan Julio', 'Forecast', 'Lotes origin']]
 
+	
 	#Filtramos la base para obtener solo las columnas
 	#importantes
 	df_ventas = df[['No_fac','Falta_fac','Subt_fac','Cve_factu','Cse_prod','Cant_surt','Lugar','Costo','Utilidad_mov','Margen',
@@ -118,6 +124,11 @@ def main():
 													'importe':'sum'})
 	remisiones.columns = ['Remision (PZA)', 'Remision ($)']
 	###TRATAMIENTO BASE PEDIDOS###
+	###TRATAMIENTO BASE FORMULAS####Quitamos los posibles espacios sobrantes de cada columna
+	formulas = formulas[['Cve_copr', 'Cve_prod', 'Can_copr', 'New_med', 'Undfor', 'Desc_prod', 'Ren_copr', 'Uncfor']]
+	formulas.columns = ['SKU', 'Cve_prod', 'Cantidad rendimiento', 'New_med', 'Unidad mp', 'MP', 'Rendimiento', 'Unidad']
+	formulas['Cantidad'] = formulas['Cantidad rendimiento']/formulas['Rendimiento']
+	st.write(formulas)
 	###MESES REPETIDO VERIFICAR DESPUES###
 	# se creó un diccionario el cual contiene los meses del año 
 	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
