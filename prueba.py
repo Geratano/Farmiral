@@ -462,7 +462,7 @@ def main():
 	pedir_backst = pedir_backst[['Formula', 'Faltantes', 'MP_y', 'Cantidad mp', 'Back del mes (PZA)']]
 	pedir_backst.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Back del mes (PZA)']
 	pedir_backme = pedir_backme[['Formula', 'Faltantes', 'MP', 'Cantidad', 'Back del mes (PZA)']]
-	pedir = pedir_backst.append(pedir_backme)
+	pedir = pd.concat([pedir_backst, pedir_backme])
 	##########################################
 	### EXPLOSION DE MATERIALES FORECAST ###
 	pedir_fcst = fcst_faltantes.merge(formulas, on='SKU', how='left')
@@ -478,7 +478,7 @@ def main():
 	pedir_fcstst.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Forecast']
 	pedir_fcstme = pedir_fcstme[['Producto_x', 'Faltantes', 'MP', 'Faltantes me', 'Forecast']]
 	pedir_fcstme.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Forecast']
-	pedir2 = pedir_fcstst.append(pedir_fcstme)
+	pedir2 = pd.concat([pedir_fcstst, pedir_fcstme])
 	##########################################	
 	#st.write(pedir_fcstme)
 	#st.write(formulas)
