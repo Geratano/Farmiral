@@ -463,6 +463,7 @@ def main():
 	pedir_backst.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Back del mes (PZA)']
 	pedir_backme = pedir_backme[['Formula', 'Faltantes', 'MP', 'Cantidad', 'Back del mes (PZA)']]
 	pedir = pd.concat([pedir_backst, pedir_backme])
+	requi = pedir.groupby(['MP']).agg({'Cantidad':'sum'}).reset_index()
 	##########################################
 	### EXPLOSION DE MATERIALES FORECAST ###
 	pedir_fcst = fcst_faltantes.merge(formulas, on='SKU', how='left')
@@ -479,6 +480,7 @@ def main():
 	pedir_fcstme = pedir_fcstme[['Producto_x', 'Faltantes', 'MP', 'Faltantes me', 'Forecast']]
 	pedir_fcstme.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Forecast']
 	pedir2 = pd.concat([pedir_fcstst, pedir_fcstme])
+	requi2 = pedir2.groupby(['MP']).agg({'Cantidad':'sum'}).reset_index()
 	##########################################	
 	#st.write(pedir_fcstme)
 	#st.write(formulas)
@@ -493,7 +495,11 @@ def main():
 				)
 			st.altair_chart(g_falt)
 		if st.checkbox('Materiales faltantes Back'):
-			st.write(pedir)
+			tabla, requisicion = st.columns([1,1])
+			with tabla:
+				st.write('Materiales por formula', pedir)
+			with requisicion:
+				st.write('Requisición', requi)
 	if st.checkbox('Piezas faltantes Forecast'):
 		tabla, grafico = st.columns([1,1])
 		with tabla:
@@ -505,7 +511,11 @@ def main():
 			)
 			st.altair_chart(f_falt)
 		if st.checkbox('Materiales faltantes Forecast'):
-			st.write(pedir2)
+			tabla, requisicion = st.columns([1,1])
+			with tabla:
+				st.write('Materiales por formula', pedir2)
+			with requisicion:
+				st.write('Requisición', requi2)
 	#if st.checkbox('Piezas faltantes Forecast'):
 
 	#barr = alt.Chart(bar_data).mark_bar(color='salmon').encode(
