@@ -78,7 +78,7 @@ def main():
 	def cargar9():
 		base9 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/formulas.csv',encoding='latin-1')
 		return base9
-	formulas = cargar9()
+	df_formulas = cargar9()
 	def cargar10():
 		base10 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/productos.csv',encoding='latin-1')
 		return base10
@@ -94,7 +94,7 @@ def main():
 	pedidos.columns = pedidos.columns.str.strip()
 	canal.columns = canal.columns.str.strip()
 	existencias.columns = existencias.columns.str.strip()
-	formulas.columns = formulas.columns.str.strip()
+	df_formulas.columns = df_formulas.columns.str.strip()
 	alfred.columns = alfred.columns.str.strip()
 	productos.columns = productos.columns.str.strip()
 	productos['Cve_prod'] = productos['Cve_prod'].str.strip()
@@ -134,7 +134,7 @@ def main():
 	remisiones.columns = ['Remision (PZA)', 'Remision ($)']
 	###TRATAMIENTO BASE PEDIDOS###
 	###TRATAMIENTO BASE FORMULAS####Quitamos los posibles espacios sobrantes de cada columna
-	formulas = formulas[['Cve_copr', 'Cve_prod', 'Can_copr', 'New_med', 'Undfor', 'Desc_prod', 'Ren_copr', 'Uncfor']]
+	formulas = df_formulas[['Cve_copr', 'Cve_prod', 'Can_copr', 'New_med', 'Undfor', 'Desc_prod', 'Ren_copr', 'Uncfor']]
 	formulas.columns = ['SKU', 'Cve_prod', 'Cantidad rendimiento', 'New_med', 'Unidad mp', 'MP', 'Rendimiento', 'Unidad']
 	formulas['Cantidad'] = formulas['Cantidad rendimiento']/formulas['Rendimiento']
 	formulas['SKU'] = formulas['SKU'].str.strip()
@@ -464,6 +464,14 @@ def main():
 	pedir_backme = pedir_backme[['Formula', 'Faltantes', 'MP', 'Cantidad', 'Back del mes (PZA)']]
 	pedir = pd.concat([pedir_backst, pedir_backme])
 	requi = pedir.groupby(['MP']).agg({'Cantidad':'sum'}).reset_index()
+	costo_for = df_formulas[['Desc_prod', 'Cto_rep']]
+	costo_for.columns = ['MP', 'Costo']
+	costo_for =costo_for.groupby(['MP']).agg({'Costo':'mean'})
+	#st.write(costo_for)
+	requi = requi.merge(costo_for, on='MP', how='left')
+	requi['Costo total'] = requi['Cantidad'] * requi['Costo']
+	total_requi = requi['Costo total'].sum()
+	frase1 = 'Inversión total $' + str(round(total_requi,2))
 	##########################################
 	### EXPLOSION DE MATERIALES FORECAST ###
 	pedir_fcst = fcst_faltantes.merge(formulas, on='SKU', how='left')
@@ -481,6 +489,10 @@ def main():
 	pedir_fcstme.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Forecast']
 	pedir2 = pd.concat([pedir_fcstst, pedir_fcstme])
 	requi2 = pedir2.groupby(['MP']).agg({'Cantidad':'sum'}).reset_index()
+	requi2 = requi2.merge(costo_for, on='MP', how='left')
+	requi2['Costo total'] = requi2['Cantidad'] * requi2['Costo']
+	total_requi2 = requi2['Costo total'].sum()
+	frase2 = 'Inversión total $' + str(round(total_requi2,2))
 	##########################################	
 	#st.write(pedir_fcstme)
 	#st.write(formulas)
@@ -500,6 +512,7 @@ def main():
 				st.write('Materiales por formula', pedir)
 			with requisicion:
 				st.write('Requisición', requi)
+				st.info(frase1)
 	if st.checkbox('Piezas faltantes Forecast'):
 		tabla, grafico = st.columns([1,1])
 		with tabla:
@@ -516,6 +529,7 @@ def main():
 				st.write('Materiales por formula', pedir2)
 			with requisicion:
 				st.write('Requisición', requi2)
+				st.info(frase2)
 	#if st.checkbox('Piezas faltantes Forecast'):
 
 	#barr = alt.Chart(bar_data).mark_bar(color='salmon').encode(
