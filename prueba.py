@@ -79,6 +79,10 @@ def main():
 		base9 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/formulas.csv',encoding='latin-1')
 		return base9
 	formulas = cargar9()
+	def cargar10():
+		base10 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/productos.csv',encoding='latin-1')
+		return base10
+	productos = cargar10()
 	def cargar7():
 		base7 = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vTSWo4ymE0xBaN-Yx0a9PFAwkD5L5CHK8duCdevjwdgt-bFyXpGQZjuzq9FLnBLFg/pub?gid=1655033046&single=true&output=csv',encoding='latin-1')
 		return base7
@@ -92,6 +96,11 @@ def main():
 	existencias.columns = existencias.columns.str.strip()
 	formulas.columns = formulas.columns.str.strip()
 	alfred.columns = alfred.columns.str.strip()
+	productos.columns = productos.columns.str.strip()
+	productos['Cve_prod'] = productos['Cve_prod'].str.strip()
+	productos['Desc_prod'] = productos['Desc_prod'].str.strip()
+	df_productos = productos[['Cve_prod', 'Desc_prod']]
+	df_productos.columns = ['SKU', 'Producto']
 	forecast.columns = forecast.columns.str.strip()
 	forecast.columns = ['Cve_prod', 'Producto', 'Tamano lotes', 'Presentacion', 'Cliente', 'Stock', 'Plan Julio', 'Forecast', 'Lotes origin', 'Lotes', 'Nota','NO']
 	forecast = forecast[['Cve_prod', 'Producto', 'Plan Julio', 'Forecast', 'Lotes origin']]
@@ -128,6 +137,8 @@ def main():
 	formulas = formulas[['Cve_copr', 'Cve_prod', 'Can_copr', 'New_med', 'Undfor', 'Desc_prod', 'Ren_copr', 'Uncfor']]
 	formulas.columns = ['SKU', 'Cve_prod', 'Cantidad rendimiento', 'New_med', 'Unidad mp', 'MP', 'Rendimiento', 'Unidad']
 	formulas['Cantidad'] = formulas['Cantidad rendimiento']/formulas['Rendimiento']
+	formulas['SKU'] = formulas['SKU'].str.strip()
+	formulas = formulas.merge(df_productos, on='SKU', how='left')
 	#st.write(formulas)
 	###MESES REPETIDO VERIFICAR DESPUES###
 	# se creó un diccionario el cual contiene los meses del año 
@@ -182,6 +193,7 @@ def main():
 	n_capt = alfred[(alfred['RESULTADO 41'] == 0) | (alfred['ORDEN 51'] == 0) | (alfred['RESULTADO 51'] == 0)]
 	alfred.columns = ['SKU', 'Producto', 'Lote', 'Caducidad', 'Cantidad', 'Tamano lote', 'Fecha', 'Contenedor',
 	 'Observacion', 'Resultado 41', 'Orden 51', 'Resultado 51']
+	#st.write(alfred)
 	for i in range(len(alfred['Cantidad'])):
 		#alfred.loc[i,'Cantidad'] = alfred.loc[i,'Cantidad'].replace('.',';').replace(',','.').replace(';','')
 		alfred.loc[i,'Cantidad'] = float(alfred.loc[i,'Cantidad'])
@@ -313,7 +325,7 @@ def main():
 	avance = avance.merge(back_act, on='Canal', how='left')
 	#p_pedidos = pedidos.groupby(['Producto']).agg({''})
 	#st.write(df_existencias.head(5))
-	p_pedidos = pedidos.groupby(['Producto', 'Back_month']).agg({'Cantidad_pedida':'sum',
+	p_pedidos = pedidos.groupby(['Producto', 'SKU', 'Back_month']).agg({'Cantidad_pedida':'sum',
 																			'Cantidad_surtida':'sum',
 																			'Liquidado':'sum',
 																			'Saldo':'sum',
@@ -429,8 +441,47 @@ def main():
 	#faltantes['Faltantes'] = faltantes['Faltantes']*(-1)
 	faltantes = faltantes[['Producto', 'Back del mes (PZA)', 'Faltantes', 'Existencia total']]
 	faltantes = faltantes.sort_values(by=['Faltantes'], ascending=False)
-	fcst_faltantes = t_forecast[['Producto', 'Forecast', 'Faltantes', 'Existencia']]
+	faltantes['Producto'] = faltantes['Producto'].str.strip()
+	faltantes_nom = faltantes.merge(df_productos, on='Producto', how='left')
+	#st.write(faltantes_nom)
+	fcst_faltantes = t_forecast[['SKU', 'Producto', 'Forecast', 'Faltantes', 'Existencia']]
 	fcst_faltantes = fcst_faltantes[fcst_faltantes['Faltantes']>0]
+	### EXPLOSION DE MATERIALES BACK ORDER ###
+	pedir_back = faltantes_nom.merge(formulas, on='SKU', how='left')
+	pedir_back.columns = ['Formula', 'Back del mes (PZA)', 'Faltantes', 'Existencia total', 'SKU', 'Componente', 'Cantidad rendimiento',
+						  'Version', 'Unidad mp', 'MP', 'Rendimiento', 'Unidad', 'Cantidad', 'Formulab']
+	pedir_backme = pedir_back[pedir_back['Componente'].str.startswith('M')].reset_index(drop=True)
+	pedir_backme['Faltantes me'] = pedir_backme['Cantidad'] * pedir_backme['Faltantes']
+	pedir_backst = pedir_back[pedir_back['Componente'].str.startswith('41')].reset_index(drop=True)
+	pedir_backst.rename(columns = {'SKU':'SKU_f', 'Componente':'SKU'}, inplace=True)
+	pedir_backst['SKU'] = pedir_backst['SKU'].str.strip()
+	#formulas.columns = ['']
+	pedir_backst = pedir_backst.merge(formulas, on='SKU', how='left')
+	pedir_backst['Cantidad mp'] = pedir_backst['Cantidad_y'] * pedir_backst['Faltantes']
+	#faltantes_tot = faltantes_nom.merge(t_forecast, on='SKU', how='outer')
+	pedir_backst = pedir_backst[['Formula', 'Faltantes', 'MP_y', 'Cantidad mp', 'Back del mes (PZA)']]
+	pedir_backst.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Back del mes (PZA)']
+	pedir_backme = pedir_backme[['Formula', 'Faltantes', 'MP', 'Cantidad', 'Back del mes (PZA)']]
+	pedir = pedir_backst.append(pedir_backme)
+	##########################################
+	### EXPLOSION DE MATERIALES FORECAST ###
+	pedir_fcst = fcst_faltantes.merge(formulas, on='SKU', how='left')
+	pedir_fcst = pedir_fcst.dropna()
+	pedir_fcstme = pedir_fcst[pedir_fcst['Cve_prod'].str.startswith('M')].reset_index(drop=True)
+	pedir_fcstme['Faltantes me'] = pedir_fcstme['Faltantes'] * pedir_fcstme['Cantidad']
+	pedir_fcstst = pedir_fcst[pedir_fcst['Cve_prod'].str.startswith('41')].reset_index(drop=True)
+	pedir_fcstst.rename(columns = {'SKU':'SKU_f', 'Cve_prod':'SKU'}, inplace=True)
+	pedir_fcstst['SKU'] = pedir_fcstst['SKU'].str.strip()
+	pedir_fcstst = pedir_fcstst.merge(formulas, on='SKU', how='left')
+	pedir_fcstst['Cantidad mp'] = pedir_fcstst['Cantidad_y'] * pedir_fcstst['Faltantes']
+	pedir_fcstst = pedir_fcstst[['Producto_x', 'Faltantes', 'MP_y', 'Cantidad mp', 'Forecast']]
+	pedir_fcstst.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Forecast']
+	pedir_fcstme = pedir_fcstme[['Producto_x', 'Faltantes', 'MP', 'Faltantes me', 'Forecast']]
+	pedir_fcstme.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Forecast']
+	pedir2 = pedir_fcstst.append(pedir_fcstme)
+	##########################################	
+	#st.write(pedir_fcstme)
+	#st.write(formulas)
 	if st.checkbox('Piezas faltantes Back Order'):
 		tabla, grafico = st.columns([1,1])
 		with tabla:
@@ -441,6 +492,8 @@ def main():
 				y=alt.Y('Producto', title='Producto')
 				)
 			st.altair_chart(g_falt)
+		if st.checkbox('Materiales faltantes Back'):
+			st.write(pedir)
 	if st.checkbox('Piezas faltantes Forecast'):
 		tabla, grafico = st.columns([1,1])
 		with tabla:
@@ -451,6 +504,8 @@ def main():
 			y=alt.Y('Producto', title='Producto')
 			)
 			st.altair_chart(f_falt)
+		if st.checkbox('Materiales faltantes Forecast'):
+			st.write(pedir2)
 	#if st.checkbox('Piezas faltantes Forecast'):
 
 	#barr = alt.Chart(bar_data).mark_bar(color='salmon').encode(
