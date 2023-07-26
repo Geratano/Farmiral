@@ -446,6 +446,24 @@ def main():
 	#st.write(faltantes_nom)
 	fcst_faltantes = t_forecast[['SKU', 'Producto', 'Forecast', 'Faltantes', 'Existencia']]
 	fcst_faltantes = fcst_faltantes[fcst_faltantes['Faltantes']>0]
+	
+	### EXISTENCIAS MATERIAS PRIMAS ###
+	existeN = existencias[['Cve_prod', 'Lugar', 'Desc_prod','Existencia']]
+	existeN.columns=existeN.columns.str.strip()
+	existeN['Cve_prod'] = existeN['Cve_prod'].str.strip()
+	existeN['Lugar'] = existeN['Lugar'].str.strip()
+	existeN['Desc_prod'] = existeN['Desc_prod'].str.strip()
+	existeN_comp =existeN[(existeN['Lugar'] == 'A1') | 
+		       			  (existeN['Lugar'] == 'A2') | 
+						  (existeN['Lugar'] == 'A3') | 
+						  (existeN['Lugar'] == 'ASPEN') |  
+						  (existeN['Lugar'] == 'SIMILARES') |  
+						  (existeN['Lugar'] == 'G2')]
+	existeN_comp.columns = ['SKU', 'Lugar', 'MP', 'Existencia']
+	existeN_comp = existeN_comp.groupby(['MP']).agg({'Existencia':'sum'}).reset_index()
+	#st.write(existeN_comp)
+    ####################################
+
 	### EXPLOSION DE MATERIALES BACK ORDER ###
 	pedir_back = faltantes_nom.merge(formulas, on='SKU', how='left')
 	pedir_back.columns = ['Formula', 'Back del mes (PZA)', 'Faltantes', 'Existencia total', 'SKU', 'Componente', 'Cantidad rendimiento',
@@ -463,13 +481,19 @@ def main():
 	pedir_backst.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Back del mes (PZA)']
 	pedir_backme = pedir_backme[['Formula', 'Faltantes', 'MP', 'Cantidad', 'Back del mes (PZA)']]
 	pedir = pd.concat([pedir_backst, pedir_backme])
-	requi = pedir.groupby(['MP']).agg({'Cantidad':'sum'}).reset_index()
+	pedir['MP'] = pedir['MP'].str.strip()
+	pedir = pedir.merge(existeN_comp, on='MP', how='left')
+	pedir = pedir.fillna(0)
+	pedir['Faltante mp'] = pedir['Cantidad'] - pedir['Existencia']
+	pedir['Faltante mp'][(pedir['Faltante mp'] < 0)] = 0
+	requi = pedir.groupby(['MP']).agg({'Cantidad':'sum', 'Existencia':'sum', 'Faltante mp':'sum'}).reset_index()
 	costo_for = df_formulas[['Desc_prod', 'Cto_rep']]
 	costo_for.columns = ['MP', 'Costo']
-	costo_for =costo_for.groupby(['MP']).agg({'Costo':'mean'})
+	costo_for =costo_for.groupby(['MP']).agg({'Costo':'mean'}).reset_index()
+	costo_for['MP'] = costo_for['MP'].str.strip()
 	#st.write(costo_for)
 	requi = requi.merge(costo_for, on='MP', how='left')
-	requi['Costo total'] = requi['Cantidad'] * requi['Costo']
+	requi['Costo total'] = requi['Faltante mp'] * requi['Costo']
 	total_requi = requi['Costo total'].sum()
 	frase1 = 'Inversión total $' + str(round(total_requi,2))
 	##########################################
@@ -488,9 +512,14 @@ def main():
 	pedir_fcstme = pedir_fcstme[['Producto_x', 'Faltantes', 'MP', 'Faltantes me', 'Forecast']]
 	pedir_fcstme.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Forecast']
 	pedir2 = pd.concat([pedir_fcstst, pedir_fcstme])
-	requi2 = pedir2.groupby(['MP']).agg({'Cantidad':'sum'}).reset_index()
+	pedir2['MP'] = pedir2['MP'].str.strip()
+	pedir2 = pedir2.merge(existeN_comp, on='MP', how='left')
+	pedir2 = pedir2.fillna(0)
+	pedir2['Faltante mp'] = pedir2['Cantidad'] - pedir2['Existencia']
+	pedir2['Faltante mp'][(pedir2['Faltante mp'] < 0)] = 0
+	requi2 = pedir2.groupby(['MP']).agg({'Cantidad':'sum', 'Existencia':'sum', 'Faltante mp':'sum'}).reset_index()
 	requi2 = requi2.merge(costo_for, on='MP', how='left')
-	requi2['Costo total'] = requi2['Cantidad'] * requi2['Costo']
+	requi2['Costo total'] = requi2['Faltante mp'] * requi2['Costo']
 	total_requi2 = requi2['Costo total'].sum()
 	frase2 = 'Inversión total $' + str(round(total_requi2,2))
 	##########################################	
