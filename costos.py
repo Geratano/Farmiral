@@ -170,6 +170,8 @@ def main():
         st.write(pt)
         st.subheader('Materiales Semiterminado por unidad')
         st.write(semit)
+        pprint = pd.concat([pt, semit])
+        st.download_button(label="Descargar", data=pprint.to_csv(), mime="text/csv")
         #st.write(semt)
 
     if st.checkbox('Formulador'):

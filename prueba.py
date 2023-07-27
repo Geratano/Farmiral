@@ -539,8 +539,10 @@ def main():
 			tabla, requisicion = st.columns([1,1])
 			with tabla:
 				st.write('Materiales por formula', pedir)
+				st.download_button(label="Descargar", data=pedir.to_csv(), mime="text/csv")
 			with requisicion:
 				st.write('Requisición', requi)
+				st.download_button(label="Descargar", data=requi.to_csv(), mime="text/csv")
 				st.info(frase1)
 	if st.checkbox('Piezas faltantes Forecast'):
 		tabla, grafico = st.columns([1,1])
@@ -556,8 +558,10 @@ def main():
 			tabla, requisicion = st.columns([1,1])
 			with tabla:
 				st.write('Materiales por formula', pedir2)
+				st.download_button(label="Descargar", data=pedir2.to_csv(), mime="text/csv")
 			with requisicion:
 				st.write('Requisición', requi2)
+				st.download_button(label="Descargar", data=requi2.to_csv(), mime="text/csv")
 				st.info(frase2)
 	#if st.checkbox('Piezas faltantes Forecast'):
 
@@ -625,7 +629,7 @@ def main():
 	df_group = df_group[['Cant_surt', 'Subt_fac', 'Utilidad_mov', 'Porcentaje']]
 	df_group.columns = ['Venta (PZA)', 'Venta ($)', 'Utilidad', 'Porcentaje']
 	st.write(df_group)
-
+	st.download_button(label="Descargar", data=df_group.to_csv(), mime="text/csv")
 	#top, bottom=st.columns([10,10])
 	top, bottom=st.columns(2)
 	with top:
@@ -678,7 +682,7 @@ def main():
 	df_group = df_group[['Cant_surt', 'Subt_fac', 'Utilidad_mov', 'Porcentaje']]
 	df_group.columns = ['Venta (PZA)', 'Venta ($)', 'Utilidad', 'Porcentaje']
 	st.write(df_group)
-
+	st.download_button(label="Descargar", data=df_group.to_csv(), mime="text/csv")
 	#top, bottom=st.columns([10,10])
 	top, bottom=st.columns(2)
 	with top:
