@@ -7,6 +7,8 @@ from datetime import datetime, timedelta, date
 #import streamlit_card as st_card
 import millify
 from millify import millify
+from millify import prettify
+
 st.set_page_config(layout="wide")
 
 
@@ -403,9 +405,9 @@ def main():
 		st.metric('Pedidos Acumulados sin entregar ($)', millify(produccion['Importe BA'].sum(), precision=1))
 		st.metric('Pedidos a entregar después ($)', millify(produccion['Importe BP'].sum(), precision=1))
 	with dos:
-		st.metric('Pedidos del mes (PZA)', millify(produccion['Back Act (PZA)'].sum(), precision=3))
-		st.metric('Pedidos Acumulados sin entregar (PZA)', millify(produccion['Back Ant (PZA)'].sum(), precision=3))
-		st.metric('Pedidos a entregar después (PZA)', millify(produccion['Back Pos (PZA)'].sum(), precision=3))
+		st.metric('Pedidos del mes (PZA)', prettify(round(produccion['Back Act (PZA)'].sum())))
+		st.metric('Pedidos Acumulados sin entregar (PZA)', prettify(round(produccion['Back Ant (PZA)'].sum())))
+		st.metric('Pedidos a entregar después (PZA)', prettify(round(produccion['Back Pos (PZA)'].sum())))
 	#with tres:
 	#	st.metric('Avance promedio PT (%)', avancept)
 	#	st.metric('Avance promedio Proceso (%)', avancepro)
