@@ -239,7 +239,7 @@ def main():
 
 	#st.write(alfred)
 	#st.write(t_forecast)
-	st.header("Avance diario")
+	st.header("Avance diario de ventas")
 
 	#Agrupamos primero nuestro dataframe por factura para poder descontar las notas de crédito
 	sub_fac1 =df_ventas.groupby(['No_fac','Canal_cliente']).agg({'Subt_fac':'sum',
@@ -369,11 +369,11 @@ def main():
 	#st.write(pp3)
 	uno, dos = st.columns([1,1])
 	with uno:
-		st.metric('Ventas al dia ($)', millify(v_dia), delta=millify(avance_objetivo))
+		st.metric('Ventas al dia ($)', millify(v_dia, precision=1), delta=millify(avance_objetivo, precision=1))
 		#st_card('Ventas al dia ($)', v_dia, show_progress=True)
 	with dos:
 		prefixes = ['%']
-		st.metric('Avance en tiempo (%)', millify(por_tiempo), delta = millify(dif_avance_por))
+		st.metric('Avance en tiempo (%)', millify(por_tiempo, precision=2), delta = millify(dif_avance_por, precision=2))
 	#st.write('$ ', d_act.iloc[:,2].sum(axis=0))
 
 	st.write(avance)
@@ -399,13 +399,13 @@ def main():
 
 	uno, dos = st.columns([1,1])
 	with uno:
-		st.metric('Pedidos del mes ($)', millify(produccion['Importe B_ACT'].sum()))
-		st.metric('Pedidos Acumulados sin entregar ($)', millify(produccion['Importe BA'].sum()))
-		st.metric('Pedidos a entregar después ($)', millify(produccion['Importe BP'].sum()))
+		st.metric('Pedidos del mes ($)', millify(produccion['Importe B_ACT'].sum(), precision=1))
+		st.metric('Pedidos Acumulados sin entregar ($)', millify(produccion['Importe BA'].sum(), precision=1))
+		st.metric('Pedidos a entregar después ($)', millify(produccion['Importe BP'].sum(), precision=1))
 	with dos:
-		st.metric('Pedidos del mes (PZA)', millify(produccion['Back Act (PZA)'].sum()))
-		st.metric('Pedidos Acumulados sin entregar (PZA)', millify(produccion['Back Ant (PZA)'].sum()))
-		st.metric('Pedidos a entregar después (PZA)', millify(produccion['Back Pos (PZA)'].sum()))
+		st.metric('Pedidos del mes (PZA)', millify(produccion['Back Act (PZA)'].sum(), precision=3))
+		st.metric('Pedidos Acumulados sin entregar (PZA)', millify(produccion['Back Ant (PZA)'].sum(), precision=3))
+		st.metric('Pedidos a entregar después (PZA)', millify(produccion['Back Pos (PZA)'].sum(), precision=3))
 	#with tres:
 	#	st.metric('Avance promedio PT (%)', avancept)
 	#	st.metric('Avance promedio Proceso (%)', avancepro)
