@@ -9,6 +9,7 @@ import millify
 from millify import millify
 from millify import prettify
 from zoneinfo import ZoneInfo
+import pytz
 
 st.set_page_config(layout="wide")
 
@@ -147,8 +148,12 @@ def main():
 	# se creó un diccionario el cual contiene los meses del año 
 	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
 		    			7:'jul',8:'ago',9:'sep',10:'oct',11:'nov',12:'dic'}
-	now = datetime.now() # se guarda la fecha actual
-	yesterday = now.replace(month = now.month, day = now.day - 1)
+	now = datetime.now(pytz.timezone("America/Mexico_City")) # se guarda la fecha actual
+	#st.write(now.day)
+	if now.day == 1:
+		yesterday = now.replace(month=now.month, day=now.day)
+	else:
+		yesterday = now.replace(month = now.month, day = now.day - 1)
 	act = now.year # de la fecha actual se guarda solo el año en curso
 	m = now.month # de la fecha actual se guarda el mes en curso(esto solo devolverá un numero) 
 	################################################################
@@ -283,8 +288,12 @@ def main():
 	# se creó un diccionario el cual contiene los meses del año 
 	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
 		    			7:'jul',8:'ago',9:'sep',10:'oct',11:'nov',12:'dic'}
-	now = datetime.now(tz=ZoneInfo("America/Los_Angeles")) # se guarda la fecha actual
-	yesterday = now.replace(month = now.month, day = now.day - 1)
+	now = datetime.now(pytz.timezone("America/Mexico_City")) # se guarda la fecha actual
+	#st.write(now.day)
+	if now.day == 1:
+		yesterday == now.replace(month = now.month, day = now.day)
+	else:
+		yesterday = now.replace(month = now.month, day = now.day - 1)
 	act = now.year # de la fecha actual se guarda solo el año en curso
 	m = now.month # de la fecha actual se guarda el mes en curso(esto solo devolverá un numero) 
 	mes = mes_diccioanrio[m]  # el numero que se guardó en la variable 'm' corresponde al mes en curso, de esta forma se manda a llamar el nombre del mes, que ya esta identificado en el diccionario 
