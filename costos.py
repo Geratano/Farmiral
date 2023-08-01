@@ -321,13 +321,13 @@ def main():
             
             st.write(df_formulador)
             # converir primeros tres encabezados en dataframe para poder descargarlos 
-            diccionario = [unidad_lote, unidad_base,prsuge] #en la variable diccionario mando a llamr a los datos Rendimiento, aunidad base y precio sugerido 
+            diccionario = [unidad_lote, unidad_base,precio] #en la variable diccionario mando a llamr a los datos Rendimiento, aunidad base y precio sugerido 
             convert= pd.DataFrame(data=diccionario)# convierto los tados a un data frame
             convert.columns=['Data'] # renombramos la columna
             titu= pd.DataFrame(['Rendimiento: ','Unidad Base: ', 'Precio sugerido: $']) # creamos otro dataframe que va a servir de encavezados
             titu.columns=[' '] # renombro en blanco para que no enumere la columna 
             #convertir los ultimos 3 ecabezados en dataframe 
-            diccionario2=[csto,cstoca,cstolo] # en la variable diccionario2 mando a llamar los datos de costo unitario, costo por caja y costo por lote
+            diccionario2=[costo_unitario,costo_caja,costo_lote] # en la variable diccionario2 mando a llamar los datos de costo unitario, costo por caja y costo por lote
             convert2=pd.DataFrame(data=diccionario2) # Converto a dataframe
             convert2.columns=[' Data'] # renombro la columna
             titu2 = pd.DataFrame(['Costo unitario: $', 'Costo por caja: $', 'Costo por lote: $'])#creamos dataframe con los encabezados
