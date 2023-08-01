@@ -150,7 +150,9 @@ def main():
 		    			7:'jul',8:'ago',9:'sep',10:'oct',11:'nov',12:'dic'}
 	now = datetime.now(pytz.timezone("America/Mexico_City")) # se guarda la fecha actual
 	#st.write(now.day)
-	if now.day == 1:
+	dia = now.day
+	if dia == 1:
+	#	st.write('Si es')
 		yesterday = now.replace(month=now.month, day=now.day)
 	else:
 		yesterday = now.replace(month = now.month, day = now.day - 1)
@@ -290,8 +292,9 @@ def main():
 		    			7:'jul',8:'ago',9:'sep',10:'oct',11:'nov',12:'dic'}
 	now = datetime.now(pytz.timezone("America/Mexico_City")) # se guarda la fecha actual
 	#st.write(now.day)
-	if now.day == 1:
-		yesterday == now.replace(month = now.month, day = now.day)
+	dia = now.day
+	if dia == 1:
+		yesterday = now.replace(month = now.month, day = now.day)
 	else:
 		yesterday = now.replace(month = now.month, day = now.day - 1)
 	act = now.year # de la fecha actual se guarda solo el año en curso
