@@ -149,7 +149,6 @@ def main():
 	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
 		    			7:'jul',8:'ago',9:'sep',10:'oct',11:'nov',12:'dic'}
 	now = datetime.now(pytz.timezone("America/Mexico_City")) # se guarda la fecha actual
-	st.write(now)
 	#st.write(now.day)
 	dia = now.day
 	if dia == 1:
