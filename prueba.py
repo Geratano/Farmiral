@@ -75,18 +75,27 @@ def main():
 		base6 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/existencias.csv',encoding='latin-1')
 		return base6
 	existencias = cargar6()
+	@st.cache_resource
 	def cargar8():
 		base8 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/Plan2023.csv',encoding='latin-1')
 		return base8
 	forecast = cargar8()
+	@st.cache_resource
 	def cargar9():
 		base9 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/formulas.csv',encoding='latin-1')
 		return base9
 	df_formulas = cargar9()
+	@st.cache_resource
 	def cargar10():
 		base10 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/productos.csv',encoding='latin-1')
 		return base10
 	productos = cargar10()
+	@st.cache_resource
+	def cargar11():
+		base11 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/sellout.csv',encoding='latin-1')
+		return base11
+	sellout = cargar11()
+	@st.cache_resource
 	def cargar7():
 		base7 = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vTSWo4ymE0xBaN-Yx0a9PFAwkD5L5CHK8duCdevjwdgt-bFyXpGQZjuzq9FLnBLFg/pub?gid=1655033046&single=true&output=csv',encoding='latin-1')
 		return base7
@@ -101,6 +110,7 @@ def main():
 	df_formulas.columns = df_formulas.columns.str.strip()
 	alfred.columns = alfred.columns.str.strip()
 	productos.columns = productos.columns.str.strip()
+	sellout.columns = sellout.columns.str.strip()
 	productos['Cve_prod'] = productos['Cve_prod'].str.strip()
 	productos['Desc_prod'] = productos['Desc_prod'].str.strip()
 	df_productos = productos[['Cve_prod', 'Desc_prod']]
@@ -627,8 +637,15 @@ def main():
 			 (df_ventas['Mes'].isin(mes_list)) &
 			 (df_ventas['Nom_cliente'].isin(cte_list))]
 
+	
+	df_sellout = sellout[
+			(sellout['Mes'].isin(mes_list)) &
+			(sellout['Anio'].isin(ano_list)) &
+			(sellout['Cliente'].isin(cte_list))]
+
 	df_filtered = df_filtered[['Nom_cliente','Producto','Cant_surt', 'Subt_fac', 'Utilidad_mov','Margen']]
 
+	df_sellout = df_sellout.fillna(0)
 	#Agregamos la columna porcentaje que será la venta ($) entre el total de ventas
 	
 	tot_vta = df_filtered.iloc[:,3].sum(axis=0)
@@ -646,6 +663,14 @@ def main():
 	df_group.columns = ['Venta (PZA)', 'Venta ($)', 'Utilidad', 'Porcentaje']
 	st.write(df_group)
 	st.download_button(label="Descargar", data=df_group.to_csv(), mime="text/csv")
+	###SELLOUTXPRODUCTO###
+	df_groups = df_sellout.groupby(['Producto']).agg({'Venta (pza)':'sum',
+													  'Venta ($)':'sum'}).sort_values(by=['Venta (pza)'],ascending=False)
+	df_groups = df_groups[(df_groups['Venta (pza)'] > 0)]
+	if st.checkbox('Sellout por producto'):
+		st.write(df_groups)
+		st.download_button(label="Descargar", data=df_groups.to_csv(), mime="text/csv")
+
 	#top, bottom=st.columns([10,10])
 	top, bottom=st.columns(2)
 	with top:
@@ -699,6 +724,13 @@ def main():
 	df_group.columns = ['Venta (PZA)', 'Venta ($)', 'Utilidad', 'Porcentaje']
 	st.write(df_group)
 	st.download_button(label="Descargar", data=df_group.to_csv(), mime="text/csv")
+	###SELLOUT POR CLIENTE###
+	df_groupsc = df_sellout.groupby(['Cliente']).agg({'Venta (pza)':'sum',
+													 'Venta ($)':'sum'}).sort_values(by=['Venta (pza)'],ascending=False)
+	df_groupsc = df_groupsc[(df_groupsc['Venta (pza)']>0)]
+	if st.checkbox('Sellout por cliente'):
+		st.write(df_groupsc)
+		st.download_button(label="Descargar", data=df_groupsc.to_csv(), mime="text/csv")
 	#top, bottom=st.columns([10,10])
 	top, bottom=st.columns(2)
 	with top:
