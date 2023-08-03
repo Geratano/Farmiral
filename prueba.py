@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, date
 import millify
 from millify import millify
 from millify import prettify
-from zoneinfo import ZoneInfo
+#from zoneinfo import ZoneInfo
 import pytz
 
 st.set_page_config(layout="wide")
