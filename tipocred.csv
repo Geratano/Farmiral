@@ -1,0 +1,20 @@
+Cve_ncre    ,Nom_ncre                                ,INCLUYE
+A           ,ND Anticipos Clientes                   ,NO
+A1          ,E ANTICIPOS DE CLIENTES                 ,NO
+A2          ,DESCUENTO POR PRONTO PAGO               ,SI
+A3          ,DESCUENTO POR DIF EN PRECIO             ,SI
+A4          ,DESCUENTO POR PZAS DAÑADAS O FALTANTES  ,SI
+A5          ,DESCUENTO POR COMISIONES                ,NO
+A6          ,DESCUENTO POR PAGO FLETE                ,NO
+A7          ,DESCUENTO POR MARKETING                 ,NO
+A8          ,DESCUENTO POR MAQUILA,NO
+A9          ,DESCUENTO LOGISTICO 3.5%,SI
+A10         ,COMISIONES E-COMMERCE,SI
+A11,,SI
+A12         ,DESCUENTO POR PIEZAS DAÑADAS,SI
+A13         ,DESCUENTO POR PIEZAS FALTANTES,SI
+AA          ,E APLICACION DE ANTICIPO                ,NO
+ANT         ,ANTICIPO                                ,NO
+CP          ,NOTA DE CREDITO POR CADUCIDAD DE PRODUCT,SI
+DESC        ,DESCUENTO                               ,SI
+DESC-ESP    ,DESCUENTO POR BONIFICACION ESPECIAL     ,SI
