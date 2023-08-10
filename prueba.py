@@ -44,11 +44,11 @@ def main():
 	#Leeremos la base de datos desde Github con pandas
 	#Usamos el encoding latin-1 porque si no arroja error
 	#ya que puede haber "ñ's" o acentos
-	@st.cache_resource
-	def cargar1():
-		base1 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/base.csv',encoding='latin-1')
-		return  base1
-	df = cargar1()
+	#@st.cache_resource
+	#def cargar1():
+	#	base1 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/base.csv',encoding='latin-1')
+	#	return  base1
+	#df = cargar1()
 	#Objetivos del mes
 	@st.cache_resource
 	def cargar2():
@@ -76,6 +76,11 @@ def main():
 		return base6
 	existencias = cargar6()
 	@st.cache_resource
+	def cargar7():
+		base7 = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vTSWo4ymE0xBaN-Yx0a9PFAwkD5L5CHK8duCdevjwdgt-bFyXpGQZjuzq9FLnBLFg/pub?gid=1655033046&single=true&output=csv',encoding='latin-1')
+		return base7
+	alfred = cargar7()
+	@st.cache_resource
 	def cargar8():
 		base8 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/Plan2023.csv',encoding='latin-1')
 		return base8
@@ -96,13 +101,31 @@ def main():
 		return base11
 	sellout = cargar11()
 	@st.cache_resource
-	def cargar7():
-		base7 = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vTSWo4ymE0xBaN-Yx0a9PFAwkD5L5CHK8duCdevjwdgt-bFyXpGQZjuzq9FLnBLFg/pub?gid=1655033046&single=true&output=csv',encoding='latin-1')
-		return base7
-	alfred = cargar7()
+	def cargar12():
+		base12 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/factura.csv',encoding='latin-1')
+		return base12
+	facturas = cargar12()
+	@st.cache_resource
+	def descuentos():
+		desc = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/descuentos.csv',encoding='latin-1')
+		return  desc
+	descuento = descuentos()
+	@st.cache_resource
+	def tipocred():
+		tipo = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/tipocred.csv',encoding='latin-1')
+		return  tipo
+	tipo = tipocred()
+	@st.cache_resource
+	def devoluciones():
+		dev = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/devoluciones.csv',encoding='latin-1')
+		return  dev
+	devolucion = devoluciones()
 
 
-	df.columns = df.columns.str.strip()
+	
+
+
+	#df.columns = df.columns.str.strip()
 	remisiones.columns = remisiones.columns.str.strip()
 	pedidos.columns = pedidos.columns.str.strip()
 	canal.columns = canal.columns.str.strip()
@@ -111,6 +134,8 @@ def main():
 	alfred.columns = alfred.columns.str.strip()
 	productos.columns = productos.columns.str.strip()
 	sellout.columns = sellout.columns.str.strip()
+	facturas.columns = facturas.columns.str.strip()
+	descuento.columns = descuento.columns.str.strip()
 	productos['Cve_prod'] = productos['Cve_prod'].str.strip()
 	productos['Desc_prod'] = productos['Desc_prod'].str.strip()
 	df_productos = productos[['Cve_prod', 'Desc_prod']]
@@ -122,8 +147,65 @@ def main():
 	
 	#Filtramos la base para obtener solo las columnas
 	#importantes
-	df_ventas = df[['No_fac','Falta_fac','Subt_fac','Cve_factu','Cse_prod','Cant_surt','Lugar','Costo','Utilidad_mov','Margen',
-	'Categoria','Canal_prod','Canal_cliente','KAM','Subdirec','N_cred','Anio','Mes','Dia','Nom_cliente','Producto']]
+	###CONSTRUCCION DESCUENTOS Y DEVOLUCIONES LUIS###
+	#filtro las columnas
+	df_descuento = descuento[['No_nota','Tip_not','Fecha','Cve_factu','No_fac','Tot_nota','Saldo','Nom_cte','No_cliente','Iva','Subtotal','Tip_cam','Nom_age','Cve_ncre']]
+	df_descuento['Cve_ncre'] = df_descuento['Cve_ncre'].str.strip() # quito espacios a Cve_ncre
+
+	#quito los espacios de las columnas en la base tipocred
+	tipo.columns=tipo.columns.str.strip()
+	tipo['Cve_ncre']= tipo['Cve_ncre'].str.strip()
+	df_descuentos = df_descuento.merge(tipo, on='Cve_ncre', how='left') # hago merge con las tablas descuenos y tipocred
+	df_descuentos['No_fac'] = df_descuentos['No_fac'].str.strip()
+	df_descuentos['No_fac'] = pd.to_numeric(df_descuentos['No_fac'])
+	#st.write(df_descuentos[df_descuentos['No_fac'] == 4811])
+	#quito los espacios de las columnas de la base devoliucion
+	devolucion.columns= devolucion.columns.str.strip()
+	#filtro las columnas
+	df_devolucion = devolucion[['No_nota','Tip_not','Fecha','Cve_factu','No_fac','Tot_nota','Saldo','Nom_cte','No_cliente',
+								'Iva','Subtotal','Tip_cam','Nom_age','Cve_ncre']]
+	m_devolucion = df_devolucion.merge(tipo, on='Cve_ncre', how='left') # hago merge de la tabla devolucion con la tabla tipo
+	m_devolucion['INCLUYE']= 'SI' # en la columna INCLUYE  lleno todo con un si 
+	m_devolucion=m_devolucion.fillna(0) # Donde haya un none se reemplaza con un 0
+	notasc = pd.concat([df_descuentos,m_devolucion]) # concateno las bases descuentos con devolcion
+	#st.write(comp)
+	#################################################
+	#CONSTRUCCION FACTURAS#
+	#canal['Cve_cte'] = canal['Cve_cte'].str.strip()
+	#facturas['Cve_cte'] = facturas['Cve_cte'].str.strip()
+	df_facturas = facturas.merge(canal, on='Cve_cte', how='left')
+	df_facturas['Costo'] = df_facturas['Cost_prom']/df_facturas['Cant_surt']
+	df_facturas['Precio'] = df_facturas['Subt_fac']/df_facturas['Cant_surt']
+	df_facturas['Utilidad'] = df_facturas['Precio'] - df_facturas['Costo']
+	df_facturas['Utilidad_mov'] = df_facturas['Utilidad'] * df_facturas['Cant_surt']
+	df_facturas['Margen'] = round((df_facturas['Utilidad']/df_facturas['Precio']),3)*100
+	df_facturas['Falta_fac'] = pd.to_datetime(df_facturas['Falta_fac'], format = '%d/%m/%Y' )
+	df_facturas['Anio'] = df_facturas['Falta_fac'].dt.year
+	df_facturas['Mes'] = df_facturas['Falta_fac'].dt.month
+	df_facturas['Dia'] = df_facturas['Falta_fac'].dt.day
+	df_facturas['Nom_cliente'] = df_facturas['Nom_fac'].str.strip()
+	df_facturas['Producto'] = df_facturas['Desc_prod'].str.strip()
+	nc_tabla = notasc[['No_fac', 'Subtotal']]
+	nc_tabla = nc_tabla.groupby(['No_fac']).agg({'Subtotal':'sum'}).reset_index()
+	dftemp = df_facturas.merge(nc_tabla, on='No_fac', how='left')
+	dftemp['N_cred'] = dftemp['Subtotal']
+	#st.write(dftemp.columns)
+	#st.write(dftemp.columns)
+	df = dftemp[['No_fac', 'Falta_fac', 'Status_fac', 'Descuento', 'Subt_fac', 'Total_fac', 'Iva', 'Saldo_fac', 'Cve_factu',
+				 'Cve_cte', 'Cse_prod', 'Cve_prod', 'New_med', 'Valor_prod', 'Cant_surt', 'Cve_mon', 'Tip_cam', 'Unidad', 'No_ped',
+				 'No_rem', 'Cve_suc', 'Lote', 'Dcto1', 'Dcto2', 'Cve_age', 'Nom_fac', 'Desc_prod', 'Cost_prom', 'Lugar',
+				 'Hora_fac', 'Cve_age2', 'Lista_med', 'F_pago', 'Saldo_fac', 'Costo', 'Precio', 'Utilidad', 'Utilidad_mov',
+				 'Margen', 'Canal', 'Kam', 'Subdirector', 'N_cred', 'Anio', 'Mes', 'Dia', 'Nom_cliente', 'Producto']]
+	#st.write(df)
+	df['Canal_cliente'] = df['Canal'].str.strip()
+
+	#st.write(df_facturas['Margen'])
+	#st.write(df)
+	#######################
+	df_ventas = df[['No_fac','Falta_fac','Subt_fac','Cve_factu','Cse_prod','Cant_surt','Lugar','Costo','Utilidad_mov','Margen'
+	,'Canal_cliente','Kam','Subdirector','N_cred','Anio','Mes','Dia','Nom_cliente','Producto']]
+	df_ventas = df_ventas.fillna(0)
+	#st.write(df_ventas)
 	###TRATAMIENTO BASE EXISTENCIAS###
 	df_existencias = existencias[['Cve_prod', 'Lote', 'Lugar', 'Cto_ent', 'Existencia', 'Fech_venc', 'Desc_prod', 'Uni_med']]
 	df_existencias.columns = ['SKU', 'Lote', 'Lugar', 'Costo', 'Existencia', 'Vencimiento', 'Producto', 'Unidad']
@@ -140,6 +222,8 @@ def main():
 	df_remisiones = remisiones[['No_rem', 'Cve_cte', 'Nom_cte', 'Cve_prod', 'Cant_surt', 'Desc_prod', 'Valor_prod']]
 	df_remisiones.columns = ['No_rem', 'Cve_cte', 'Cliente', 'SKU', 'Cantidad', 'Producto', 'Precio']
 	canal.columns = ['Cve_cte', 'Cliente', 'Canal', 'Kam', 'Subdirector']
+	canal['Canal'] = canal['Canal'].str.strip()
+
 	remisiones = df_remisiones.merge(canal, on='Cve_cte', how='left')
 	remisiones['importe'] = remisiones['Cantidad'] * remisiones['Precio']
 	remisiones.columns = ['No_rem', 'Cve_cte', 'Cliente', 'SKU', 'Cantidad', 'Producto', 'Precio', 'CTE', 'Canal', 'Kam', 'Subdirector', 'importe']
@@ -188,7 +272,7 @@ def main():
 		except ValueError:
 			df_pedidos.loc[i, 'Mes_ent'] = df_pedidos.loc[i, 'Mes_alta']
 	
-		if df_pedidos.loc[i,'Mes_alta'] == m:
+		if (df_pedidos.loc[i,'Mes_alta'] == m) & (df_pedidos.loc[i,'Mes_ent'] == m):
 			df_pedidos.loc[i,'Back_month'] = m
 		elif  df_pedidos.loc[i, 'Mes_ent'] > m:
 			df_pedidos.loc[i, 'Back_month'] = 'POS'
@@ -200,10 +284,12 @@ def main():
 	#st.write(pedidos[pedidos['Back_month'] == 'ANT']['Back_month'])
 
 	pedidos = df_pedidos.merge(canal, on='Cve_cte', how='left')
+
 	for i in range(len(pedidos.loc[:,'Saldo'])):
 		if pedidos.loc[i,'Saldo'] < 0:
 			pedidos.loc[i,'Saldo'] = 0
 	pedidos['importe'] = pedidos['Saldo'] * pedidos['Precio']
+	#st.write(pedidos)
 	#st.write(pedidos)
 	#imprimimos como prueba los primeros cinco datos de la tabla
 	#if st.checkbox("Raw data"):
@@ -272,10 +358,12 @@ def main():
 												'Mes':'max',
 												'Dia':'max'}).reset_index()
 	
+	
 	#Para poder restar las notas de crédito eliminamos los NAS
 	sub_fac1['N_cred'] = sub_fac1['N_cred'].fillna(0)
-	sub_fac1['Subt_fac'] = sub_fac1['Subt_fac'] + sub_fac1['N_cred']
+	sub_fac1['Subt_fac'] = sub_fac1['Subt_fac'] - sub_fac1['N_cred']
 
+	#st.write(sub_fac1)
 	#st.write(fac_act.iloc[:,2].sum(axis=0))
 	#st.write(a_act.head(5))
 	# Creacion del grupo canal_prod
@@ -291,6 +379,7 @@ def main():
 												'Utilidad_mov':'sum',
 												'Margen':'mean'}).reset_index()
 	fac_act = fac_act.sort_values(by=['Utilidad_mov'],ascending=False)
+	#st.write(fac_act)
 	#Función para obtener el ultimo dia del mes
 	def last_day_of_month(date):
 		if date.month == 12:
@@ -311,12 +400,24 @@ def main():
 	act = now.year # de la fecha actual se guarda solo el año en curso
 	m = now.month # de la fecha actual se guarda el mes en curso(esto solo devolverá un numero) 
 	mes = mes_diccioanrio[m]  # el numero que se guardó en la variable 'm' corresponde al mes en curso, de esta forma se manda a llamar el nombre del mes, que ya esta identificado en el diccionario 
+	fac_act['Anio'] = pd.to_numeric(fac_act['Anio'])
 	a_act = fac_act[fac_act['Anio']== act].drop(columns=['Anio']) # se aplica el filto por año, el cual se almacenará e la variable a_act
+	#st.write(fac_act['Anio'])
+	#st.write(a_act)
+	#st.write(a_act)
 	last_day = last_day_of_month(now)
 	#st.write(a_act.iloc[:,4].sum(axis=0))
+	#a_act['Mes'] = a_act['Mes'].str.strip()
+	#a_act['Mes'] = pd.to_numeric(a_act['Mes'])
+	#st.write(a_act[a_act['Mes']==mes])
+	#st.write(mes)
+	a_act = a_act.replace({'Mes': mes_diccioanrio})
+	#st.write(a_act)
 	d_act = a_act[a_act['Mes'] == mes].drop(columns=['Mes'])
+	#st.write(d_act)
 	obj_canal = objetivos.groupby(['Cliente','Desc_prod','Canal']).agg({'Objetivos pesos':'sum',
-																		'Objetivo piezas':'sum'})
+																	'Objetivo piezas':'sum'})
+	
 	v_dia = d_act.iloc[:,2].sum(axis=0)
 	#Calculamos el avance porcentual en tiempo
 	por_tiempo = (now.day/last_day.day)*100
@@ -339,16 +440,17 @@ def main():
 	back_pos = pedidos[pedidos['Back_month'] == 'POS']
 	back_pos = back_pos.groupby(['Canal']).agg({'importe':'sum'})
 	back_pos.columns = ['Back posterior']
-	back_act = pedidos[pedidos['Back_month'] == m]
+	back_act = pedidos[(pedidos['Back_month'] == m)]
 	back_act = back_act.groupby(['Canal']).agg({'importe':'sum'})
 	back_act.columns = ['Back Mes']
-
+	#st.write(pedidos)
 	#st.write(back_ant.sum())
 	#st.write(pedidos.head(5))
 	avance = avance.merge(remisiones, on='Canal', how='left')
 	avance = avance.merge(back_ant, on='Canal', how='left')
 	avance = avance.merge(back_pos, on='Canal', how='left')
 	avance = avance.merge(back_act, on='Canal', how='left')
+	avance = avance.fillna(0)
 	#p_pedidos = pedidos.groupby(['Producto']).agg({''})
 	#st.write(df_existencias.head(5))
 	p_pedidos = pedidos.groupby(['Producto', 'SKU', 'Back_month']).agg({'Cantidad_pedida':'sum',
@@ -392,7 +494,14 @@ def main():
 	#pp2 = produccion['Importe B_ACT'].sum()
 	#pp3 = produccion['Importe BP'].sum()
 	
+	
 	#st.write(pp3)
+	#mes_corriente = mes_diccioanrio[m]
+	#descuentos = sub_fac1[(sub_fac1['Mes'] == mes_corriente)]
+	#descuentos = descuentos.groupby(['No_fac']).agg({'N_cred':'mean'}).reset_index()
+	#descuentos = descuentos[descuentos['N_cred']<0]
+	#st.write(descuentos)
+
 	uno, dos = st.columns([1,1])
 	with uno:
 		st.metric('Ventas al dia ($)', millify(v_dia, precision=1), delta=millify(avance_objetivo, precision=1))
@@ -489,9 +598,9 @@ def main():
 	existeN_comp = existeN_comp.groupby(['MP']).agg({'Existencia':'sum'}).reset_index()
 	#st.write(existeN_comp)
     ####################################
-
-	### EXPLOSION DE MATERIALES BACK ORDER ###
+    ### EXPLOSION DE MATERIALES BACK ORDER ###
 	pedir_back = faltantes_nom.merge(formulas, on='SKU', how='left')
+	#st.write(pedir_back)
 	pedir_back.columns = ['Formula', 'Back del mes (PZA)', 'Faltantes', 'Existencia total', 'SKU', 'Componente', 'Cantidad rendimiento',
 						  'Version', 'Unidad mp', 'MP', 'Rendimiento', 'Unidad', 'Cantidad', 'Formulab']
 	pedir_backme = pedir_back[pedir_back['Componente'].str.startswith('M')].reset_index(drop=True)
