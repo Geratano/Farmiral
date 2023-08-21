@@ -18,6 +18,7 @@ def main():
     with col3:
         st.write("")
 
+    #cargo la base compras 
     @st.cache_resource
     def load_compras():
         compras = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/compras.csv',encoding='latin-1')
@@ -28,12 +29,16 @@ def main():
     compras['Cve_prod'] = compras['Cve_prod'].str.strip()
     compras['Desc_prod'] = compras['Desc_prod'].str.strip()
     compras['Nom_prov'] = compras['Nom_prov'].str.strip()
-
+    compras['F_ent'] = compras['F_ent'].str.strip()
+    mes= pd.DataFrame(columns=['Mes'])
     df_compras = compras[['Cve_prod','Desc_prod', 'Nom_prov', 'F_ent','Cant_prod','Cant_surtp','Valor_prod','Des_mon']]
-
-    df_compras['F_ent'] = pd.to_datetime(df_compras['F_ent'], format='%d-%m-%Y')
-
+    mes['Mes'] = df_compras['F_ent'].str[3:5]
+    df_compras = pd.concat([df_compras,mes], axis=1)
+    
     st.write(df_compras)
+   
+    
+    
 
 if __name__ == '__main__':
     main()
