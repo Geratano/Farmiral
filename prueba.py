@@ -745,15 +745,17 @@ def main():
 			 (df_ventas['Anio'].isin(ano_list)) & 
 			 (df_ventas['Mes'].isin(mes_list)) &
 			 (df_ventas['Nom_cliente'].isin(cte_list))]
+	#Mes por letra 3 digitos
+	mes_letra = []
+	for i in range(len(mes_list)):
+		mes_letra.append(mes_diccioanrio[mes_list[i]])
 
-	
 	df_sellout = sellout[
-			(sellout['Mes'].isin(mes_list)) &
+			(sellout['Mes'].isin(mes_letra)) &
 			(sellout['Anio'].isin(ano_list)) &
 			(sellout['Cliente'].isin(cte_list))]
 
 	df_filtered = df_filtered[['Nom_cliente','Producto','Cant_surt', 'Subt_fac', 'Utilidad_mov','Margen']]
-
 	df_sellout = df_sellout.fillna(0)
 	#Agregamos la columna porcentaje que será la venta ($) entre el total de ventas
 	
