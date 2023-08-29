@@ -221,6 +221,8 @@ def main():
     
     df_compras = df_compras[['Cve_prod','Desc_prod', 'Nom_prov','X_Entregar','Cant_surtp','Cant_prod', 
                              'Status', 'Status_aut', 'F_ent','Mes','Valor_prod','Des_mon']]
+    df_compras = df_compras.fillna(0)
+    st.write(df_compras)
     start_date = df_compras['F_ent'].min()
     start_date = datetime(start_date.year, start_date.month, start_date.day)
     end_date = df_compras['F_ent'].max()
