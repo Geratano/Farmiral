@@ -168,10 +168,8 @@ def main():
     pedir_fcstst.rename(columns = {'SKU':'SKU_f', 'Cve_prod':'SKU'}, inplace=True)
     pedir_fcstst['SKU'] = pedir_fcstst['SKU'].str.strip()
     pedir_fcstst = pedir_fcstst.merge(formulas, on='SKU', how='left')
-
     pedir_fcstst['Cantidad_y'] = pedir_fcstst['Cantidad rendimiento_y'] / pedir_fcstst['Rendimiento_x']
     pedir_fcstst['Cantidad mp'] = pedir_fcstst['Cantidad_y'] * pedir_fcstst['Faltantes']
-    
     pedir_fcstst = pedir_fcstst[['Producto_x', 'Faltantes', 'MP_y', 'Cantidad mp', 'Forecast']]
     pedir_fcstst.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Forecast']
     pedir_fcstme = pedir_fcstme[['Producto_x', 'Faltantes', 'MP', 'Faltantes me', 'Forecast']]
@@ -223,6 +221,7 @@ def main():
     
     df_compras = df_compras[['Cve_prod','Desc_prod', 'Nom_prov','X_Entregar','Cant_surtp','Cant_prod', 
                              'Status', 'Status_aut', 'F_ent','Mes','Valor_prod','Des_mon']]
+    st.write(df_compras)
     start_date = df_compras['F_ent'].min()
     start_date = datetime(start_date.year, start_date.month, start_date.day)
     end_date = df_compras['F_ent'].max()
