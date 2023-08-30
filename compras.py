@@ -161,7 +161,6 @@ def main():
     pedir_fcst = fcst_faltantes.merge(formulas, on='SKU', how='left')
 
     pedir_fcst = pedir_fcst.dropna()
-    st.write(pedir_fcst)
     pedir_fcstme = pedir_fcst[pedir_fcst['Cve_prod'].str.startswith('M')].reset_index(drop=True)
     pedir_fcstme['Faltantes me'] = pedir_fcstme['Faltantes'] * pedir_fcstme['Cantidad']
     pedir_fcstst = pedir_fcst[pedir_fcst['Cve_prod'].str.startswith('41')].reset_index(drop=True)
@@ -221,8 +220,8 @@ def main():
     
     df_compras = df_compras[['Cve_prod','Desc_prod', 'Nom_prov','X_Entregar','Cant_surtp','Cant_prod', 
                              'Status', 'Status_aut', 'F_ent','Mes','Valor_prod','Des_mon']]
+    
     df_compras = df_compras.fillna(0)
-    st.write(df_compras)
     start_date = df_compras['F_ent'].min()
     start_date = datetime(start_date.year, start_date.month, start_date.day)
     end_date = df_compras['F_ent'].max()
