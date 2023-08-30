@@ -115,21 +115,9 @@ def main():
         semt = semt.iloc[0]['Nombre']
         semit = df_formulas_n[df_formulas_n.Formula == semt]
         semit = semit[semit.SKU.str.startswith('41')].reset_index()
-        #st.write(semit)
         semit = semit[['SKU','Componente','Nombre','Cantidad','Costo','Unidad_componente','Rendimiento','Unidad pt']]
-        #semit['Cantidad'] = semit['Cantidad']/semit['Rendimiento']
-        
-        # correccion en la base semit
-        copia = semit.copy()
-        copia.columns = ['Componente','SKU','Nombre','Cantidad','Costo','Unidad_componente','Rendimiento','Unidad pt']
-        temp= pt.merge(copia, on="Componente", how="left")
-        temp['Cantidad'] = temp['Cantidad_y']/temp['Rendimiento_x']
-        temp['Costo total'] = temp['Cantidad'] * temp['Costo_y']
-        temp = temp.fillna(0)
-        temp = temp[temp["SKU_y"] !=0]
-        semit = temp[['Componente','SKU_y','Nombre_y','Cantidad','Costo_y','Unidad_componente_y','Rendimiento_x','Unidad pt_y','Costo total']]
-        semit.columns = ['SKU','Componente','Nombre','Cantidad','Costo','Unidad_componente','Rendimiento','Unidad pt','Costo total']
-
+        semit['Cantidad'] = semit['Cantidad']/semit['Rendimiento']
+        semit['Costo total'] = semit['Cantidad'] * semit['Costo']
         st.subheader('Costos')
         col1, col2 = st.columns([15,15])
         with col1:
@@ -141,11 +129,11 @@ def main():
                 costo_n1 = semit.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']/1000
             else:
                 costo_n1 = semit.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']
-            
             costo_st = pt[pt.Componente.str.startswith('41')]['Costo'].reset_index().iloc[0]['Costo']
             pt.Costo = pt.Costo.replace({costo_st:costo_n1})
             pt['Costo total'] = pt['Cantidad'] * pt['Costo']
             cantidad_n1 = pt[pt.Componente.str.startswith('41')]['Cantidad'].reset_index().iloc[0]['Cantidad']
+            #st.write(costo_n1)
             costo_total_n1 = costo_n1 * cantidad_n1
             costo_total_pt = pt.groupby(['SKU']).agg({'Costo total':'sum'}).iloc[0]['Costo total']
             
