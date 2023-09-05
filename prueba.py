@@ -414,7 +414,7 @@ def main():
 	#fac_repo = fac_repo.groupby(['Categoria', 'Cliente']).agg({'Subt_fac':'sum',
 	#														   'Cant_surt':'sum'
 	#														   })
-	st.write(fac_repo)
+	#st.write(fac_repo)
 
 
 	fac_act = sub_fac1.groupby(['Anio','Mes','Canal_cliente']).agg({'Cant_surt':'sum',
