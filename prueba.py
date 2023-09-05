@@ -77,7 +77,7 @@ def main():
 	existencias = cargar6()
 	@st.cache_resource
 	def cargar7():
-		base7 = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vTSWo4ymE0xBaN-Yx0a9PFAwkD5L5CHK8duCdevjwdgt-bFyXpGQZjuzq9FLnBLFg/pub?gid=1655033046&single=true&output=csv',encoding='latin-1')
+		base7 = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vS-gFTAr9ciTZCr5wWjQWMZl3-UnCr3kGTGRDQgxpMsQAKzz45csmSR0optBf4nZQ/pub?gid=884503078&single=true&output=csv')
 		return base7
 	alfred = cargar7()
 	@st.cache_resource
@@ -120,7 +120,11 @@ def main():
 		dev = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/devoluciones.csv',encoding='latin-1')
 		return  dev
 	devolucion = devoluciones()
-
+	@st.cache_resource
+	def clases():
+		clases = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/clases.csv',encoding='latin-1')
+		return  clases
+	clases = clases()
 
 	
 
@@ -135,9 +139,14 @@ def main():
 	productos.columns = productos.columns.str.strip()
 	sellout.columns = sellout.columns.str.strip()
 	facturas.columns = facturas.columns.str.strip()
+	facturas['Cse_prod'] = facturas['Cse_prod'].str.strip()
 	descuento.columns = descuento.columns.str.strip()
+	clases.columns = clases.columns.str.strip()
+	clases['Categoria'] = clases['Categoria'].str.strip()
+	clases['Des_prod'] = clases['Desc_prod'].str.strip()
 	productos['Cve_prod'] = productos['Cve_prod'].str.strip()
 	productos['Desc_prod'] = productos['Desc_prod'].str.strip()
+	productos['Cse_prod'] = productos['Cse_prod'].str.strip()
 	df_productos = productos[['Cve_prod', 'Desc_prod']]
 	df_productos.columns = ['SKU', 'Producto']
 	forecast.columns = forecast.columns.str.strip()
@@ -147,6 +156,9 @@ def main():
 	
 	#Filtramos la base para obtener solo las columnas
 	#importantes
+	###CONSTRUCCION BASE DE CLASES PARA CATEGORIZAR LOS PRODUCTOS###
+	clases = clases[['SKU', 'Categoria', 'Des_prod']]
+
 	###CONSTRUCCION DESCUENTOS Y DEVOLUCIONES LUIS###
 	#filtro las columnas
 	df_descuento = descuento[['No_nota','Tip_not','Fecha','Cve_factu','No_fac','Tot_nota','Saldo','Nom_cte','No_cliente','Iva','Subtotal','Tip_cam','Nom_age','Cve_ncre']]
@@ -185,6 +197,10 @@ def main():
 	df_facturas['Dia'] = df_facturas['Falta_fac'].dt.day
 	df_facturas['Nom_cliente'] = df_facturas['Nom_fac'].str.strip()
 	df_facturas['Producto'] = df_facturas['Desc_prod'].str.strip()
+	#st.write(df_facturas.columns)
+	################################################################################
+	#luisar = df_facturas.merge(clases, on='Cse_prod', how='left')
+
 	nc_tabla = notasc[['No_fac', 'Subtotal']]
 	nc_tabla = nc_tabla.groupby(['No_fac']).agg({'Subtotal':'sum'}).reset_index()
 	dftemp = df_facturas.merge(nc_tabla, on='No_fac', how='left')
@@ -202,9 +218,14 @@ def main():
 	#st.write(df_facturas['Margen'])
 	#st.write(df)
 	#######################
+	#df_ventas = df[['No_fac','Falta_fac','Subt_fac','Cve_factu','Cse_prod','Cant_surt','Lugar','Costo','Utilidad_mov','Margen'
+	#,'Canal_cliente','Kam','Subdirector','N_cred','Anio','Mes','Dia','Nom_cliente','Producto']]
 	df_ventas = df[['No_fac','Falta_fac','Subt_fac','Cve_factu','Cse_prod','Cant_surt','Lugar','Costo','Utilidad_mov','Margen'
-	,'Canal_cliente','Kam','Subdirector','N_cred','Anio','Mes','Dia','Nom_cliente','Producto']]
+	,'Canal_cliente','Kam','Subdirector','N_cred','Anio','Mes','Dia','Nom_fac','Producto']]
+	df_ventas.columns = ['No_fac','Falta_fac','Subt_fac','Cve_factu','Cse_prod','Cant_surt','Lugar','Costo','Utilidad_mov','Margen'
+	,'Canal_cliente','Kam','Subdirector','N_cred','Anio','Mes','Dia','Nom_cliente','Producto']
 	df_ventas = df_ventas.fillna(0)
+	#st.write(df_ventas)
 	#st.write(df_ventas)
 	###TRATAMIENTO BASE EXISTENCIAS###
 	df_existencias = existencias[['Cve_prod', 'Lote', 'Lugar', 'Cto_ent', 'Existencia', 'Fech_venc', 'Desc_prod', 'Uni_med']]
@@ -357,11 +378,24 @@ def main():
 												'Anio':'max',
 												'Mes':'max',
 												'Dia':'max'}).reset_index()
-	
+	sub_fac2 = df_ventas.groupby(['No_fac','Canal_cliente']).agg({'Subt_fac':'sum',
+					     						'Cant_surt':'sum',
+												'N_cred':'mean',
+												'Costo':'sum',
+												'Utilidad_mov':'sum',
+												'Margen':'mean',
+												'Anio':'max',
+												'Mes':'max',
+												'Dia':'max',
+												'Producto':'max',
+												'Nom_cliente':'max'}).reset_index()	
 	
 	#Para poder restar las notas de crédito eliminamos los NAS
 	sub_fac1['N_cred'] = sub_fac1['N_cred'].fillna(0)
 	sub_fac1['Subt_fac'] = sub_fac1['Subt_fac'] - sub_fac1['N_cred']
+	sub_fac2['N_cred'] = sub_fac2['N_cred'].fillna(0)
+	sub_fac2['Subt_fac'] = sub_fac2['Subt_fac'] - sub_fac2['N_cred']
+	
 
 	#st.write(sub_fac1)
 	#st.write(fac_act.iloc[:,2].sum(axis=0))
@@ -372,6 +406,15 @@ def main():
 	#											'Utilidad_mov':'sum',
 	#											'Margen':'mean'}).reset_index()
 
+	######CONSTRUCCIÓN PARA REPORTE DE ABRAHAMA########
+	clases.columns = ['SKU','Categoria','Producto']
+	sub_fac2.columns = ['No_fac', 'Canal_cliente', 'sub_fac', 'Cant_surt', 'N_cred', 'Costo', 'Utilidad_mov', 'Margen', 'Anio', 'Mes',
+						'Dia', 'Producto', 'Cliente']
+	fac_repo = pd.merge(sub_fac2, clases, on='Producto', how='left').reset_index()
+	#fac_repo = fac_repo.groupby(['Categoria', 'Cliente']).agg({'Subt_fac':'sum',
+	#														   'Cant_surt':'sum'
+	#														   })
+	st.write(fac_repo)
 
 
 	fac_act = sub_fac1.groupby(['Anio','Mes','Canal_cliente']).agg({'Cant_surt':'sum',
