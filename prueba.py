@@ -844,6 +844,7 @@ def main():
 	   	color=alt.Color(field='Producto', type="nominal"),
 	   	tooltip = ['Producto','Venta ($)', 'Porcentaje']
 	   	)
+		st.write(top_5)
 	    #Mostramos el objeto en streamlit
 		st.altair_chart(pie_top, use_container_width=True)
 	with bottom:
