@@ -5,6 +5,7 @@ import altair as alt
 import numpy as np
 from datetime import datetime,timedelta
 import re 
+import matplotlib.pyplot as plt
 
 def main():
 
@@ -248,13 +249,36 @@ def main():
     
     df_compras = df_compras[(df_compras['Nom_prov'].isin(proov)) & (df_compras['F_ent']<selected_date[1]) & 
         (df_compras['F_ent']>selected_date[0]) & (df_compras['Status_aut'].isin(Autorizacion)) & (df_compras['Status'].isin(Estatus))]
-
-    #st.write(fcst_victor2['Forecast'])
-
+    st.header("Ordenes de compra")
     st.write(df_compras)
-
-
+    st.header("Materias primas global")
     st.write(requi2)
+    
+    prueba = len(requi2['Faltante mp'][(requi2['Faltante mp'] > 0)])
+    prueba2= len(requi2['Faltante mp'][(requi2['Faltante mp'] == 0)])
+    cont= len(requi2['Faltante mp'])
+    past = pd.DataFrame()
+    past['Piezas']=[prueba,prueba2]
+    past['Tipo']=['Faltantes','Ok']
+    past['Porcentaje']=[(prueba/cont) * 100,(prueba2/cont) * 100]
+
+    pie_top = alt.Chart(past, title="Piezas").mark_arc().encode(
+	    theta=alt.Theta(field='Piezas', type="quantitative"),
+	   	color=alt.Color(field='Tipo', type="nominal" ,scale=alt.Scale(scheme='tableau10')),
+        tooltip = ['Piezas','Tipo', 'Porcentaje']
+           
+	   	)
+	    #Mostramos el objeto en streamlit
+    col1, col2, col3 = st.columns([5,10,1])
+    with col1:
+        st.write("")
+	
+    with col2:
+         st.altair_chart(pie_top)
+    with col3:
+        st.write("")
+   
+
 
 if __name__ == '__main__':
     main()
