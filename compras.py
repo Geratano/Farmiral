@@ -77,12 +77,15 @@ def main():
     fcst_victor2 = fcst_victor.copy()
     fcst_victor2['Forecast'] = (fcst_victor2['ago23'] + fcst_victor2['sep23'] + fcst_victor2['oct23'] + fcst_victor2['nov23'] + fcst_victor2['dic23'] + fcst_victor2['ene24'] + fcst_victor2['feb24'])
     fcst_victor2 = fcst_victor2.groupby(['Codigo','Producto']).agg({'Forecast':'sum'}).reset_index()
-    #st.write(fcst_victor2)
+    
+
     ##########
     df_existencias = existencias[['Cve_prod', 'Lote', 'Lugar', 'Cto_ent', 'Existencia', 'Fech_venc', 'Desc_prod', 'Uni_med']]
     df_existencias.columns = ['SKU', 'Lote', 'Lugar', 'Costo', 'Existencia', 'Vencimiento', 'Producto', 'Unidad']
+    
     #df_existencias['Lugar'] = df_existencias['Lugar'].str.strip()
     df_existencias = df_existencias[(df_existencias['Lugar']=='5') | (df_existencias['Lugar']=='4')] 
+   
     df_existencias2 = df_existencias[(df_existencias['Lugar']=='A1') | (df_existencias['Lugar']=='A2')]
     df_existencias_4 = df_existencias[(df_existencias['Lugar']=='4')]
     df_existencias_5 = df_existencias[(df_existencias['Lugar']=='5')]
@@ -249,11 +252,21 @@ def main():
     
     df_compras = df_compras[(df_compras['Nom_prov'].isin(proov)) & (df_compras['F_ent']<selected_date[1]) & 
         (df_compras['F_ent']>selected_date[0]) & (df_compras['Status_aut'].isin(Autorizacion)) & (df_compras['Status'].isin(Estatus))]
+    
+    #se agrega x_entregar a la tabla de materias primas
+    entrega = df_compras[['Desc_prod','X_Entregar']]
+    entrega.columns = ['MP','X_Entregar']
+    requi2 = requi2.merge(entrega, on='MP', how='left').fillna(0)
+
+    requi2.columns= ['MP','Cantidad_año','Existencia','Faltante mp','Costo','Costo total','X_Entregar']
+
+    #se imprimen los fataframe
     st.header("Ordenes de compra")
     st.write(df_compras)
     st.header("Materias primas global")
     st.write(requi2)
     
+
     prueba = len(requi2['Faltante mp'][(requi2['Faltante mp'] > 0)])
     prueba2= len(requi2['Faltante mp'][(requi2['Faltante mp'] == 0)])
     cont= len(requi2['Faltante mp'])
@@ -264,9 +277,8 @@ def main():
 
     pie_top = alt.Chart(past, title="Piezas").mark_arc().encode(
 	    theta=alt.Theta(field='Piezas', type="quantitative"),
-	   	color=alt.Color(field='Tipo', type="nominal" ,scale=alt.Scale(scheme='tableau10')),
+	   	color=alt.Color(field='Tipo', type="nominal" ,scale=alt.Scale(scheme='set1')),
         tooltip = ['Piezas','Tipo', 'Porcentaje']
-           
 	   	)
 	    #Mostramos el objeto en streamlit
     col1, col2, col3 = st.columns([5,10,1])
