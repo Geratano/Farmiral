@@ -77,7 +77,7 @@ def main():
 	existencias = cargar6()
 	@st.cache_resource
 	def cargar7():
-		base7 = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vS-gFTAr9ciTZCr5wWjQWMZl3-UnCr3kGTGRDQgxpMsQAKzz45csmSR0optBf4nZQ/pub?gid=884503078&single=true&output=csv')
+		base7 = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vS-gFTAr9ciTZCr5wWjQWMZl3-UnCr3kGTGRDQgxpMsQAKzz45csmSR0optBf4nZQ/pub?gid=1555835570&single=true&output=csv')
 		return base7
 	alfred = cargar7()
 	@st.cache_resource
@@ -406,15 +406,7 @@ def main():
 	#											'Utilidad_mov':'sum',
 	#											'Margen':'mean'}).reset_index()
 
-	######CONSTRUCCIÓN PARA REPORTE DE ABRAHAMA########
-	clases.columns = ['SKU','Categoria','Producto']
-	sub_fac2.columns = ['No_fac', 'Canal_cliente', 'sub_fac', 'Cant_surt', 'N_cred', 'Costo', 'Utilidad_mov', 'Margen', 'Anio', 'Mes',
-						'Dia', 'Producto', 'Cliente']
-	fac_repo = pd.merge(sub_fac2, clases, on='Producto', how='left').reset_index()
-	#fac_repo = fac_repo.groupby(['Categoria', 'Cliente']).agg({'Subt_fac':'sum',
-	#														   'Cant_surt':'sum'
-	#														   })
-	#st.write(fac_repo)
+
 
 
 	fac_act = sub_fac1.groupby(['Anio','Mes','Canal_cliente']).agg({'Cant_surt':'sum',
@@ -556,6 +548,122 @@ def main():
 
 	st.write(avance)
 	
+	######CONSTRUCCIÓN PARA REPORTE DE ABRAHAMA########
+	if st.checkbox('Reporte Abraham'):
+		anio, mes = st.columns([1,1])
+		Mes_si = st.selectbox('Selecciona el mes para el reporte Abraham Torres', sub_fac2['Mes'].unique())
+	####################AÑO###########################
+		clas = clases.copy()
+		clas.columns = ['SKU','Categoria','Producto']
+		sub_fac2.columns = ['No_fac', 'Canal_cliente', 'sub_fac', 'Cant_surt', 'N_cred', 'Costo', 'Utilidad_mov', 'Margen', 'Anio', 'Mes',
+							'Dia', 'Producto', 'Cliente']
+		sub_fac2 = sub_fac2[sub_fac2['Anio']==act]
+		objetivo_temp = objetivos.copy()
+		clas['Cve_prod'] = clas['SKU'].str.strip()
+		objetivo_temp['Cve_prod'] = objetivo_temp['Cve_prod'].str.strip()
+		objetivo_temp = pd.merge(objetivo_temp, clas, on='Cve_prod', how='left').reset_index()
+		#st.write(objetivo_temp)
+		objetivo = objetivo_temp.groupby(['Cve_cte', 'Cliente', 'Categoria']).agg({'Objetivos pesos':'sum',
+															      'Objetivo piezas':'sum'}).reset_index()
+		#st.write(objetivo)
+		fac_repo = pd.merge(sub_fac2, clas, on='Producto', how='left').reset_index(drop=True)
+		fac_cte = df[['No_fac', 'Cve_cte']] 
+		fac_cte = fac_cte.groupby(['No_fac']).agg({'Cve_cte':'max'}).reset_index()
+		#st.write(fac_cte)
+		#fac_cte = pd.merge(fac_cte, objetivo, on='Cve_cte', how='left')
+		#st.write(fac_cte)
+		fac_repo = pd.merge(fac_repo, fac_cte, on='No_fac', how='left').reset_index(drop=True)
+		#st.write(fac_repo)
+		#st.write(fac_repo)
+		fac_repo['Cliente'] = fac_repo['Cliente'].str.strip()
+		fac_repo['Categoria'] = fac_repo['Categoria'].fillna('OTRA')
+		fac_repo = fac_repo.fillna(0)
+		#st.write(fac_repo)
+		final = fac_repo.groupby(['Categoria', 'Cliente']).agg({'sub_fac':'sum',
+																'Cant_surt':'sum',
+																'Cve_cte':'max'})
+		final = pd.merge(final, objetivo, on=['Cve_cte', 'Categoria'], how='left').reset_index(drop=True)
+		final = final[['Categoria', 'Cliente', 'sub_fac', 'Cant_surt', 'Objetivos pesos', 'Objetivo piezas', 'Cve_cte']]
+		final.columns = ['Categoria', 'Cliente', 'Venta $', 'Venta PZA', 'Objetivo $', 'Objetivo PZA', 'Cve_cte']
+		final = final.fillna(0)
+		##################AÑO############################################################
+
+		####################MES###########################
+		clas2 = clases.copy()
+		clas2.columns = ['SKU','Categoria','Producto']
+		sub_fac2.columns = ['No_fac', 'Canal_cliente', 'sub_fac', 'Cant_surt', 'N_cred', 'Costo', 'Utilidad_mov', 'Margen', 'Anio', 'Mes',
+							'Dia', 'Producto', 'Cliente']					
+		sub_fac3 = sub_fac2[sub_fac2['Mes']==Mes_si]
+		objetivo_temp = objetivos.copy()
+		clas2['Cve_prod'] = clas2['SKU'].str.strip()
+		objetivo_temp['Cve_prod'] = objetivo_temp['Cve_prod'].str.strip()
+		objetivo_temp = pd.merge(objetivo_temp, clas2, on='Cve_prod', how='left').reset_index()
+		#st.write(objetivo_temp)
+		objetivo = objetivo_temp.groupby(['Cve_cte', 'Cliente', 'Categoria']).agg({'Objetivos pesos':'sum',
+															      'Objetivo piezas':'sum'}).reset_index()
+		#st.write(objetivo)
+		fac_repo2 = pd.merge(sub_fac3, clas2, on='Producto', how='left').reset_index(drop=True)
+		fac_cte2 = df[['No_fac', 'Cve_cte']] 
+		fac_cte2 = fac_cte2.groupby(['No_fac']).agg({'Cve_cte':'max'}).reset_index()
+		#st.write(fac_cte)
+		#fac_cte = pd.merge(fac_cte, objetivo, on='Cve_cte', how='left')
+		#st.write(fac_cte)
+		fac_repo2 = pd.merge(fac_repo2, fac_cte2, on='No_fac', how='left').reset_index(drop=True)
+		#st.write(fac_repo)
+		#st.write(fac_repo)
+		fac_repo2['Cliente'] = fac_repo2['Cliente'].str.strip()
+		fac_repo2['Categoria'] = fac_repo2['Categoria'].fillna('OTRA')
+		fac_repo2 = fac_repo2.fillna(0)
+		#st.write(fac_repo)
+		final2 = fac_repo2.groupby(['Categoria', 'Cliente']).agg({'sub_fac':'sum',
+																'Cant_surt':'sum',
+																'Cve_cte':'max'})
+		final2 = pd.merge(final2, objetivo, on=['Cve_cte', 'Categoria'], how='left').reset_index(drop=True)
+		final2 = final2[['Categoria', 'Cliente', 'sub_fac', 'Cant_surt', 'Objetivos pesos', 'Objetivo piezas', 'Cve_cte']]
+		final2.columns = ['Categoria', 'Cliente', 'Venta $', 'Venta PZA', 'Objetivo $', 'Objetivo PZA', 'Cve_cte']
+		final2 = final2.fillna(0)
+		##################MES############################################################
+
+		################################################################################
+
+
+
+		#st.write(final)
+
+		client_list = [372, 373, 281, 4, 435, 364, 423]
+		final = final[(final['Cve_cte'].isin(client_list))]
+		final2 = final2[(final2['Cve_cte'].isin(client_list))]
+		so_cte = sellout.copy()
+		#st.write(clases)
+		clas3 = clases.copy()
+		clas3.columns=['Cve_prod', 'Categoria', 'Desc_prod']
+		clas3['Cve_prod'] = clas3['Cve_prod'].str.strip()
+		so_cte = pd.merge(so_cte, clas3, on='Cve_prod', how='left')
+		so_cte = so_cte[so_cte['Anio'] == act]
+		so_cte = so_cte.fillna(0)
+		#st.write(so_cte)
+		so_pesos = so_cte[['Categoria', 'Cliente', 'Venta ($)', 'Mes', 'Cve_cte']]
+		so_pesos = so_pesos[so_pesos['Cve_cte'].isin(client_list)]
+		so_pesos['Categoria'] = so_pesos['Categoria'].replace(0,'OTRA')
+		so_pesos = so_pesos.groupby(['Mes', 'Categoria', 'Cliente']).agg({'Venta ($)':'sum'}).reset_index()
+		#st.write(so_pesos)
+		
+		#so_cte = so_cte.groupby(['Categoria', 'Cliente']).agg({'Venta ($)':'sum',
+		#													   'Venta (pza)':'sum'})
+		#st.write(mes_diccioanrio[m])
+		#if (final['Cliente'] == 0):
+		#	final['Cliente'] == 'PHARMA PLUS'
+		#st.write(final)
+		#st.write(sellout)
+
+		with anio:
+			st.write(final)
+			if st.checkbox('Sellout'):
+				st.write(so_pesos)
+		with mes:
+			#Mes_si = st.selectbox('Selecciona el mes', final2['Mes'].unique())
+			st.write(final2)
+	
 	st.header('Avance Producción')
 	
 	produccion = produccion.fillna(0)
@@ -643,10 +751,17 @@ def main():
     ####################################
     ### EXPLOSION DE MATERIALES BACK ORDER ###
 	pedir_back = faltantes_nom.merge(formulas, on='SKU', how='left')
+	
+	pedir_back = pedir_back.fillna(0)
+
 	#st.write(pedir_back)
 	pedir_back.columns = ['Formula', 'Back del mes (PZA)', 'Faltantes', 'Existencia total', 'SKU', 'Componente', 'Cantidad rendimiento',
 						  'Version', 'Unidad mp', 'MP', 'Rendimiento', 'Unidad', 'Cantidad', 'Formulab']
+	#st.write(pedir_back)
+	pedir_back['Componente'] = pedir_back['Componente'].replace(0,'N')
+	#st.write(pedir_back)
 	pedir_backme = pedir_back[pedir_back['Componente'].str.startswith('M')].reset_index(drop=True)
+	st.write(pedir_backme)
 	pedir_backme['Faltantes me'] = pedir_backme['Cantidad'] * pedir_backme['Faltantes']
 	pedir_backst = pedir_back[pedir_back['Componente'].str.startswith('41')].reset_index(drop=True)
 	pedir_backst.rename(columns = {'SKU':'SKU_f', 'Componente':'SKU'}, inplace=True)
@@ -678,6 +793,7 @@ def main():
 	### EXPLOSION DE MATERIALES FORECAST ###
 	pedir_fcst = fcst_faltantes.merge(formulas, on='SKU', how='left')
 	pedir_fcst = pedir_fcst.dropna()
+	#st.write(pedir_fcst)
 	pedir_fcstme = pedir_fcst[pedir_fcst['Cve_prod'].str.startswith('M')].reset_index(drop=True)
 	pedir_fcstme['Faltantes me'] = pedir_fcstme['Faltantes'] * pedir_fcstme['Cantidad']
 	pedir_fcstst = pedir_fcst[pedir_fcst['Cve_prod'].str.startswith('41')].reset_index(drop=True)
@@ -844,7 +960,6 @@ def main():
 	   	color=alt.Color(field='Producto', type="nominal"),
 	   	tooltip = ['Producto','Venta ($)', 'Porcentaje']
 	   	)
-		st.write(top_5)
 	    #Mostramos el objeto en streamlit
 		st.altair_chart(pie_top, use_container_width=True)
 	with bottom:
@@ -935,7 +1050,17 @@ def main():
 	df_filtered_2 = df_ventas[
 			 (df_ventas['Cve_factu'].isin(emp_list)) & 
 			 (df_ventas['Nom_cliente'].isin(cte_list))]
-
+	clas3 = clases.copy()
+	clas3.columns = ['SKU','Categoria','Producto']
+	df_filtered_2 = pd.merge(df_filtered_2, clas3, on='Producto', how='left')
+	df_filtered_2['Categoria'] = df_filtered_2['Categoria'].fillna('OTRA')
+	#st.write(df_filtered_2)
+	#st.write(notasc)
+	#ncred = notasc.copy()
+	#ncred = ncred[['No_fac', 'Subtotal']]
+	facprod = df_filtered_2[['No_fac', 'Producto', 'Categoria', 'Subt_fac', 'Cant_surt']]
+	#st.write(df_filtered_2)
+	facprod.columns = facprod.columns.str.strip()
 	sub_fac =df_filtered_2.groupby(['No_fac']).agg({'Subt_fac':'sum',
 					     						'Cant_surt':'sum',
 												'N_cred':'mean',
@@ -944,22 +1069,28 @@ def main():
 												'Margen':'mean',
 												'Anio':'max',
 												'Mes':'max'}).reset_index()
-	
+	#st.write(sub_fac)
+	#sub_fac = pd.merge(df_filtered_2, ncred, on=['No_fac'], how='left')
 	#Para poder restar las notas de crédito eliminamos los NAS
 	sub_fac['N_cred'] = sub_fac['N_cred'].fillna(0)
-	sub_fac['Subt_fac'] = sub_fac['Subt_fac'] + sub_fac['N_cred']
-
-	sub_fac = sub_fac.groupby(['Anio','Mes']).agg({'Subt_fac':'sum',
-													'Cant_surt':'sum',
+	sub_fac['Subt_fac'] = sub_fac['Subt_fac'] - sub_fac['N_cred']
+	
+	sub_fac4 = pd.merge(sub_fac, facprod, on='No_fac', how='left')
+	#st.write(sub_fac4)
+	
+	sub_fac4 = sub_fac4.groupby(['Anio','Mes','Categoria']).agg({'Subt_fac_x':'sum',
+													'Cant_surt_x':'sum',
 													'Costo':'sum',
 													'Utilidad_mov':'sum',
-													'Margen':'mean'}).reset_index()
-	
-	anio = st.selectbox('Año',sub_fac['Anio'].unique())
+													'Margen':'mean',
+													'Subt_fac_y':'sum',
+													'Cant_surt_y':'sum'}).reset_index()
+	st.write(sub_fac4)
+	anio = st.selectbox('Año',sub_fac4['Anio'].unique())
 
 	#sub_fac = sub_fac[(sub_fac['Nom_cliente'].isin(cte_list))]
-	sub_fac.columns = ['Anio','Mes','Venta ($)','Venta (Pza)','Costo total','Utilidad','Margen (%)']
-	st.write(sub_fac[sub_fac['Anio']== anio].drop(columns=['Anio']))
+	sub_fac4.columns = ['Anio','Mes', 'Categoria', 'Venta ($)','Venta (Pza)','Costo total','Utilidad','Margen (%)', 'Venta sin desc', 'Cantidad']
+	st.write(sub_fac4[sub_fac4['Anio']== anio].drop(columns=['Anio']))
 
 	
 if __name__ == '__main__':
