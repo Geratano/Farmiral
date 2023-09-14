@@ -203,6 +203,11 @@ def main():
     existeN_simi = existeN[(existeN['Lugar'] == 'SIMILARES')]  
     existeN_grisi = existeN[(existeN['Lugar'] == 'G2') |
                           (existeN['Lugar'] == 'G1')]
+    ###############################################
+    nomprod = productos.copy()
+    nomprod = nomprod[['Cve_prod', 'Desc_prod']]
+    nomprod.columns = ['SKU', 'MP']
+    ###############################################
     #General
     existeN_comp.columns = ['SKU', 'Lugar', 'MP', 'Existencia']
     existeN_comp['SKU'] = existeN_comp['SKU'].str.strip()
@@ -215,14 +220,23 @@ def main():
     existeN_aspen.columns = ['SKU', 'Lugar', 'MP', 'Existencia']
     existeN_aspen['SKU'] = existeN_aspen['SKU'].str.strip()
     existeN_aspen = existeN_aspen.groupby(['SKU']).agg({'Existencia':'sum'}).reset_index()
+    easpen = existeN_aspen.copy()
+    easpen = easpen.merge(nomprod, on='SKU', how='left')
+    easpen = easpen[['SKU', 'MP', 'Existencia']]
     #Simi
     existeN_simi.columns = ['SKU', 'Lugar', 'MP', 'Existencia']
     existeN_simi['SKU'] = existeN_simi['SKU'].str.strip()
     existeN_simi = existeN_simi.groupby(['SKU']).agg({'Existencia':'sum'}).reset_index()
+    esimi = existeN_simi.copy()
+    esimi = esimi.merge(nomprod, on='SKU', how='left')
+    esimi = esimi[['SKU', 'MP', 'Existencia']]
     #grisi
     existeN_grisi.columns = ['SKU', 'Lugar', 'MP', 'Existencia']
     existeN_grisi['SKU'] = existeN_grisi['SKU'].str.strip()
     existeN_grisi = existeN_grisi.groupby(['SKU']).agg({'Existencia':'sum'}).reset_index()
+    egrisi = existeN_grisi.copy()
+    egrisi = egrisi.merge(nomprod, on='SKU', how='left')
+    egrisi = egrisi[['SKU', 'MP', 'Existencia']]
     #st.write(existeN_comp)
     ###############
     #st.write(formulas)
@@ -614,11 +628,11 @@ def main():
     if st.checkbox('Desglose materias primas por PT'):
         st.write(pedir2)
     if st.checkbox('Almacenes Grisi'):
-        st.write(existeN_grisi)
+        st.write(egrisi)
     if st.checkbox('Almacenes Aspen'):
-        st.write(existeN_aspen)
+        st.write(easpen)
     if st.checkbox('Almacenes Similares'):
-        st.write(existeN_simi)
+        st.write(esimi)
     if st.checkbox('Ordenes de compra'):
         st.write(df_compras)
 
@@ -1017,25 +1031,33 @@ def main():
     inversionmesgrisi = explosiongrisi['Costo total'].sum()
     frasegrisi = 'Inversión total del mes $' + str(round(inversionmesgrisi,2))
     ####################################################################################
-    st.write(explosion)
-    st.info(frase, icon='💵')
+    uno, dos = st.columns([1, 1])
+    with uno:
+        st.title('Almacén A1-A3')
+        st.write(explosiona)
+        st.download_button(label="Descargar", data=explosiona.to_csv(), mime="text/csv")
+        st.info(frasea, icon='💵')
+        st.title('Almacén ASPEN')
+        st.write(explosionaspen)
+        st.download_button(label="Descargar", data=explosionaspen.to_csv(), mime="text/csv")
+        st.info(fraseaspen, icon='💵')
+    with dos:
+        st.title('Almacén SIMILARES')
+        st.write(explosionsimi)
+        st.download_button(label="Descargar", data=explosionsimi.to_csv(), mime="text/csv")
+        st.info(frasesimi, icon='💵')
+        st.title('Almacén GRISI')
+        st.write(explosiongrisi)
+        st.download_button(label="Descargar", data=explosiongrisi.to_csv(), mime="text/csv")
+        st.info(frasegrisi, icon='💵')
 
-    if st.checkbox('Requerimientos por almacén'):
-        uno, dos = st.columns([1, 1])
-        with uno:
-            st.title('Almacén A1-A3')
-            st.write(explosiona)
-            st.info(frasea, icon='💵')
-            st.title('Almacén ASPEN')
-            st.write(explosionaspen)
-            st.info(fraseaspen, icon='💵')
-        with dos:
-            st.title('Almacén SIMILARES')
-            st.write(explosionsimi)
-            st.info(frasesimi, icon='💵')
-            st.title('Almacén GRISI')
-            st.write(explosiongrisi)
-            st.info(frasegrisi, icon='💵')
+    if st.checkbox('Requerimientos general'):
+        st.write(explosion)
+        st.download_button(label="Descargar", data=explosion.to_csv(), mime="text/csv")
+        st.info(frase, icon='💵')
+
+    
+        
     #st.balloons()
     
     #st.write(requi2)
