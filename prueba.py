@@ -77,7 +77,7 @@ def main():
 	existencias = cargar6()
 	@st.cache_resource
 	def cargar7():
-		base7 = pd.read_csv('https://docs.google.com/spreadsheets/d/e/2PACX-1vS-gFTAr9ciTZCr5wWjQWMZl3-UnCr3kGTGRDQgxpMsQAKzz45csmSR0optBf4nZQ/pub?gid=1555835570&single=true&output=csv')
+		base7 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/existencias.csv',encoding='latin-1')
 		return base7
 	alfred = cargar7()
 	@st.cache_resource
