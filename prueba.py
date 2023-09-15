@@ -77,7 +77,7 @@ def main():
 	existencias = cargar6()
 	@st.cache_resource
 	def cargar7():
-		base7 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/existencias.csv',encoding='latin-1')
+		base7 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/controlproduccion.csv',encoding='latin-1')
 		return base7
 	alfred = cargar7()
 	@st.cache_resource
@@ -316,6 +316,7 @@ def main():
 	#if st.checkbox("Raw data"):
 	#	st.write(df_ventas.head(5))
 	alfred = alfred.fillna(0)
+	#st.write(alfred)
 	alfred = alfred[alfred['SKU'] != 0]
 	n_capt = alfred[(alfred['RESULTADO 41'] == 0) | (alfred['ORDEN 51'] == 0) | (alfred['RESULTADO 51'] == 0)]
 	alfred.columns = ['SKU', 'Producto', 'Lote', 'Caducidad', 'Cantidad', 'Tamano lote', 'Fecha', 'Contenedor',
