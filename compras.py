@@ -4,7 +4,8 @@ from PIL import Image
 import altair as alt
 import numpy as np
 from datetime import datetime,timedelta
-import re 
+import re
+import math
 
 st.set_page_config(layout="wide")
 
@@ -51,6 +52,16 @@ def main():
         base11 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/fcst_victor.csv',encoding='latin-1')
         return base11
     fcst_victor = Forecast_victor() 
+    @st.cache_resource
+    def moq():
+        base12 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/moq.csv',encoding='latin-1')
+        return base12
+    moq = moq()
+    def a1():
+        base13 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/ingresosa1.csv',encoding='latin-1')
+        return base13
+    a1 = a1()
+
     #quito los espacios 
     compras.columns = compras.columns.str.strip()
     existencias.columns = existencias.columns.str.strip()
@@ -71,7 +82,17 @@ def main():
     compras['Nom_prov'] = compras['Nom_prov'].str.strip()
     compras['F_ent'] = compras['F_ent'].str.strip()
     existencias['Lugar'] = existencias['Lugar'].str.strip()
+    moq.columns = moq.columns.str.strip()
+    moq['SKU'] = moq['SKU'].str.strip()
+    moq['MP'] = moq['MP'].str.strip()
+    a1.columns = a1.columns.str.strip()
+    a1['Cve_prod'] = a1['Cve_prod'].str.strip()
+    a1['Desc_prod'] = a1['Desc_prod'].str.strip()
 
+    #########EXTRACCION INGRESOS A1#########################
+    a1 = a1[['Cve_prod', 'Desc_prod', 'Cant_prod']]
+    a1.columns = ['SKU', 'MP', 'Ingreso']
+    a1 = a1.groupby(['SKU']).agg({'Ingreso':'sum'}).reset_index()
     ###################################EXTRACTO APP DE VENTAS##################################################################
     ###TRATAMIENTO BASE EXISTENCIAS###
     ##########
@@ -401,6 +422,7 @@ def main():
     pedir_fcststsimi['Cantidad mp Dic23'] = pedir_fcststsimi['Cantidad_y'] * pedir_fcststsimi['Dic23']
     pedir_fcststsimi['Cantidad mp Ene24'] = pedir_fcststsimi['Cantidad_y'] * pedir_fcststsimi['Ene23']
     pedir_fcststsimi['Cantidad mp Feb24'] = pedir_fcststsimi['Cantidad_y'] * pedir_fcststsimi['Feb24']
+    #st.write(pedir_fcststsimi)
     pedir_fcststsimi = pedir_fcststsimi[['Producto_x', 'Faltantes', 'MP_y', 'Cantidad mp', 'Sep23', 'Cantidad mp Oct23', 'Cantidad mp Nov23', 'Cantidad mp Dic23', 'Cantidad mp Ene24', 'Cantidad mp Feb24', 'Forecast anual']]
     pedir_fcststsimi.columns = ['Formula', 'Faltantes', 'MP', 'Cantidad', 'Sep23', 'Cantidad Oct23', 'Cantidad Nov23', 'Cantidad Dic23', 'Cantidad Ene24', 'Cantidad Feb24', 'Forecast anual']
     #st.write(pedir_fcstst)
@@ -1053,7 +1075,36 @@ def main():
         st.info(frasegrisi, icon='💵')
 
     if st.checkbox('Requerimientos general'):
-        st.write(explosion)
+        explosion_temp = explosion.merge(moq, on='SKU', how='left')
+        explosion_temp = explosion_temp.fillna(0)
+        #st.write(explosion_temp)
+        explosion_temp['OC NUEVA'] = pd.Series(0, index=range(len(explosion['SKU'])))
+        explosion_temp['div'] = pd.Series(0, index=range(len(explosion['SKU'])))
+        explosion_temp['OC temp'] = pd.Series(0, index=range(len(explosion['SKU'])))
+        #hola = math.ceil(explosion_temp.loc[22,'Faltante mp'] / explosion_temp.loc[22, 'MOQ'])
+        #hola = (math.ceil(explosion_temp.loc[22,'Faltante mp'] / explosion_temp.loc[22,'MOQ']))*(explosion_temp.loc[22,'MOQ'])-(explosion_temp.loc[22,'Rec Sep23'])
+        #st.write(hola)
+        for i in range(len(explosion['SKU'])):
+            explosion_temp.loc[i, 'MOQ'] = float(explosion_temp.loc[i, 'MOQ'])
+            explosion_temp = explosion_temp.fillna(0)
+            if explosion_temp.loc[i,'MOQ'] != 0:
+                explosion_temp.loc[i, 'div'] = math.ceil(explosion_temp.loc[i,'Faltante mp'] / explosion_temp.loc[i,'MOQ'])
+            else:
+                explosion_temp.loc[i, 'div'] = 0
+            explosion_temp.loc[i,'OC temp'] = (explosion_temp.loc[i,'div'])*(explosion_temp.loc[i,'MOQ'])-(explosion_temp.loc[i,'Rec Sep23'])
+            if (explosion_temp.loc[i,'Faltante mp']>0) & (explosion_temp.loc[i,'OC temp']>0):
+                explosion_temp.loc[i,'OC NUEVA'] = explosion_temp.loc[i,'OC temp']
+            else:
+                explosion_temp.loc[i, 'OC NUEVA'] = 0  
+        explosion_temp['TOTAL OC'] = explosion_temp['Rec Sep23'] + explosion_temp['OC NUEVA']
+        explosion_temp = explosion_temp.merge(a1, on='SKU', how='left')
+        explosion_temp = explosion_temp.fillna(0)
+        explosion_temp = explosion_temp[['SKU', 'MP_x', 'PROVEEDOR', 'DÍAS CRED', 'MP/ME', 'MOQ', 'Moneda', 'Costo', 'Existencia',
+                                         'Cantidad', 'Faltante mp', 'Rec Sep23', 'OC NUEVA', 'TOTAL OC', 'Ingreso', 'Inv inicial', 'Cantidad Oct23',
+                                          'Fal Oct23', 'Inv inicial Nov23', 'Cantidad Nov23', 'Fal Nov23', 'Inv inicial Dic23', 
+                                          'Cantidad Dic23', 'Fal Dic23', 'Inv inicial Ene24', 'Cantidad Ene24', 'Fal Ene24', 
+                                          'Inv inicial Feb24', 'Cantidad Feb24', 'Fal Feb24']]
+        st.write(explosion_temp)
         st.download_button(label="Descargar", data=explosion.to_csv(), mime="text/csv")
         st.info(frase, icon='💵')
 
