@@ -551,7 +551,7 @@ def main():
 	
 	######CONSTRUCCIÓN PARA REPORTE DE ABRAHAMA########
 	if st.checkbox('Reporte Abraham'):
-		anio, mes = st.columns([1,1])
+		#anio, mes = st.columns([1,1])
 		Mes_si = st.selectbox('Selecciona el mes para el reporte Abraham Torres', sub_fac2['Mes'].unique())
 	####################AÑO###########################
 		clas = clases.copy()
@@ -587,6 +587,7 @@ def main():
 		final = final[['Categoria', 'Cliente', 'sub_fac', 'Cant_surt', 'Objetivos pesos', 'Objetivo piezas', 'Cve_cte']]
 		final.columns = ['Categoria', 'Cliente', 'Venta $', 'Venta PZA', 'Objetivo $', 'Objetivo PZA', 'Cve_cte']
 		final = final.fillna(0)
+		#st.write(final)
 		##################AÑO############################################################
 
 		####################MES###########################
@@ -657,13 +658,13 @@ def main():
 		#st.write(final)
 		#st.write(sellout)
 
-		with anio:
-			st.write(final)
-			if st.checkbox('Sellout'):
-				st.write(so_pesos)
-		with mes:
-			#Mes_si = st.selectbox('Selecciona el mes', final2['Mes'].unique())
-			st.write(final2)
+		#with anio:
+		#	st.write(final)
+		#	if st.checkbox('Sellout'):
+		#		st.write(so_pesos)
+		#with mes:
+		#Mes_si = st.selectbox('Selecciona el mes', final2['Mes'].unique())
+		st.write(final2)
 	
 	st.header('Avance Producción')
 	
@@ -762,7 +763,7 @@ def main():
 	pedir_back['Componente'] = pedir_back['Componente'].replace(0,'N')
 	#st.write(pedir_back)
 	pedir_backme = pedir_back[pedir_back['Componente'].str.startswith('M')].reset_index(drop=True)
-	st.write(pedir_backme)
+	#st.write(pedir_backme)
 	pedir_backme['Faltantes me'] = pedir_backme['Cantidad'] * pedir_backme['Faltantes']
 	pedir_backst = pedir_back[pedir_back['Componente'].str.startswith('41')].reset_index(drop=True)
 	pedir_backst.rename(columns = {'SKU':'SKU_f', 'Componente':'SKU'}, inplace=True)
@@ -924,6 +925,7 @@ def main():
 	df_filtered['Porcentaje'] = (df_filtered['Subt_fac']/tot_vta)*100 
 	###BENEFICIO POR PRODUCTO###
 	st.subheader('Tabla beneficio por producto')
+	df_filtered['Producto'] = df_filtered['Producto'].str.strip()
 	df_group = df_filtered.groupby(['Producto']).agg({'Cant_surt':'sum',
 													  'Subt_fac':'sum',
 						   							  'Utilidad_mov':'sum', 
@@ -985,6 +987,7 @@ def main():
 	############################
 	###BENEFICIO POR CLIENTE###
 	st.subheader('Tabla beneficio por cliente')
+	df_filtered['Nom_cliente'] = df_filtered['Nom_cliente'].str.strip()
 	df_group = df_filtered.groupby(['Nom_cliente']).agg({'Cant_surt':'sum',
 													  'Subt_fac':'sum',
 						   							  'Utilidad_mov':'sum', 
@@ -1086,7 +1089,7 @@ def main():
 													'Margen':'mean',
 													'Subt_fac_y':'sum',
 													'Cant_surt_y':'sum'}).reset_index()
-	st.write(sub_fac4)
+	#st.write(sub_fac4)
 	anio = st.selectbox('Año',sub_fac4['Anio'].unique())
 
 	#sub_fac = sub_fac[(sub_fac['Nom_cliente'].isin(cte_list))]

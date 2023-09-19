@@ -565,7 +565,8 @@ def main():
     mes= pd.DataFrame(columns=['Mes'])
     anio = pd.DataFrame(columns=['Anio'])
     #Filtro las columnas que necesito
-    df_compras = compras[['F_alta_ped','Cve_prod','Desc_prod', 'Nom_prov', 'F_ent','Cant_prod','Cant_surtp','Valor_prod',
+    #st.write(compras)
+    df_compras = compras[['No_pedc', 'F_alta_ped','Cve_prod','Desc_prod', 'Nom_prov', 'F_ent','Cant_prod','Cant_surtp','Valor_prod',
                           'Des_mon', 'Status', 'Status_aut']]
     # hago un substring que me de solo los numeros del mes 
     mes['Mes'] = df_compras['F_ent'].str[3:5]
@@ -578,10 +579,10 @@ def main():
     # Cant_prod - Cant_surtp
     x_entregar = df_compras['Cant_prod'] - df_compras['Cant_surtp']
     df_compras = pd.concat([df_compras,x_entregar], axis=1)
-    df_compras.columns=['F_alta_ped','Cve_prod','Desc_prod', 'Nom_prov', 'F_ent','Cant_prod','Cant_surtp','Valor_prod',
+    df_compras.columns=['# Orden', 'F_alta_ped','Cve_prod','Desc_prod', 'Nom_prov', 'F_ent','Cant_prod','Cant_surtp','Valor_prod',
                         'Des_mon', 'Status', 'Status_aut', 'Mes', 'Anio', 'X_Entregar']
     
-    df_compras = df_compras[['F_alta_ped', 'Cve_prod','Desc_prod', 'Nom_prov','X_Entregar','Cant_surtp','Cant_prod',
+    df_compras = df_compras[['# Orden', 'F_alta_ped', 'Cve_prod','Desc_prod', 'Nom_prov','X_Entregar','Cant_surtp','Cant_prod',
                              'Status', 'Status_aut', 'F_ent','Mes', 'Anio', 'Valor_prod','Des_mon']]
     for i in range(len(df_compras.loc[:,'F_ent'])):
         try:
@@ -589,7 +590,7 @@ def main():
         except ValueError:
             df_compras.loc[i, 'F_ent'] = pd.to_datetime(df_compras.loc[i, 'F_alta_ped'], format='%d/%m/%Y')
     
-    df_compras = df_compras[['Cve_prod','Desc_prod', 'Nom_prov','X_Entregar','Cant_surtp','Cant_prod', 
+    df_compras = df_compras[['# Orden', 'Cve_prod','Desc_prod', 'Nom_prov','X_Entregar','Cant_surtp','Cant_prod', 
                              'Status', 'Status_aut', 'F_ent','Mes', 'Anio', 'Valor_prod','Des_mon']]
     #start_date = df_compras['F_ent'].min()
     #start_date = datetime(start_date.year, start_date.month, start_date.day)
