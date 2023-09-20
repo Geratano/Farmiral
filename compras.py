@@ -1233,7 +1233,7 @@ def main():
                                   'INV_FEB', 'REQ_FEB', 'B.O. FEB', 'OC TRANSIT FEB', 'OC NUEVAFEB', 'TOTAL OC_FEB' ]
             
         st.write(explosion_temp)
-        st.download_button(label="Descargar", data=explosion.to_csv(), mime="text/csv")
+        st.download_button(label="Descargar", data=explosion_temp.to_csv(), mime="text/csv")
         st.info(frase, icon='💵')
 
     
