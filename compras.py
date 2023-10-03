@@ -65,7 +65,11 @@ def main():
     #quito los espacios 
     compras.columns = compras.columns.str.strip()
     existencias.columns = existencias.columns.str.strip()
+    existencias['Cve_prod'] = existencias['Cve_prod'].str.strip()
+    #st.write(existencias)
     df_formulas.columns = df_formulas.columns.str.strip()
+    df_formulas['Cve_copr'] = df_formulas['Cve_copr'].str.strip()
+    df_formulas['Cve_prod'] = df_formulas['Cve_prod'].str.strip()
     productos.columns = productos.columns.str.strip()
     fcst_victor.columns = fcst_victor.columns.str.strip()
     fcst_victor['Codigo'] = fcst_victor['Codigo'].str.strip()
@@ -106,13 +110,18 @@ def main():
     ##########
     df_existencias = existencias[['Cve_prod', 'Lote', 'Lugar', 'Cto_ent', 'Existencia', 'Fech_venc', 'Desc_prod', 'Uni_med']]
     df_existencias.columns = ['SKU', 'Lote', 'Lugar', 'Costo', 'Existencia', 'Vencimiento', 'Producto', 'Unidad']
+    df_existencias_ot = existencias[['Cve_prod', 'Lote', 'Lugar', 'Cto_ent', 'Existencia', 'Fech_venc', 'Desc_prod', 'Uni_med']]
+    df_existencias_ot.columns = ['SKU', 'Lote', 'Lugar', 'Costo', 'Existencia', 'Vencimiento', 'Producto', 'Unidad']
+
     #df_existencias['Lugar'] = df_existencias['Lugar'].str.strip()
     ###############ALMACENES DIFERENCIADOS##########################################################################################
-    df_existencias = df_existencias[(df_existencias['Lugar']=='5') | (df_existencias['Lugar']=='4')] 
-    df_existencias2 = df_existencias[(df_existencias['Lugar']=='A1') | (df_existencias['Lugar']=='A2') | (df_existencias['Lugar']=='A3')]
-    df_existenciasaspen = df_existencias[(df_existencias['Lugar']=='ASPEN')]
-    df_existenciasgrisi = df_existencias[(df_existencias['Lugar']=='G1')|(df_existencias['Lugar']=='G2')]
-    df_existenciassimi = df_existencias[(df_existencias['Lugar']=='SIMILARES')]
+    df_existencias = df_existencias[(df_existencias['Lugar']=='5') | (df_existencias['Lugar']=='4')]
+    #st.write(df_existencias) 
+    df_existencias2 = df_existencias_ot[(df_existencias_ot['Lugar']=='A1') | (df_existencias_ot['Lugar']=='A2') | (df_existencias_ot['Lugar']=='A3')]
+    #st.write(df_existencias2)
+    df_existenciasaspen = df_existencias_ot[(df_existencias_ot['Lugar']=='ASPEN')]
+    df_existenciasgrisi = df_existencias_ot[(df_existencias_ot['Lugar']=='G1')|(df_existencias_ot['Lugar']=='G2')]
+    df_existenciassimi = df_existencias_ot[(df_existencias_ot['Lugar']=='SIMILARES')]
     #############################################################################################################################33
     df_existencias_4 = df_existencias[(df_existencias['Lugar']=='4')]
     df_existencias_5 = df_existencias[(df_existencias['Lugar']=='5')]
@@ -147,6 +156,7 @@ def main():
     #st.write(formulas)
     existe = df_existencias.groupby(['Producto','SKU']).agg({'Existencia':'sum'
                                                        }).reset_index()
+    #st.write(existe)
     existemp = df_existencias2.groupby(['Producto', 'SKU']).agg({'Existencia':'sum'}).reset_index()
     #forecast = forecast.fillna(0)
     #forecast = forecast[forecast['Cve_prod'] != 0]
