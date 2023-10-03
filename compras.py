@@ -181,7 +181,9 @@ def main():
             #t_forecast.loc[i,'Forecast'] = str(t_forecast.loc[i,'Forecast']).strip().replace('-','0')
 
     t_forecast = t_forecast[['SKU', 'Producto','Sep23', 'Oct23', 'Nov23', 'Dic23', 'Ene23', 'Feb24', 'Forecast anual', 'Existencia', 'Almacen']]
-    t_forecast['Faltantes'] = t_forecast['Sep23'] - t_forecast['Existencia']
+    ###CAMBIO POR MES#######
+    #t_forecast['Faltantes'] = t_forecast['Sep23'] - t_forecast['Existencia']
+    t_forecast['Faltantes'] = t_forecast['Oct23'] - t_forecast['Existencia']
     t_forecast = t_forecast[t_forecast['Faltantes'] != 0]
     #st.write(t_forecast)
     #Forecast faltantes Completo
@@ -269,8 +271,10 @@ def main():
     #st.write(pedir_fcst)
     pedir_fcstme = pedir_fcst[pedir_fcst['Cve_prod'].str.startswith('M')].reset_index(drop=True)
     
-    pedir_fcstme['Faltantes me'] = pedir_fcstme['Faltantes'] * pedir_fcstme['Cantidad']    
-    pedir_fcstme['Faltantes me Oct23'] = pedir_fcstme['Oct23'] * pedir_fcstme['Cantidad']
+    #####MODIFICAR POR MES#######################
+    #pedir_fcstme['Faltantes me'] = pedir_fcstme['Faltantes'] * pedir_fcstme['Cantidad']
+    pedir_fcstme['Faltantes me'] = 0 * pedir_fcstme['Cantidad']    
+    pedir_fcstme['Faltantes me Oct23'] = pedir_fcstme['Faltantes'] * pedir_fcstme['Cantidad']
     pedir_fcstme['Faltantes me Nov23'] = pedir_fcstme['Nov23'] * pedir_fcstme['Cantidad']
     pedir_fcstme['Faltantes me Dic23'] = pedir_fcstme['Dic23'] * pedir_fcstme['Cantidad']
     pedir_fcstme['Faltantes me Ene24'] = pedir_fcstme['Ene23'] * pedir_fcstme['Cantidad']
@@ -283,9 +287,11 @@ def main():
     #st.write(pedir_fcstst)
     #Cantidad por pieza
     pedir_fcstst['Cantidad_y'] = pedir_fcstst['Cantidad rendimiento_y'] / pedir_fcstst['Rendimiento_x']
-    pedir_fcstst['Cantidad mp'] = pedir_fcstst['Cantidad_y'] * pedir_fcstst['Faltantes']
+    ##########CAMBIO MES ################################################
+    #pedir_fcstst['Cantidad mp'] = pedir_fcstst['Cantidad_y'] * pedir_fcstst['Faltantes']
+    pedir_fcstst['Cantidad mp'] = pedir_fcstst['Cantidad_y'] * 0
     #st.write(pedir_fcstst)
-    pedir_fcstst['Cantidad mp Oct23'] = pedir_fcstst['Cantidad_y'] * pedir_fcstst['Oct23']
+    pedir_fcstst['Cantidad mp Oct23'] = pedir_fcstst['Cantidad_y'] * pedir_fcstst['Faltantes']
     pedir_fcstst['Cantidad mp Nov23'] = pedir_fcstst['Cantidad_y'] * pedir_fcstst['Nov23']
     pedir_fcstst['Cantidad mp Dic23'] = pedir_fcstst['Cantidad_y'] * pedir_fcstst['Dic23']
     pedir_fcstst['Cantidad mp Ene24'] = pedir_fcstst['Cantidad_y'] * pedir_fcstst['Ene23']
@@ -303,6 +309,7 @@ def main():
     prods = productos[['Cve_prod', 'Desc_prod']]
     prods.columns = ['SKU', 'MP']
     pedir2 = pedir2.merge(prods, on='MP', how='left')
+    #st.write(pedir2)
     #Columnas a pegar en la explosión
     pedir2t = pedir2.groupby(['SKU']).agg({'Cantidad Oct23':'sum',
                                   'Cantidad Nov23':'sum',
@@ -317,8 +324,10 @@ def main():
     pedir_fcsta = pedir_fcsta.dropna()
     #st.write(pedir_fcst)
     pedir_fcstmea = pedir_fcsta[pedir_fcsta['Cve_prod'].str.startswith('M')].reset_index(drop=True)
-    pedir_fcstmea['Faltantes me'] = pedir_fcstmea['Faltantes'] * pedir_fcstmea['Cantidad']
-    pedir_fcstmea['Faltantes me Oct23'] = pedir_fcstmea['Oct23'] * pedir_fcstmea['Cantidad']
+    ##############CAMBIO MES################################################
+    #pedir_fcstmea['Faltantes me'] = pedir_fcstmea['Faltantes'] * pedir_fcstmea['Cantidad']
+    pedir_fcstmea['Faltantes me'] = 0 * pedir_fcstmea['Cantidad']
+    pedir_fcstmea['Faltantes me Oct23'] = pedir_fcstmea['Faltantes'] * pedir_fcstmea['Cantidad']
     pedir_fcstmea['Faltantes me Nov23'] = pedir_fcstmea['Nov23'] * pedir_fcstmea['Cantidad']
     pedir_fcstmea['Faltantes me Dic23'] = pedir_fcstmea['Dic23'] * pedir_fcstmea['Cantidad']
     pedir_fcstmea['Faltantes me Ene24'] = pedir_fcstmea['Ene23'] * pedir_fcstmea['Cantidad']
@@ -329,8 +338,11 @@ def main():
     pedir_fcststa['SKU'] = pedir_fcststa['SKU'].str.strip()
     pedir_fcststa = pedir_fcststa.merge(formulas, on='SKU', how='left')
     pedir_fcststa['Cantidad_y'] = pedir_fcststa['Cantidad rendimiento_y'] / pedir_fcststa['Rendimiento_x']
-    pedir_fcststa['Cantidad mp'] = pedir_fcststa['Cantidad_y'] * pedir_fcststa['Faltantes']
-    pedir_fcststa['Cantidad mp Oct23'] = pedir_fcststa['Cantidad_y'] * pedir_fcststa['Oct23']
+    
+    ###############CAMBIO MES###################################
+    #pedir_fcststa['Cantidad mp'] = pedir_fcststa['Cantidad_y'] * pedir_fcststa['Faltantes']
+    pedir_fcststa['Cantidad mp'] = pedir_fcststa['Cantidad_y'] * 0
+    pedir_fcststa['Cantidad mp Oct23'] = pedir_fcststa['Cantidad_y'] * pedir_fcststa['Faltantes']
     pedir_fcststa['Cantidad mp Nov23'] = pedir_fcststa['Cantidad_y'] * pedir_fcststa['Nov23']
     pedir_fcststa['Cantidad mp Dic23'] = pedir_fcststa['Cantidad_y'] * pedir_fcststa['Dic23']
     pedir_fcststa['Cantidad mp Ene24'] = pedir_fcststa['Cantidad_y'] * pedir_fcststa['Ene23']
@@ -361,8 +373,11 @@ def main():
     pedir_fcstaspen = pedir_fcstaspen.dropna()
     #st.write(pedir_fcst)
     pedir_fcstmeaspen = pedir_fcstaspen[pedir_fcstaspen['Cve_prod'].str.startswith('M')].reset_index(drop=True)
-    pedir_fcstmeaspen['Faltantes me'] = pedir_fcstmeaspen['Faltantes'] * pedir_fcstmeaspen['Cantidad']
-    pedir_fcstmeaspen['Faltantes me Oct23'] = pedir_fcstmeaspen['Oct23'] * pedir_fcstmeaspen['Cantidad']
+    
+    #####################CAMBIO MES##################################
+    #pedir_fcstmeaspen['Faltantes me'] = pedir_fcstmeaspen['Faltantes'] * pedir_fcstmeaspen['Cantidad']
+    pedir_fcstmeaspen['Faltantes me'] = 0 * pedir_fcstmeaspen['Cantidad']
+    pedir_fcstmeaspen['Faltantes me Oct23'] = pedir_fcstmeaspen['Faltantes'] * pedir_fcstmeaspen['Cantidad']
     pedir_fcstmeaspen['Faltantes me Nov23'] = pedir_fcstmeaspen['Nov23'] * pedir_fcstmeaspen['Cantidad']
     pedir_fcstmeaspen['Faltantes me Dic23'] = pedir_fcstmeaspen['Dic23'] * pedir_fcstmeaspen['Cantidad']
     pedir_fcstmeaspen['Faltantes me Ene24'] = pedir_fcstmeaspen['Ene23'] * pedir_fcstmeaspen['Cantidad']
@@ -373,8 +388,11 @@ def main():
     pedir_fcststaspen['SKU'] = pedir_fcststaspen['SKU'].str.strip()
     pedir_fcststaspen = pedir_fcststaspen.merge(formulas, on='SKU', how='left')
     pedir_fcststaspen['Cantidad_y'] = pedir_fcststaspen['Cantidad rendimiento_y'] / pedir_fcststaspen['Rendimiento_x']
-    pedir_fcststaspen['Cantidad mp'] = pedir_fcststaspen['Cantidad_y'] * pedir_fcststaspen['Faltantes']
-    pedir_fcststaspen['Cantidad mp Oct23'] = pedir_fcststaspen['Cantidad_y'] * pedir_fcststaspen['Oct23']
+    
+    ####################CAMBIO MES##################################################
+    #pedir_fcststaspen['Cantidad mp'] = pedir_fcststaspen['Cantidad_y'] * pedir_fcststaspen['Faltantes']
+    pedir_fcststaspen['Cantidad mp'] = pedir_fcststaspen['Cantidad_y'] * 0
+    pedir_fcststaspen['Cantidad mp Oct23'] = pedir_fcststaspen['Cantidad_y'] * pedir_fcststaspen['Faltantes']
     pedir_fcststaspen['Cantidad mp Nov23'] = pedir_fcststaspen['Cantidad_y'] * pedir_fcststaspen['Nov23']
     pedir_fcststaspen['Cantidad mp Dic23'] = pedir_fcststaspen['Cantidad_y'] * pedir_fcststaspen['Dic23']
     pedir_fcststaspen['Cantidad mp Ene24'] = pedir_fcststaspen['Cantidad_y'] * pedir_fcststaspen['Ene23']
@@ -404,8 +422,11 @@ def main():
     pedir_fcstsimi = pedir_fcstsimi.dropna()
     #st.write(pedir_fcst)
     pedir_fcstmesimi = pedir_fcstsimi[pedir_fcstsimi['Cve_prod'].str.startswith('M')].reset_index(drop=True)
-    pedir_fcstmesimi['Faltantes me'] = pedir_fcstmesimi['Faltantes'] * pedir_fcstmesimi['Cantidad']
-    pedir_fcstmesimi['Faltantes me Oct23'] = pedir_fcstmesimi['Oct23'] * pedir_fcstmesimi['Cantidad']
+
+    ##################CAMBIO MES################################################
+    #pedir_fcstmesimi['Faltantes me'] = pedir_fcstmesimi['Faltantes'] * pedir_fcstmesimi['Cantidad']
+    pedir_fcstmesimi['Faltantes me'] = 0 * pedir_fcstmesimi['Cantidad']
+    pedir_fcstmesimi['Faltantes me Oct23'] = pedir_fcstmesimi['Faltantes'] * pedir_fcstmesimi['Cantidad']
     pedir_fcstmesimi['Faltantes me Nov23'] = pedir_fcstmesimi['Nov23'] * pedir_fcstmesimi['Cantidad']
     pedir_fcstmesimi['Faltantes me Dic23'] = pedir_fcstmesimi['Dic23'] * pedir_fcstmesimi['Cantidad']
     pedir_fcstmesimi['Faltantes me Ene24'] = pedir_fcstmesimi['Ene23'] * pedir_fcstmesimi['Cantidad']
@@ -416,8 +437,11 @@ def main():
     pedir_fcststsimi['SKU'] = pedir_fcststsimi['SKU'].str.strip()
     pedir_fcststsimi = pedir_fcststsimi.merge(formulas, on='SKU', how='left')
     pedir_fcststsimi['Cantidad_y'] = pedir_fcststsimi['Cantidad rendimiento_y'] / pedir_fcststsimi['Rendimiento_x']
-    pedir_fcststsimi['Cantidad mp'] = pedir_fcststsimi['Cantidad_y'] * pedir_fcststsimi['Faltantes']
-    pedir_fcststsimi['Cantidad mp Oct23'] = pedir_fcststsimi['Cantidad_y'] * pedir_fcststsimi['Oct23']
+    
+    ###################CAMBIO MES#################################################
+    #pedir_fcststsimi['Cantidad mp'] = pedir_fcststsimi['Cantidad_y'] * pedir_fcststsimi['Faltantes']
+    pedir_fcststsimi['Cantidad mp'] = pedir_fcststsimi['Cantidad_y'] * 0
+    pedir_fcststsimi['Cantidad mp Oct23'] = pedir_fcststsimi['Cantidad_y'] * pedir_fcststsimi['Faltantes']
     pedir_fcststsimi['Cantidad mp Nov23'] = pedir_fcststsimi['Cantidad_y'] * pedir_fcststsimi['Nov23']
     pedir_fcststsimi['Cantidad mp Dic23'] = pedir_fcststsimi['Cantidad_y'] * pedir_fcststsimi['Dic23']
     pedir_fcststsimi['Cantidad mp Ene24'] = pedir_fcststsimi['Cantidad_y'] * pedir_fcststsimi['Ene23']
@@ -448,8 +472,11 @@ def main():
     pedir_fcstgrisi = pedir_fcstgrisi.dropna()
     #st.write(pedir_fcst)
     pedir_fcstmegrisi = pedir_fcstgrisi[pedir_fcstgrisi['Cve_prod'].str.startswith('M')].reset_index(drop=True)
-    pedir_fcstmegrisi['Faltantes me'] = pedir_fcstmegrisi['Faltantes'] * pedir_fcstmegrisi['Cantidad']
-    pedir_fcstmegrisi['Faltantes me Oct23'] = pedir_fcstmegrisi['Oct23'] * pedir_fcstmegrisi['Cantidad']
+    
+    ####################CAMBIO MES###########################################
+    #pedir_fcstmegrisi['Faltantes me'] = pedir_fcstmegrisi['Faltantes'] * pedir_fcstmegrisi['Cantidad']
+    pedir_fcstmegrisi['Faltantes me'] = 0 * pedir_fcstmegrisi['Cantidad']
+    pedir_fcstmegrisi['Faltantes me Oct23'] = pedir_fcstmegrisi['Faltantes'] * pedir_fcstmegrisi['Cantidad']
     pedir_fcstmegrisi['Faltantes me Nov23'] = pedir_fcstmegrisi['Nov23'] * pedir_fcstmegrisi['Cantidad']
     pedir_fcstmegrisi['Faltantes me Dic23'] = pedir_fcstmegrisi['Dic23'] * pedir_fcstmegrisi['Cantidad']
     pedir_fcstmegrisi['Faltantes me Ene24'] = pedir_fcstmegrisi['Ene23'] * pedir_fcstmegrisi['Cantidad']
@@ -460,8 +487,11 @@ def main():
     pedir_fcststgrisi['SKU'] = pedir_fcststgrisi['SKU'].str.strip()
     pedir_fcststgrisi = pedir_fcststgrisi.merge(formulas, on='SKU', how='left')
     pedir_fcststgrisi['Cantidad_y'] = pedir_fcststgrisi['Cantidad rendimiento_y'] / pedir_fcststgrisi['Rendimiento_x']
-    pedir_fcststgrisi['Cantidad mp'] = pedir_fcststgrisi['Cantidad_y'] * pedir_fcststgrisi['Faltantes']
-    pedir_fcststgrisi['Cantidad mp Oct23'] = pedir_fcststgrisi['Cantidad_y'] * pedir_fcststgrisi['Oct23']
+    
+    #################CAMBIO MES########################################
+    #pedir_fcststgrisi['Cantidad mp'] = pedir_fcststgrisi['Cantidad_y'] * pedir_fcststgrisi['Faltantes']
+    pedir_fcststgrisi['Cantidad mp'] = pedir_fcststgrisi['Cantidad_y'] * 0
+    pedir_fcststgrisi['Cantidad mp Oct23'] = pedir_fcststgrisi['Cantidad_y'] * pedir_fcststgrisi['Faltantes']
     pedir_fcststgrisi['Cantidad mp Nov23'] = pedir_fcststgrisi['Cantidad_y'] * pedir_fcststgrisi['Nov23']
     pedir_fcststgrisi['Cantidad mp Dic23'] = pedir_fcststgrisi['Cantidad_y'] * pedir_fcststgrisi['Dic23']
     pedir_fcststgrisi['Cantidad mp Ene24'] = pedir_fcststgrisi['Cantidad_y'] * pedir_fcststgrisi['Ene23']
@@ -489,7 +519,9 @@ def main():
     pedir2 = pedir2.merge(existeN_comp, on='SKU', how='left')
     pedir2 = pedir2.fillna(0)
     #st.write(pedir2)
-    pedir2['Faltante mp'] = pedir2['Cantidad'] - pedir2['Existencia']
+    ##############CAMBIO MES###########################
+    #pedir2['Faltante mp'] = pedir2['Cantidad'] - pedir2['Existencia']
+    pedir2['Faltante mp'] = pedir2['Cantidad Oct23'] - pedir2['Existencia']
     #st.write(pedir2)
     ###COSTO FOR
     costo_for = df_formulas[['Desc_prod', 'Cto_rep']]
@@ -498,17 +530,21 @@ def main():
     costo_for['MP'] = costo_for['MP'].str.strip()
     ###
     pedir2['Faltante mp'][(pedir2['Faltante mp'] < 0)] = 0
+    #st.write(pedir2)
     requi2 = pedir2.groupby(['MP']).agg({'Cantidad':'sum', 'Existencia':'max', 'Faltante mp':'sum'}).reset_index()
     #st.write(requi2)
     requi2 = requi2.merge(costo_for, on='MP', how='left')
     requi2['Costo total'] = requi2['Faltante mp'] * requi2['Costo']
     total_requi2 = requi2['Costo total'].sum()
+    #st.write(total_requi2)
     ######################################################################################################
     #############REQUI A1-A3##########################################################################
     pedira = pedir2a.merge(existeN_a, on='SKU', how='left')
     pedira = pedira.fillna(0)
     #st.write(pedira)
-    pedira['Faltante mp'] = pedira['Cantidad'] - pedira['Existencia']
+    ###################CAMBIO MES#######################################
+    #pedira['Faltante mp'] = pedira['Cantidad'] - pedira['Existencia']
+    pedira['Faltante mp'] = pedira['Cantidad Oct23'] - pedira['Existencia']
     #st.write(pedira)
     ###COSTO FOR
     costo_fora = df_formulas[['Desc_prod', 'Cto_rep']]
@@ -527,7 +563,9 @@ def main():
     pediraspen = pedir2aspen.merge(existeN_aspen, on='SKU', how='left')
     pediraspen = pediraspen.fillna(0)
     #st.write(pedir2)
-    pediraspen['Faltante mp'] = pediraspen['Cantidad'] - pediraspen['Existencia']
+    #################CAMBIO MES###############################
+    #pediraspen['Faltante mp'] = pediraspen['Cantidad'] - pediraspen['Existencia']
+    pediraspen['Faltante mp'] = pediraspen['Cantidad Oct23'] - pediraspen['Existencia']
     #st.write(pedir2)
     ###COSTO FOR
     costo_foraspen = df_formulas[['Desc_prod', 'Cto_rep']]
@@ -546,7 +584,9 @@ def main():
     pedirsimi = pedir2simi.merge(existeN_simi, on='SKU', how='left')
     pedirsimi = pedirsimi.fillna(0)
     #st.write(pedir2)
-    pedirsimi['Faltante mp'] = pedirsimi['Cantidad'] - pedirsimi['Existencia']
+    #################################CAMBIO MES#######################################
+    #pedirsimi['Faltante mp'] = pedirsimi['Cantidad'] - pedirsimi['Existencia']
+    pedirsimi['Faltante mp'] = pedirsimi['Cantidad Oct23'] - pedirsimi['Existencia']
     #st.write(pedir2)
     ###COSTO FOR
     costo_forsimi = df_formulas[['Desc_prod', 'Cto_rep']]
@@ -565,7 +605,9 @@ def main():
     pedirgrisi = pedir2grisi.merge(existeN_grisi, on='SKU', how='left')
     pedirgrisi = pedirgrisi.fillna(0)
     #st.write(pedir2)
-    pedirgrisi['Faltante mp'] = pedirgrisi['Cantidad'] - pedirgrisi['Existencia']
+    ##################################CAMBIO MES#############################################
+    #pedirgrisi['Faltante mp'] = pedirgrisi['Cantidad'] - pedirgrisi['Existencia']
+    pedirgrisi['Faltante mp'] = pedirgrisi['Cantidad Oct23'] - pedirgrisi['Existencia']
     #st.write(pedir2)
     ###COSTO FOR
     costo_forgrisi = df_formulas[['Desc_prod', 'Cto_rep']]
@@ -703,14 +745,18 @@ def main():
     #st.write(explosion)
     
     ##################################################################################################3333
-    explosion['Inv inicial'] = (explosion['Cantidad'] - explosion['Existencia']) - explosion['Rec Sep23']
-    explosion['Inv inicial'][(explosion['Inv inicial'] >0)] = 0
-    explosion['Inv inicial'][(explosion['Inv inicial'] <0)] = (-1)*explosion['Inv inicial']
+    #############################CAMBIO MES###############################################################
+    #explosion['Inv inicial'] = (explosion['Cantidad'] - explosion['Existencia']) - explosion['Rec Sep23']
+    #explosion['Inv inicial'][(explosion['Inv inicial'] >0)] = 0
+    #explosion['Inv inicial'][(explosion['Inv inicial'] <0)] = (-1)*explosion['Inv inicial']
+
+    explosion['Inv inicial'] = explosion['Existencia']
     
     #Faltantes Octubre
     explosion['Fal Oct23'] = explosion['Cantidad Oct23'] - explosion['Inv inicial']
     explosion['Fal Oct23'][(explosion['Fal Oct23'] <0)] = 0
     explosion['Costo Oct23'] = explosion['Fal Oct23'] * explosion['Costo']
+    
     #Inventario inicial Noviembre
     explosion['Inv inicial Nov23'] = (explosion['Cantidad Oct23'] - explosion['Inv inicial']) - explosion['Rec Oct23']
     explosion['Inv inicial Nov23'][(explosion['Inv inicial Nov23'] >0)] = 0
@@ -754,9 +800,11 @@ def main():
                'Inv inicial Dic23', 'Cantidad Dic23', 'Fal Dic23', 'Costo Dic23', 'Rec Dic23',
                'Inv inicial Ene24', 'Cantidad Ene24', 'Fal Ene24', 'Costo Ene24', 'Rec Ene24',
                'Inv inicial Feb24', 'Cantidad Feb24', 'Fal Feb24', 'Costo Feb24', 'Rec Feb24']]
+    
+    #st.write(explosion)
     #############################################################################################################
     
-    inversionmes = explosion['Costo total'].sum()
+    inversionmes = explosion['Costo Oct23'].sum()
     frase = 'Inversión total del mes $' + str(round(inversionmes,2))
 
     ####################################################################################
@@ -780,10 +828,12 @@ def main():
     explosiona['Costo total'] = explosiona['Faltante mp'] * explosiona['Costo']
     
     #####################################################################################################
-    explosiona['Inv inicial'] = (explosiona['Cantidad'] - explosiona['Existencia']) - explosiona['Rec Sep23']
-    explosiona['Inv inicial'][(explosiona['Inv inicial'] >0)] = 0
-    explosiona['Inv inicial'][(explosiona['Inv inicial'] <0)] = (-1)*explosiona['Inv inicial']
+    ############################CAMBIO MES########################################
+    #explosiona['Inv inicial'] = (explosiona['Cantidad'] - explosiona['Existencia']) - explosiona['Rec Sep23']
+    #explosiona['Inv inicial'][(explosiona['Inv inicial'] >0)] = 0
+    #explosiona['Inv inicial'][(explosiona['Inv inicial'] <0)] = (-1)*explosiona['Inv inicial']
     
+    explosiona['Inv inicial'] = explosiona['Existencia']
     #Faltantes Octubre
     explosiona['Fal Oct23'] = explosiona['Cantidad Oct23'] - explosiona['Inv inicial']
     explosiona['Fal Oct23'][(explosiona['Fal Oct23'] <0)] = 0
@@ -829,7 +879,7 @@ def main():
 
     #######################################################################################################
     
-    inversionmesa = explosiona['Costo total'].sum()
+    inversionmesa = explosiona['Costo Oct23'].sum()
     frasea = 'Inversión total del mes $' + str(round(inversionmesa,2))
     ####################################################################################
     ##########EXPLOSION FINAL ASPEN################################################
@@ -850,9 +900,13 @@ def main():
     explosionaspen['Costo total'] = explosionaspen['Faltante mp'] * explosionaspen['Costo']
     
     #########################################################################################################
-    explosionaspen['Inv inicial'] = (explosionaspen['Cantidad'] - explosionaspen['Existencia']) - explosionaspen['Rec Sep23']
-    explosionaspen['Inv inicial'][(explosionaspen['Inv inicial'] >0)] = 0
-    explosionaspen['Inv inicial'][(explosionaspen['Inv inicial'] <0)] = (-1)*explosionaspen['Inv inicial']
+    
+    ########################CAMBIO MES#######################################################################
+    #explosionaspen['Inv inicial'] = (explosionaspen['Cantidad'] - explosionaspen['Existencia']) - explosionaspen['Rec Sep23']
+    #explosionaspen['Inv inicial'][(explosionaspen['Inv inicial'] >0)] = 0
+    #explosionaspen['Inv inicial'][(explosionaspen['Inv inicial'] <0)] = (-1)*explosionaspen['Inv inicial']
+    
+    explosionaspen['Inv inicial'] = explosionaspen['Existencia']
     #st.write(explosionaspen)
     #Faltantes Octubre
     explosionaspen['Fal Oct23'] = explosionaspen['Cantidad Oct23'] - explosionaspen['Inv inicial']
@@ -898,7 +952,7 @@ def main():
                'Inv inicial Feb24', 'Cantidad Feb24', 'Fal Feb24', 'Costo Feb24']]
     ########################################################################################################
     
-    inversionmesaspen = explosionaspen['Costo total'].sum()
+    inversionmesaspen = explosionaspen['Costo Oct23'].sum()
     fraseaspen = 'Inversión total del mes $' + str(round(inversionmesaspen,2))
     ####################################################################################
     ##########EXPLOSION FINAL SIMI################################################
@@ -920,10 +974,13 @@ def main():
     
     ########################################################################################################
     #st.write(explosionsimi)
-    explosionsimi['Inv inicial'] = (explosionsimi['Cantidad'] - explosionsimi['Existencia']) - explosionsimi['Rec Sep23']
-    explosionsimi['Inv inicial'][(explosionsimi['Inv inicial'] >0)] = 0
-    explosionsimi['Inv inicial'][(explosionsimi['Inv inicial'] <0)] = (-1)*explosionsimi['Inv inicial']
+    #####################################CAMBIO MES##########################################################
+    #explosionsimi['Inv inicial'] = (explosionsimi['Cantidad'] - explosionsimi['Existencia']) - explosionsimi['Rec Sep23']
+    #explosionsimi['Inv inicial'][(explosionsimi['Inv inicial'] >0)] = 0
+    #explosionsimi['Inv inicial'][(explosionsimi['Inv inicial'] <0)] = (-1)*explosionsimi['Inv inicial']
     
+    explosionsimi['Inv inicial'] = explosionsimi['Existencia']
+
     #Faltantes Octubre
     explosionsimi['Fal Oct23'] = explosionsimi['Cantidad Oct23'] - explosionsimi['Inv inicial']
     explosionsimi['Fal Oct23'][(explosionsimi['Fal Oct23'] <0)] = 0
@@ -975,7 +1032,7 @@ def main():
     ########################################################################################################
 
     
-    inversionmessimi = explosionsimi['Costo total'].sum()
+    inversionmessimi = explosionsimi['Costo Oct23'].sum()
     frasesimi = 'Inversión total del mes $' + str(round(inversionmessimi,2))
     ####################################################################################
     ##########EXPLOSION FINAL GRISI################################################
@@ -997,10 +1054,13 @@ def main():
     
     ##########################################################################################################3
 
-    explosiongrisi['Inv inicial'] = (explosiongrisi['Cantidad'] - explosiongrisi['Existencia']) - explosiongrisi['Rec Sep23']
-    explosiongrisi['Inv inicial'][(explosiongrisi['Inv inicial'] >0)] = 0
-    explosiongrisi['Inv inicial'][(explosiongrisi['Inv inicial'] <0)] = (-1)*explosiongrisi['Inv inicial']
+    ###########################CAMBIO MES##############################################
+    #explosiongrisi['Inv inicial'] = (explosiongrisi['Cantidad'] - explosiongrisi['Existencia']) - explosiongrisi['Rec Sep23']
+    #explosiongrisi['Inv inicial'][(explosiongrisi['Inv inicial'] >0)] = 0
+    #explosiongrisi['Inv inicial'][(explosiongrisi['Inv inicial'] <0)] = (-1)*explosiongrisi['Inv inicial']
     
+    explosiongrisi['Inv inicial'] = explosiongrisi['Existencia']
+
     #Faltantes Octubre
     explosiongrisi['Fal Oct23'] = explosiongrisi['Cantidad Oct23'] - explosiongrisi['Inv inicial']
     explosiongrisi['Fal Oct23'][(explosiongrisi['Fal Oct23'] <0)] = 0
@@ -1051,28 +1111,29 @@ def main():
     
     ################################################################################################################
     
-    inversionmesgrisi = explosiongrisi['Costo total'].sum()
+    inversionmesgrisi = explosiongrisi['Costo Oct23'].sum()
     frasegrisi = 'Inversión total del mes $' + str(round(inversionmesgrisi,2))
     ####################################################################################
-    uno, dos = st.columns([1, 1])
-    with uno:
-        st.title('Almacén A1-A3')
-        st.write(explosiona)
-        st.download_button(label="Descargar", data=explosiona.to_csv(), mime="text/csv")
-        st.info(frasea, icon='💵')
-        st.title('Almacén ASPEN')
-        st.write(explosionaspen)
-        st.download_button(label="Descargar", data=explosionaspen.to_csv(), mime="text/csv")
-        st.info(fraseaspen, icon='💵')
-    with dos:
-        st.title('Almacén SIMILARES')
-        st.write(explosionsimi)
-        st.download_button(label="Descargar", data=explosionsimi.to_csv(), mime="text/csv")
-        st.info(frasesimi, icon='💵')
-        st.title('Almacén GRISI')
-        st.write(explosiongrisi)
-        st.download_button(label="Descargar", data=explosiongrisi.to_csv(), mime="text/csv")
-        st.info(frasegrisi, icon='💵')
+    if st.checkbox('Requerimientos por almacen'):
+        uno, dos = st.columns([1, 1])
+        with uno:
+            st.title('Almacén A1-A3')
+            st.write(explosiona)
+            st.download_button(label="Descargar", data=explosiona.to_csv(), mime="text/csv")
+            st.info(frasea, icon='💵')
+            st.title('Almacén ASPEN')
+            st.write(explosionaspen)
+            st.download_button(label="Descargar", data=explosionaspen.to_csv(), mime="text/csv")
+            st.info(fraseaspen, icon='💵')
+        with dos:
+            st.title('Almacén SIMILARES')
+            st.write(explosionsimi)
+            st.download_button(label="Descargar", data=explosionsimi.to_csv(), mime="text/csv")
+            st.info(frasesimi, icon='💵')
+            st.title('Almacén GRISI')
+            st.write(explosiongrisi)
+            st.download_button(label="Descargar", data=explosiongrisi.to_csv(), mime="text/csv")
+            st.info(frasegrisi, icon='💵')
 
     if st.checkbox('Requerimientos general'):
         explosion_temp = explosion.merge(moq, on='SKU', how='left')
@@ -1099,6 +1160,7 @@ def main():
         #hola = math.ceil(explosion_temp.loc[22,'Faltante mp'] / explosion_temp.loc[22, 'MOQ'])
         #hola = (math.ceil(explosion_temp.loc[22,'Faltante mp'] / explosion_temp.loc[22,'MOQ']))*(explosion_temp.loc[22,'MOQ'])-(explosion_temp.loc[22,'Rec Sep23'])
         #st.write(hola)
+        ########################################3333CAMBIO MES##########################################################################
         for i in range(len(explosion_temp['SKU'])):
             explosion_temp.loc[i, 'MOQ'] = float(explosion_temp.loc[i, 'MOQ'])
             explosion_temp = explosion_temp.fillna(0)
@@ -1118,9 +1180,11 @@ def main():
         explosion_temp['TOTAL OC'] = explosion_temp['Rec Sep23'] + explosion_temp['OC NUEVA']
         explosion_temp = explosion_temp.merge(a1, on='SKU', how='left')
         explosion_temp = explosion_temp.fillna(0)
-        explosion_temp['INV_OCT'] = (explosion_temp['Cantidad'] - explosion_temp['Existencia']) - explosion_temp['TOTAL OC'] 
-        explosion_temp['INV_OCT'][(explosion_temp['INV_OCT'] >0)] = 0
-        explosion_temp['INV_OCT'][(explosion_temp['INV_OCT'] <0)] = (-1)*explosion_temp['INV_OCT']
+        ######################################CAMBIO MES###########################################################################
+        #explosion_temp['INV_OCT'] = (explosion_temp['Cantidad'] - explosion_temp['Existencia']) - explosion_temp['TOTAL OC']
+        explosion_temp['INV_OCT'] = explosion_temp['Existencia'] 
+        #explosion_temp['INV_OCT'][(explosion_temp['INV_OCT'] >0)] = 0
+        #explosion_temp['INV_OCT'][(explosion_temp['INV_OCT'] <0)] = (-1)*explosion_temp['INV_OCT']
         
         #################################MES OCT################################################################################
         explosion_temp['Fal Oct23'] = explosion_temp['Cantidad Oct23'] - explosion_temp['INV_OCT']
@@ -1216,17 +1280,30 @@ def main():
         explosion_temp['INV_FEB'][(explosion_temp['INV_FEB'] >0)] = 0
         explosion_temp['INV_FEB'][(explosion_temp['INV_FEB'] <0)] = (-1)*explosion_temp['INV_FEB']
         ##################################################################################################################################
+        ############################CAMBIO MES ELIMINAMOS SEPTIEMBRE##########################################################
+        #explosion_temp = explosion_temp[['SKU', 'MP_x', 'PROVEEDOR', 'DÍAS CRED', 'MP/ME', 'MOQ', 'Moneda', 'Costo', 'Existencia',
+        #                                 'Cantidad', 'Faltante mp', 'Rec Sep23', 'OC NUEVA', 'TOTAL OC', 'Ingreso', 
+        #                                 'INV_OCT', 'Cantidad Oct23', 'Fal Oct23', 'Rec Oct23', 'OC NUEVAOCT', 'TOTAL OC_OCT', 
+        #                                 'INV_NOV', 'Cantidad Nov23', 'Fal Nov23', 'Rec Nov23', 'OC NUEVANOV', 'TOTAL OC_NOV',
+        #                                 'INV_DIC', 'Cantidad Dic23', 'Fal Dic23', 'Rec Dic23', 'OC NUEVADIC', 'TOTAL OC_DIC',
+        #                                 'INV_ENE', 'Cantidad Ene24', 'Fal Ene24', 'Rec Ene24', 'OC NUEVAENE', 'TOTAL OC_ENE',
+        #                                 'INV_FEB', 'Cantidad Feb24', 'Fal Feb24', 'Rec Feb24', 'OC NUEVAFEB', 'TOTAL OC_FEB']]
+        #explosion_temp.columns = ['SKU', 'MP', 'PROVEEDOR', 'DIAS CRED', 'MP/ME', 'MOQ', 'Moneda', 'Costo', 'Existencia',
+        #                          'REQ_SEP', 'B.O. SEP', 'OC TRANSIT SEP', 'OC NUEVA SEP', 'TOTAL OC SEP', 'INGRESO A1',
+        #                          'INV_OCT', 'REQ_OCT', 'B.O. OCT', 'OC TRANSIT OCT', 'OC NUEVAOCT', 'TOTAL OC_OCT',
+        #                          'INV_NOV', 'REQ_NOV', 'B.O. NOV', 'OC TRANSIT NOV', 'OC NUEVANOV', 'TOTAL OC_NOV',
+        #                          'INV_DIC', 'REQ_DIC', 'B.O. DIC', 'OC TRANSIT DIC', 'OC NUEVADIC', 'TOTAL OC_DIC',
+        #                          'INV_ENE', 'REQ_ENE', 'B.O. ENE', 'OC TRANSIT ENE', 'OC NUEVAENE', 'TOTAL OC_ENE',
+        #                          'INV_FEB', 'REQ_FEB', 'B.O. FEB', 'OC TRANSIT FEB', 'OC NUEVAFEB', 'TOTAL OC_FEB' ]
         
-        explosion_temp = explosion_temp[['SKU', 'MP_x', 'PROVEEDOR', 'DÍAS CRED', 'MP/ME', 'MOQ', 'Moneda', 'Costo', 'Existencia',
-                                         'Cantidad', 'Faltante mp', 'Rec Sep23', 'OC NUEVA', 'TOTAL OC', 'Ingreso', 
-                                         'INV_OCT', 'Cantidad Oct23', 'Fal Oct23', 'Rec Oct23', 'OC NUEVAOCT', 'TOTAL OC_OCT', 
+        explosion_temp = explosion_temp[['SKU', 'MP_x', 'PROVEEDOR', 'DÍAS CRED', 'MP/ME', 'MOQ', 'Moneda', 'Costo', 'Existencia', 
+                                         'INV_OCT', 'Cantidad Oct23', 'Fal Oct23', 'Rec Oct23', 'OC NUEVAOCT', 'TOTAL OC_OCT', 'Ingreso',
                                          'INV_NOV', 'Cantidad Nov23', 'Fal Nov23', 'Rec Nov23', 'OC NUEVANOV', 'TOTAL OC_NOV',
                                          'INV_DIC', 'Cantidad Dic23', 'Fal Dic23', 'Rec Dic23', 'OC NUEVADIC', 'TOTAL OC_DIC',
                                          'INV_ENE', 'Cantidad Ene24', 'Fal Ene24', 'Rec Ene24', 'OC NUEVAENE', 'TOTAL OC_ENE',
                                          'INV_FEB', 'Cantidad Feb24', 'Fal Feb24', 'Rec Feb24', 'OC NUEVAFEB', 'TOTAL OC_FEB']]
         explosion_temp.columns = ['SKU', 'MP', 'PROVEEDOR', 'DIAS CRED', 'MP/ME', 'MOQ', 'Moneda', 'Costo', 'Existencia',
-                                  'REQ_SEP', 'B.O. SEP', 'OC TRANSIT SEP', 'OC NUEVA SEP', 'TOTAL OC SEP', 'INGRESO A1',
-                                  'INV_OCT', 'REQ_OCT', 'B.O. OCT', 'OC TRANSIT OCT', 'OC NUEVAOCT', 'TOTAL OC_OCT',
+                                  'INV_OCT', 'REQ_OCT', 'B.O. OCT', 'OC TRANSIT OCT', 'OC NUEVAOCT', 'TOTAL OC_OCT', 'INGRESO A1',
                                   'INV_NOV', 'REQ_NOV', 'B.O. NOV', 'OC TRANSIT NOV', 'OC NUEVANOV', 'TOTAL OC_NOV',
                                   'INV_DIC', 'REQ_DIC', 'B.O. DIC', 'OC TRANSIT DIC', 'OC NUEVADIC', 'TOTAL OC_DIC',
                                   'INV_ENE', 'REQ_ENE', 'B.O. ENE', 'OC TRANSIT ENE', 'OC NUEVAENE', 'TOTAL OC_ENE',
