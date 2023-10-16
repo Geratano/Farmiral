@@ -66,6 +66,7 @@ def main():
     compras.columns = compras.columns.str.strip()
     existencias.columns = existencias.columns.str.strip()
     existencias['Cve_prod'] = existencias['Cve_prod'].str.strip()
+    existencias['Desc_prod'] = existencias['Desc_prod'].str.strip()
     #st.write(existencias)
     df_formulas.columns = df_formulas.columns.str.strip()
     df_formulas['Cve_copr'] = df_formulas['Cve_copr'].str.strip()
