@@ -773,6 +773,7 @@ def main():
         concat_exp.rename(columns = {'SKU':'SKU PT', 'Cve_prod':'SKU'}, inplace = True)
         concat_exp = concat_exp.merge(existeN_comp, on='SKU', how='left')
         st.write(concat_exp)
+        st.download_button(label="Descargar", data=concat_exp.to_csv(), mime="text/csv")
     if st.checkbox('Desglose materias primas por PT'):
         st.write(pedir2)
     if st.checkbox('Almacenes Grisi'):
@@ -783,6 +784,7 @@ def main():
         st.write(esimi)
     if st.checkbox('Ordenes de compra'):
         st.write(df_compras)
+        st.download_button(label="Descargar", data=df_compras.to_csv(), mime="text/csv")
 
     recepcion = df_compras.copy()
     recepcion.columns = recepcion.columns.str.strip()
