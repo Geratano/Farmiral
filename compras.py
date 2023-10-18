@@ -701,6 +701,78 @@ def main():
         st.write(formulas)
     if st.checkbox('Forecast original'):
         st.write(fcst_faltantes)
+    if st.checkbox('Explosion PT'):
+        form_filter = formulas[formulas.SKU.str.startswith('51')].reset_index()
+        cantidad_explosiones = st.number_input('Numero de formulas a explosionar', key=f'cantidad_explosion_{i}', step=1)
+        formulas_selec = {}
+        cantidades_selec = {}
+        formulas_filtro = {}
+        base_pt = {}
+        base_me = {}
+        base_st = {}
+        bases_formulas = {}
+        explosion_part = {}
+        for i in range(cantidad_explosiones):
+            nombres_formulas = f'formula_selec_{i}'
+            cantidades_select = f'cantidades_select_{i}'
+            form_filter2 = f'form_filter2_{i}'
+            formula_pt = f'formula_pt_{i}'
+            formula_me = f'formula_me_{i}'
+            formula_st = f'formula_st_{i}'
+            formulas_filter = f'formulas_filter_{i}'
+            explosion_materiales = f'explosion_materiales_{i}'
+            formulas_selec[nombres_formulas] = st.selectbox('Formula a explosionar', form_filter['Producto'].sort_values().unique(), key=f'formula_selec_{i}')
+            cantidades_selec[cantidades_select] = st.number_input('Cantidad a explosionar', key=f'cantidades_select_{i}', step=1)
+        for i in range(cantidad_explosiones):
+            nombres_formulas = f'formula_selec_{i}'
+            cantidades_select = f'cantidades_select_{i}'
+            form_filter2 = f'form_filter2_{i}'
+            formula_pt = f'formula_pt_{i}'
+            formula_me = f'formula_me_{i}'
+            formula_st = f'formula_st_{i}'
+            formulas_filter = f'formulas_filter_{i}'
+            explosion_materiales = f'explosion_materiales_{i}'
+            bases_formulas[form_filter2] = form_filter[form_filter['Producto'] == formulas_selec.get(nombres_formulas)]
+            #globals()[f'form_filter2_{i}'] = form_filter[form_filter['Producto'] == formulas_selec.get(nombres_formulas)]
+        ####################PEDIR#####################################################
+        #st.write(bases_formulas.get('form_filter2_1')[bases_formulas.get('form_filter2_1')['Cve_prod'].str.startswith('M')].reset_index(drop=True))
+            base_pt[formula_pt] = bases_formulas.get(f'form_filter2_{i}').copy()
+            base_pt[formula_pt] = bases_formulas.get(f'form_filter2_{i}').dropna()
+            #formula_pt[formula_pt] = bases_formulas.get(f'form_filter2_{i}').dropna()
+        #st.write(base_pt.get('formula_pt_0'))
+            base_me[formula_me] = bases_formulas.get(f'form_filter2_{i}')[bases_formulas.get(f'form_filter2_{i}')['Cve_prod'].str.startswith('M')].reset_index(drop=True)
+            #formula_me = formula_pt[formula_pt['Cve_prod'].str.startswith('M')].reset_index(drop=True)
+            base_st[formula_st] = bases_formulas.get(f'form_filter2_{i}')[bases_formulas.get(f'form_filter2_{i}')['Cve_prod'].str.startswith('41')].reset_index(drop=True)
+            #formula_st = formula_pt[formula_pt['Cve_prod'].str.startswith('41')].reset_index(drop=True)
+            col_names = ['index', 'SKU pt', 'SKU', 'Cantidad rendimiento', 'New_med', 'New_copr', 'Unidad mp', 'MP','Rendimiento', 'Unidad', 'Cantidad', 'Producto']
+            #merge_st = base_st.get(f'formula_st_{i}').merge(formulas, on='SKU', how='left')
+            base_st.get(f'formula_st_{i}').columns = col_names
+            base_st[formula_st] = base_st.get(f'formula_st_{i}').merge(formulas, on='SKU', how='left') 
+            #formula_stt_i = formula_stt_i.merge(formulas, on='SKU', how='left')
+        #st.write(base_st.get('formula_st_0').columns)
+            base_st[formula_st] = base_st.get(f'formula_st_{i}')[['SKU pt', 'SKU', 'MP_x', 'Rendimiento_x', 'Cve_prod', 'Cantidad rendimiento_y', 'Unidad mp_y', 'MP_y']]
+            col_names2 = ['PT', 'SKU', 'ST', 'Rendimiento', 'Cve_prod', 'Cantidad rendimiento', 'Unidad', 'Producto']
+            base_st.get(f'formula_st_{i}').columns = col_names2 
+            base_st.get(f'formula_st_{i}')['Cantidad unitaria'] = base_st.get(f'formula_st_{i}')['Cantidad rendimiento'] / base_st.get(f'formula_st_{i}')['Rendimiento']
+        #st.write(base_st)
+            col_names3 = ['SKU', 'ST', 'Producto', 'Rendimiento', 'Cve_prod', 'Cantidad rendimiento', 'Unidad', 'MP', 'Cantidad unitaria']
+            base_st.get(f'formula_st_{i}').columns = col_names3 
+            base_me[formula_me] = base_me.get(f'formula_me_{i}')[['SKU', 'Producto', 'Rendimiento', 'Cve_prod', 'Cantidad rendimiento', 'Unidad', 'MP', 'Cantidad']]
+            col_names4 = ['SKU', 'Producto', 'Rendimiento', 'Cve_prod', 'Cantidad rendimiento', 'Unidad', 'MP', 'Cantidad unitaria']
+            base_me.get(f'formula_me_{i}').columns = col_names4 
+        #st.write(base_me)
+            #formulas_filter = pd.concat([formula_st, formula_me])
+            formulas_filtro[formulas_filter] = pd.concat([base_st.get(f'formula_st_{i}'), base_me.get(f'formula_me_{i}')])
+        
+            formulas_filtro[formulas_filter] = formulas_filtro.get(f'formulas_filter_{i}').fillna(0)
+            formulas_filtro[formulas_filter] = formulas_filtro.get(f'formulas_filter_{i}')[['SKU', 'Producto', 'Rendimiento', 'Cve_prod', 'Cantidad rendimiento', 'MP', 'Cantidad unitaria']]
+            explosion_part[explosion_materiales] = formulas_filtro.get(f'formulas_filter_{i}').copy()
+            explosion_part.get(f'explosion_materiales_{i}')['Cantidad total necesaria'] = explosion_part.get(f'explosion_materiales_{i}')['Cantidad unitaria'] * cantidades_selec.get(f'cantidades_select_{i}')
+            explosion_part[explosion_materiales] = pd.DataFrame(explosion_part.get(f'explosion_materiales_{i}'))        
+        concat_exp = pd.concat(explosion_part.values(), axis=0, ignore_index=True)
+        concat_exp.rename(columns = {'SKU':'SKU PT', 'Cve_prod':'SKU'}, inplace = True)
+        concat_exp = concat_exp.merge(existeN_comp, on='SKU', how='left')
+        st.write(concat_exp)
     if st.checkbox('Desglose materias primas por PT'):
         st.write(pedir2)
     if st.checkbox('Almacenes Grisi'):
