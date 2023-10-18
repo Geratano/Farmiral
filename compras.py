@@ -703,7 +703,7 @@ def main():
         st.write(fcst_faltantes)
     if st.checkbox('Explosion PT'):
         form_filter = formulas[formulas.SKU.str.startswith('51')].reset_index()
-        cantidad_explosiones = st.number_input('Numero de formulas a explosionar', key=f'cantidad_explosion_{i}', step=1)
+        cantidad_explosiones = st.number_input('Numero de formulas a explosionar', min_value=1, key=f'cantidad_explosion_{i}', step=1)
         formulas_selec = {}
         cantidades_selec = {}
         formulas_filtro = {}
