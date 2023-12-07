@@ -1319,8 +1319,8 @@ def main():
         explosion_temp['INV_ENE'] = (explosion_temp['Cantidad'] - explosion_temp['Existencia']) - explosion_temp['TOTAL OC']
         #explosion_temp['INV_ENE'] = explosion_temp['Existencia']
         #explosion_temp['INV_FEB'] = explosion_temp['Existencia'] 
-        #explosion_temp['INV_ENE'][(explosion_temp['INV_ENE'] >0)] = 0
-        #explosion_temp['INV_ENE'][(explosion_temp['INV_ENE'] <0)] = (-1)*explosion_temp['INV_ENE']
+        explosion_temp['INV_ENE'][(explosion_temp['INV_ENE'] >0)] = 0
+        explosion_temp['INV_ENE'][(explosion_temp['INV_ENE'] <0)] = (-1)*explosion_temp['INV_ENE']
         
         #################################MES ENE################################################################################
         explosion_temp['Fal ene24'] = explosion_temp['Cantidad ene24'] - explosion_temp['INV_ENE']
@@ -1346,7 +1346,7 @@ def main():
         explosion_temp['Fal feb24'][(explosion_temp['Fal feb24']<0)] = 0
         for i in range(len(explosion_temp['SKU'])):
             if explosion_temp.loc[i, 'MOQ'] != 0:
-                explosion_temp.loc[i, 'divene'] = math.ceil(explosion_temp.loc[i,'Fal feb24'] / explosion_temp.loc[i,'MOQ'])
+                explosion_temp.loc[i, 'divfeb'] = math.ceil(explosion_temp.loc[i,'Fal feb24'] / explosion_temp.loc[i,'MOQ'])
             else:
                 explosion_temp.loc[i, 'divfeb'] = 0        
             explosion_temp.loc[i,'OC tempfeb'] = (explosion_temp.loc[i,'divfeb'])*(explosion_temp.loc[i,'MOQ'])-(explosion_temp.loc[i,'Rec feb24'])
@@ -1365,10 +1365,10 @@ def main():
         explosion_temp['Fal mar24'][(explosion_temp['Fal mar24']<0)] = 0
         for i in range(len(explosion_temp['SKU'])):
             if explosion_temp.loc[i, 'MOQ'] != 0:
-                explosion_temp.loc[i, 'divfeb'] = math.ceil(explosion_temp.loc[i,'Fal mar24'] / explosion_temp.loc[i,'MOQ'])
+                explosion_temp.loc[i, 'divmar'] = math.ceil(explosion_temp.loc[i,'Fal mar24'] / explosion_temp.loc[i,'MOQ'])
             else:
                 explosion_temp.loc[i, 'divmar'] = 0        
-            explosion_temp.loc[i,'OC tempfeb'] = (explosion_temp.loc[i,'divfeb'])*(explosion_temp.loc[i,'MOQ'])-(explosion_temp.loc[i,'Rec mar24'])
+            explosion_temp.loc[i,'OC tempmar'] = (explosion_temp.loc[i,'divmar'])*(explosion_temp.loc[i,'MOQ'])-(explosion_temp.loc[i,'Rec mar24'])
             if (explosion_temp.loc[i,'Fal mar24']>0) & (explosion_temp.loc[i,'OC tempmar']>0):
                 explosion_temp.loc[i,'OC NUEVAMAR'] = explosion_temp.loc[i,'OC tempmar']
             else:
@@ -1384,17 +1384,17 @@ def main():
         explosion_temp['Fal abr24'][(explosion_temp['Fal abr24']<0)] = 0
         for i in range(len(explosion_temp['SKU'])):
             if explosion_temp.loc[i, 'MOQ'] != 0:
-                explosion_temp.loc[i, 'divmar'] = math.ceil(explosion_temp.loc[i,'Fal abr24'] / explosion_temp.loc[i,'MOQ'])
+                explosion_temp.loc[i, 'divabr'] = math.ceil(explosion_temp.loc[i,'Fal abr24'] / explosion_temp.loc[i,'MOQ'])
             else:
                 explosion_temp.loc[i, 'divabr'] = 0        
-            explosion_temp.loc[i,'OC tempmar'] = (explosion_temp.loc[i,'divmar'])*(explosion_temp.loc[i,'MOQ'])-(explosion_temp.loc[i,'Rec abr24'])
+            explosion_temp.loc[i,'OC tempabr'] = (explosion_temp.loc[i,'divabr'])*(explosion_temp.loc[i,'MOQ'])-(explosion_temp.loc[i,'Rec abr24'])
             if (explosion_temp.loc[i,'Fal abr24']>0) & (explosion_temp.loc[i,'OC tempabr']>0):
                 explosion_temp.loc[i,'OC NUEVAABR'] = explosion_temp.loc[i,'OC tempabr']
             else:
                 explosion_temp.loc[i, 'OC NUEVAABR'] = 0
         explosion_temp['TOTAL OC_ABR'] = explosion_temp['Rec abr24'] + explosion_temp['OC NUEVAABR']
         explosion_temp['INV_MAY'] = (explosion_temp['Cantidad abr24'] - explosion_temp['INV_ABR']) - explosion_temp['TOTAL OC_ABR']
-        explosion_temp['INV_MAY'][(explosion_temp['INV_ABR'] >0)] = 0
+        explosion_temp['INV_MAY'][(explosion_temp['INV_MAY'] >0)] = 0
         explosion_temp['INV_MAY'][(explosion_temp['INV_MAY'] <0)] = (-1)*explosion_temp['INV_MAY']
         ##################################################################################################################################
 
@@ -1403,16 +1403,16 @@ def main():
         explosion_temp['Fal may24'][(explosion_temp['Fal may24']<0)] = 0
         for i in range(len(explosion_temp['SKU'])):
             if explosion_temp.loc[i, 'MOQ'] != 0:
-                explosion_temp.loc[i, 'divabr'] = math.ceil(explosion_temp.loc[i,'Fal may24'] / explosion_temp.loc[i,'MOQ'])
+                explosion_temp.loc[i, 'divmay'] = math.ceil(explosion_temp.loc[i,'Fal may24'] / explosion_temp.loc[i,'MOQ'])
             else:
                 explosion_temp.loc[i, 'divmay'] = 0        
-            explosion_temp.loc[i,'OC tempabr'] = (explosion_temp.loc[i,'divabr'])*(explosion_temp.loc[i,'MOQ'])-(explosion_temp.loc[i,'Rec may24'])
+            explosion_temp.loc[i,'OC tempmay'] = (explosion_temp.loc[i,'divmay'])*(explosion_temp.loc[i,'MOQ'])-(explosion_temp.loc[i,'Rec may24'])
             if (explosion_temp.loc[i,'Fal may24']>0) & (explosion_temp.loc[i,'OC tempmay']>0):
                 explosion_temp.loc[i,'OC NUEVAMAY'] = explosion_temp.loc[i,'OC tempmay']
             else:
                 explosion_temp.loc[i, 'OC NUEVAMAY'] = 0
         explosion_temp['TOTAL OC_MAY'] = explosion_temp['Rec may24'] + explosion_temp['OC NUEVAMAY']
-        explosion_temp['INV_MAY'] = (explosion_temp['Cantidad abr24'] - explosion_temp['INV_ABR']) - explosion_temp['TOTAL OC_MAY']
+        explosion_temp['INV_MAY'] = (explosion_temp['Cantidad abr24'] - explosion_temp['INV_ABR']) - explosion_temp['TOTAL OC_ABR']
         explosion_temp['INV_MAY'][(explosion_temp['INV_MAY'] >0)] = 0
         explosion_temp['INV_MAY'][(explosion_temp['INV_MAY'] <0)] = (-1)*explosion_temp['INV_MAY']
         ##################################################################################################################################
