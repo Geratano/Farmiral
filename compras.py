@@ -204,7 +204,15 @@ def main():
     #st.write(t_forecast)
     #Forecast faltantes Completo
     fcst_faltantes = t_forecast[['SKU', 'Producto','dic23', 'ene24', 'feb24', 'mar24', 'abr24', 'may24', 'Forecast anual', 'Faltantes', 'Existencia', 'Almacen']]
-    fcst_faltantes = fcst_faltantes[fcst_faltantes['Faltantes']>0]
+    #####SE CAMBIO ESTA LINEA PARA INTEGRAR TODO EL FORECAST AUNQUE SE TENGA EXISTENCIA###########3
+    #st.write(len(fcst_faltantes['Faltantes']))
+    fcst_faltantes['Faltantes'][fcst_faltantes['Faltantes'] <= 0] = 0
+    #for i in range(len(fcst_faltantes['Faltantes'])):
+    #    if fcst_faltantes.loc[i,'Faltantes'] <= 0:
+    #        fcst_faltantes.loc[i,'Faltantes'] ==0
+
+    #fcst_faltantes[[fcst_faltantes['Faltantes']] <= 0 ] = 0 
+    #fcst_faltantes = fcst_faltantes[fcst_faltantes['Faltantes']>0]
     #st.write(fcst_faltantes)
     ############################
     #Forecast faltantes A1-A3
