@@ -61,13 +61,22 @@ def main():
         base13 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/ingresosa1.csv',encoding='latin-1')
         return base13
     a1 = a1()
+    def cobranza():
+        base14 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/cobranza.csv',encoding='latin-1')
+        return base14
+    cobranza = cobranza()
+    def porpagar():
+        base15 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/porpagar.csv',encoding='latin-1')
+        return base15
+    porpagar = porpagar()
+
+
 
     #quito los espacios 
     compras.columns = compras.columns.str.strip()
     existencias.columns = existencias.columns.str.strip()
     existencias['Cve_prod'] = existencias['Cve_prod'].str.strip()
     existencias['Desc_prod'] = existencias['Desc_prod'].str.strip()
-    #st.write(existencias)
     df_formulas.columns = df_formulas.columns.str.strip()
     df_formulas['Cve_copr'] = df_formulas['Cve_copr'].str.strip()
     df_formulas['Cve_prod'] = df_formulas['Cve_prod'].str.strip()
@@ -93,6 +102,11 @@ def main():
     a1.columns = a1.columns.str.strip()
     a1['Cve_prod'] = a1['Cve_prod'].str.strip()
     a1['Desc_prod'] = a1['Desc_prod'].str.strip()
+    cobranza.columns = cobranza.columns.str.strip()
+    cobranza['Nom_cte'] = cobranza['Nom_cte'].str.strip()
+    porpagar.columns = porpagar.columns.str.strip()
+    porpagar['Nom_prov'] = porpagar['Nom_prov'].str.strip()
+    porpagar['Cve_iva'] = porpagar['Cve_iva'].str.strip()
 
     #########EXTRACCION INGRESOS A1#########################
     a1 = a1[['Cve_prod', 'Desc_prod', 'Cant_prod']]
@@ -729,13 +743,75 @@ def main():
         Autorizacion = df_compras['Status_aut'].unique()
     if not Estatus:
         Estatus = df_compras['Status'].unique()
-    
-    #df_compras = df_compras[(df_compras['Nom_prov'].isin(proov)) & (df_compras['F_ent']<selected_date[1]) & 
+
+        #df_compras = df_compras[(df_compras['Nom_prov'].isin(proov)) & (df_compras['F_ent']<selected_date[1]) & 
     #    (df_compras['F_ent']>selected_date[0]) & (df_compras['Status_aut'].isin(Autorizacion)) & (df_compras['Status'].isin(Estatus))]
 
     df_compras = df_compras[(df_compras['Nom_prov'].isin(proov)) & (df_compras['Status_aut'].isin(Autorizacion)) 
                             & (df_compras['Status'].isin(Estatus))]
+    
+    #####################################CUENTAS POR PAGAR##########################################
+    porpagar = porpagar[['No_facc', 'Falta_fac', 'Saldo_fac', 'Nom_prov', 'Lim_cre', 'Dia_cre', 'Total_fac', 'Fech_venci']]
+    porpagar.columns = ['Factura', 'Fecha', 'Saldo', 'Proveedor', 'Limite credito', 'Dias credito', 'Total factura', 'Vencimiento']
+    porpagar['Vencimiento'] = pd.to_datetime(porpagar['Vencimiento'], format='%d/%m/%Y')
+    diactual = datetime.now()
+    porpagar['Estatus'] = 0 
+    for i in range(len(porpagar['Vencimiento'])):
+        if porpagar.loc[i,'Vencimiento'] <= diactual:
+            porpagar.loc[i,'Estatus'] = 'Vencido'
+        else:
+            porpagar.loc[i,'Estatus'] = 'Corriente'
+    st.sidebar.title('Filtro Cuentas por pagar')
+    proveedor = st.sidebar.multiselect('Proveedor', porpagar['Proveedor'].unique())
+    estatus_d = st.sidebar.multiselect('Estatus', porpagar['Estatus'].unique())
+    if not proveedor:
+        proveedor = porpagar['Proveedor'].unique()
+    if not estatus_d:
+        estatus_d = porpagar['Estatus'].unique()
+
+    porpagar = porpagar[(porpagar['Proveedor'].isin(proveedor)) & (porpagar['Estatus'].isin(estatus_d))]
+
+    deuda = porpagar['Saldo'].sum()
+    fdeuda = 'Total a pagar $' + str(round(deuda,2))
+
+    td_ppagar = pd.pivot_table(porpagar, index=['Estatus'], values=['Saldo'], aggfunc='sum', margins=True).reset_index().fillna(0)
+    ################################################################################################
+    ######################################CUENTAS POR COBRAR##########################################
+    cobranza = cobranza[['No_fac', 'Falta_fac', 'Saldo_fac', 'Nom_cte', 'Lim_cre', 'Dia_cre', 'Total_fac', 'Fech_venci']]
+    cobranza.columns = ['Factura', 'Fecha', 'Saldo', 'Cliente', 'Limite credito', 'Dias credito', 'Total factura', 'Vencimiento']
+    cobranza['Vencimiento'] = pd.to_datetime(cobranza['Vencimiento'], format='%d/%m/%Y')
+    cobranza['Estatus'] = 0 
+    for i in range(len(cobranza['Vencimiento'])):
+        if cobranza.loc[i,'Vencimiento'] <= diactual:
+            cobranza.loc[i,'Estatus'] = 'Vencido'
+        else:
+            cobranza.loc[i,'Estatus'] = 'Corriente'
+    st.sidebar.title('Filtro Cuentas por cobrar')
+    cliente = st.sidebar.multiselect('Cliente', cobranza['Cliente'].unique())
+    estatus_f = st.sidebar.multiselect('Estatus', cobranza['Estatus'].unique())
+    if not cliente:
+        cliente = cobranza['Cliente'].unique()
+    if not estatus_f:
+        estatus_f = cobranza['Estatus'].unique()
+
+    cobranza = cobranza[(cobranza['Cliente'].isin(cliente)) & (cobranza['Estatus'].isin(estatus_f))]
+
+    afavor = cobranza['Saldo'].sum()
+    favor = 'Total por cobrar $' + str(round(afavor,2))
+
+    td_cobrar = pd.pivot_table(cobranza, index=['Estatus'], values=['Saldo'], aggfunc='sum', margins=True).reset_index().fillna(0)
+    
+    
+    #########################################################################################################
     #st.write(fcst_victor2['Forecast'])
+    if st.checkbox('Cuentas por pagar'):
+        st.write(td_ppagar)
+        st.write(porpagar)
+        st.info(fdeuda, icon='💵')
+    if st.checkbox('Cuentas por cobrar'):
+        st.write(td_cobrar)
+        st.write(cobranza)
+        st.info(favor, icon='💵')
     if st.checkbox('Formulas'):
         st.write(formulas)
     if st.checkbox('Forecast original'):
