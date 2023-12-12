@@ -200,7 +200,8 @@ def main():
     t_forecast['Faltantes'] = t_forecast['dic23'] - t_forecast['Existencia']
     #t_forecast['Faltantes'] = t_forecast['ene24'] - t_forecast['Existencia']
     #t_forecast['Faltantes'] = t_forecast['feb24'] - t_forecast['Existencia']
-    t_forecast = t_forecast[t_forecast['Faltantes'] != 0]
+    ####SE CAMBIO ESTA LINEA TAMBIEN PARA INTEGRAR TODO EL FORECAST#########
+    #t_forecast = t_forecast[t_forecast['Faltantes'] != 0]
     #st.write(t_forecast)
     #Forecast faltantes Completo
     fcst_faltantes = t_forecast[['SKU', 'Producto','dic23', 'ene24', 'feb24', 'mar24', 'abr24', 'may24', 'Forecast anual', 'Faltantes', 'Existencia', 'Almacen']]
