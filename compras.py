@@ -1024,8 +1024,8 @@ def main():
     #st.write(explosion)
     #############################################################################################################
     
-    inversionmes = explosion['Costo total'].sum()
-    frase = 'Inversión total del mes $' + str(round(inversionmes,2))
+    #inversionmes = explosion['Costo total'].sum()
+    #frase = 'Inversión total del mes $' + str(round(inversionmes,2))
 
     ####################################################################################
     ##########EXPLOSION FINAL A1-A3################################################
@@ -1549,7 +1549,10 @@ def main():
                                   'INV_MAY', 'REQ_MAY', 'B.O. MAY', 'OC TRANSIT MAY', 'OC NUEVAMAY', 'TOTAL OC_MAY', ]
             
         st.write(explosion_temp)
+        inversionmes = (explosion_temp['Costo'] * explosion_temp['TOTAL OC_DIC']).sum()
+        frase = 'Inversión total del mes $' + str(round(inversionmes,2))
         st.download_button(label="Descargar", data=explosion_temp.to_csv(), mime="text/csv")
+        
         st.info(frase, icon='💵')
 
     
