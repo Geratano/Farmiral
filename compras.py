@@ -752,8 +752,8 @@ def main():
                             & (df_compras['Status'].isin(Estatus))]
     
     #####################################CUENTAS POR PAGAR##########################################
-    porpagar = porpagar[['No_facc', 'Falta_fac', 'Saldo_fac', 'Nom_prov', 'Lim_cre', 'Dia_cre', 'Total_fac', 'Fech_venci']]
-    porpagar.columns = ['Factura', 'Fecha', 'Saldo', 'Proveedor', 'Limite credito', 'Dias credito', 'Total factura', 'Vencimiento']
+    porpagar = porpagar[['No_facc', 'Falta_fac', 'Cve_mon', 'U_tip_cam', 'Saldo_fac', 'Nom_prov', 'Lim_cre', 'Dia_cre', 'Total_fac', 'Fech_venci']]
+    porpagar.columns = ['Factura', 'Fecha', 'Moneda', 'TC', 'Saldo', 'Proveedor', 'Limite credito', 'Dias credito', 'Total factura', 'Vencimiento']
     porpagar['Vencimiento'] = pd.to_datetime(porpagar['Vencimiento'], format='%d/%m/%Y')
     diactual = datetime.now()
     porpagar['Estatus'] = 0 
@@ -762,6 +762,9 @@ def main():
             porpagar.loc[i,'Estatus'] = 'Vencido'
         else:
             porpagar.loc[i,'Estatus'] = 'Corriente'
+    for i in range(len(porpagar['Factura'])):
+        if porpagar.loc[i, 'Moneda'] == 2:
+            porpagar.loc[i, 'Saldo'] = porpagar.loc[i, 'Saldo'] * porpagar.loc[i, 'TC'] 
     st.sidebar.title('Filtro Cuentas por pagar')
     proveedor = st.sidebar.multiselect('Proveedor', porpagar['Proveedor'].unique())
     estatus_d = st.sidebar.multiselect('Estatus', porpagar['Estatus'].unique())
@@ -781,26 +784,26 @@ def main():
     cobranza = cobranza[['No_fac', 'Falta_fac', 'Saldo_fac', 'Nom_cte', 'Lim_cre', 'Dia_cre', 'Total_fac', 'Fech_venci']]
     cobranza.columns = ['Factura', 'Fecha', 'Saldo', 'Cliente', 'Limite credito', 'Dias credito', 'Total factura', 'Vencimiento']
     cobranza['Vencimiento'] = pd.to_datetime(cobranza['Vencimiento'], format='%d/%m/%Y')
-    cobranza['Estatus'] = 0 
+    cobranza['status'] = 0 
     for i in range(len(cobranza['Vencimiento'])):
         if cobranza.loc[i,'Vencimiento'] <= diactual:
-            cobranza.loc[i,'Estatus'] = 'Vencido'
+            cobranza.loc[i,'status'] = 'Vencido'
         else:
-            cobranza.loc[i,'Estatus'] = 'Corriente'
+            cobranza.loc[i,'status'] = 'Corriente'
     st.sidebar.title('Filtro Cuentas por cobrar')
     cliente = st.sidebar.multiselect('Cliente', cobranza['Cliente'].unique())
-    estatus_f = st.sidebar.multiselect('Estatus', cobranza['Estatus'].unique())
+    estatus_f = st.sidebar.multiselect('status', cobranza['status'].unique())
     if not cliente:
         cliente = cobranza['Cliente'].unique()
     if not estatus_f:
-        estatus_f = cobranza['Estatus'].unique()
+        estatus_f = cobranza['status'].unique()
 
-    cobranza = cobranza[(cobranza['Cliente'].isin(cliente)) & (cobranza['Estatus'].isin(estatus_f))]
+    cobranza = cobranza[(cobranza['Cliente'].isin(cliente)) & (cobranza['status'].isin(estatus_f))]
 
     afavor = cobranza['Saldo'].sum()
     favor = 'Total por cobrar $' + str(round(afavor,2))
 
-    td_cobrar = pd.pivot_table(cobranza, index=['Estatus'], values=['Saldo'], aggfunc='sum', margins=True).reset_index().fillna(0)
+    td_cobrar = pd.pivot_table(cobranza, index=['status'], values=['Saldo'], aggfunc='sum', margins=True).reset_index().fillna(0)
     
     
     #########################################################################################################
