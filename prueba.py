@@ -140,7 +140,18 @@ def main():
 	sellout.columns = sellout.columns.str.strip()
 	facturas.columns = facturas.columns.str.strip()
 	facturas['Cse_prod'] = facturas['Cse_prod'].str.strip()
+	for i in range(len(facturas['No_fac'])):
+		facturas.loc[i,'No_fac'] = str(facturas.loc[i,'No_fac'])
+	
+	facturas['No_fac'] = facturas['No_fac'].str.strip()
 	descuento.columns = descuento.columns.str.strip()
+	descuento['No_fac'] = descuento['No_fac'].str.strip()
+	for i in range(len(descuento['No_fac'])):
+		descuento.loc[i,'No_fac'] = str(descuento.loc[i,'No_fac'])	
+	devolucion.columns = devolucion.columns.str.strip()
+	devolucion['No_fac'] = devolucion['No_fac'].str.strip()
+	for i in range(len(devolucion['No_fac'])):
+		devolucion.loc[i,'No_fac'] = str(devolucion.loc[i,'No_fac'])
 	clases.columns = clases.columns.str.strip()
 	clases['Categoria'] = clases['Categoria'].str.strip()
 	clases['Des_prod'] = clases['Desc_prod'].str.strip()
@@ -169,7 +180,7 @@ def main():
 	tipo['Cve_ncre']= tipo['Cve_ncre'].str.strip()
 	df_descuentos = df_descuento.merge(tipo, on='Cve_ncre', how='left') # hago merge con las tablas descuenos y tipocred
 	df_descuentos['No_fac'] = df_descuentos['No_fac'].str.strip()
-	df_descuentos['No_fac'] = pd.to_numeric(df_descuentos['No_fac'])
+	#df_descuentos['No_fac'] = pd.to_numeric(df_descuentos['No_fac'])
 	#st.write(df_descuentos[df_descuentos['No_fac'] == 4811])
 	#quito los espacios de las columnas de la base devoliucion
 	devolucion.columns= devolucion.columns.str.strip()
@@ -180,6 +191,10 @@ def main():
 	m_devolucion['INCLUYE']= 'SI' # en la columna INCLUYE  lleno todo con un si 
 	m_devolucion=m_devolucion.fillna(0) # Donde haya un none se reemplaza con un 0
 	notasc = pd.concat([df_descuentos,m_devolucion]) # concateno las bases descuentos con devolcion
+	notasc = notasc.fillna(0).reset_index()
+	#for i in range(len(notasc['No_fac'])):
+	#	notasc.loc[i,'No_fac'] = str(notasc.loc[i,'No_fac'])
+	#st.write(notasc)
 	#st.write(comp)
 	#################################################
 	#CONSTRUCCION FACTURAS#
@@ -196,17 +211,32 @@ def main():
 	df_facturas['Mes'] = df_facturas['Falta_fac'].dt.month
 	df_facturas['Dia'] = df_facturas['Falta_fac'].dt.day
 	df_facturas['Nom_cliente'] = df_facturas['Nom_fac'].str.strip()
+	#df_facturas = df_facturas.astype({'Nom_cliente':'string'})
 	df_facturas['Producto'] = df_facturas['Desc_prod'].str.strip()
-	#st.write(df_facturas.columns)
+	for i in range(len(df_facturas['No_fac'])):
+		df_facturas.loc[i,'No_fac'] = str(df_facturas.loc[i,'No_fac'])
+	df_facturas['No_fac'] = df_facturas['No_fac'].str.strip()
+	#st.write(df_facturas)
 	################################################################################
 	#luisar = df_facturas.merge(clases, on='Cse_prod', how='left')
 
 	nc_tabla = notasc[['No_fac', 'Subtotal']]
+	for i in range(len(nc_tabla['No_fac'])):
+		nc_tabla.loc[i,'No_fac'] = str(nc_tabla.loc[i,'No_fac'])
+	
+
 	nc_tabla = nc_tabla.groupby(['No_fac']).agg({'Subtotal':'sum'}).reset_index()
-	dftemp = df_facturas.merge(nc_tabla, on='No_fac', how='left')
+	#for i in range(len(nc_tabla['No_fac'])):
+	#	nc_tabla.loc[i,'No_fac'] = str(nc_tabla.loc[i,'No_fac'])
+	#dftemp = df_facturas.merge(nc_tabla, on='No_fac', how='left')
+	#st.write(nc_tabla)
+	dftemp = df_facturas.merge(nc_tabla, on='No_fac', how='left').fillna(0).reset_index()
+	
 	dftemp['N_cred'] = dftemp['Subtotal']
+	#st.write(dftemp)
 	#st.write(dftemp.columns)
 	#st.write(dftemp.columns)
+	#st.write(dftemp)
 	df = dftemp[['No_fac', 'Falta_fac', 'Status_fac', 'Descuento', 'Subt_fac', 'Total_fac', 'Iva', 'Saldo_fac', 'Cve_factu',
 				 'Cve_cte', 'Cse_prod', 'Cve_prod', 'New_med', 'Valor_prod', 'Cant_surt', 'Cve_mon', 'Tip_cam', 'Unidad', 'No_ped',
 				 'No_rem', 'Cve_suc', 'Lote', 'Dcto1', 'Dcto2', 'Cve_age', 'Nom_fac', 'Desc_prod', 'Cost_prom', 'Lugar',
@@ -319,8 +349,8 @@ def main():
 	#st.write(alfred)
 	alfred = alfred[alfred['SKU'] != 0]
 	n_capt = alfred[(alfred['RESULTADO 41'] == 0) | (alfred['ORDEN 51'] == 0) | (alfred['RESULTADO 51'] == 0)]
-	alfred.columns = ['SKU', 'Producto', 'Lote', 'Caducidad', 'Cantidad', 'Tamano lote', 'Fecha', 'Contenedor',
-	 'Observacion', 'Resultado 41', 'Orden 51', 'Resultado 51']
+	alfred.columns = ['SKU', 'Producto', 'Lote', 'Caducidad', 'Cantidad', 'Tamano lote', 'Fecha', 'Contenedor', 
+	'Observacion', 'Resultado 41', 'Orden 51', 'Resultado 51']
 	#st.write(alfred)
 	for i in range(len(alfred['Cantidad'])):
 		#alfred.loc[i,'Cantidad'] = alfred.loc[i,'Cantidad'].replace('.',';').replace(',','.').replace(';','')
@@ -367,10 +397,11 @@ def main():
 
 	#st.write(alfred)
 	#st.write(t_forecast)
+	#st.write(df_ventas)
 	st.header("Avance diario de ventas")
 
 	#Agrupamos primero nuestro dataframe por factura para poder descontar las notas de crédito
-	sub_fac1 =df_ventas.groupby(['No_fac','Canal_cliente']).agg({'Subt_fac':'sum',
+	sub_fac1 =df_ventas.groupby(['No_fac', 'Canal_cliente']).agg({'Subt_fac':'sum',
 					     						'Cant_surt':'sum',
 												'N_cred':'mean',
 												'Costo':'sum',
@@ -379,7 +410,8 @@ def main():
 												'Anio':'max',
 												'Mes':'max',
 												'Dia':'max'}).reset_index()
-	sub_fac2 = df_ventas.groupby(['No_fac','Canal_cliente']).agg({'Subt_fac':'sum',
+	
+	sub_fac2 = df_ventas.groupby(['No_fac', 'Canal_cliente']).agg({'Subt_fac':'sum',
 					     						'Cant_surt':'sum',
 												'N_cred':'mean',
 												'Costo':'sum',
@@ -397,6 +429,7 @@ def main():
 	sub_fac2['N_cred'] = sub_fac2['N_cred'].fillna(0)
 	sub_fac2['Subt_fac'] = sub_fac2['Subt_fac'] - sub_fac2['N_cred']
 	
+	#st.write(sub_fac1)
 
 	#st.write(sub_fac1)
 	#st.write(fac_act.iloc[:,2].sum(axis=0))
@@ -552,13 +585,15 @@ def main():
 	######CONSTRUCCIÓN PARA REPORTE DE ABRAHAMA########
 	if st.checkbox('Reporte Abraham'):
 		#anio, mes = st.columns([1,1])
-		Mes_si = st.selectbox('Selecciona el mes para el reporte Abraham Torres', sub_fac2['Mes'].unique())
+		#Mes_si = st.selectbox('Selecciona el mes para el reporte Abraham Torres', sub_fac2['Mes'].unique())
+		Mes_si = st.multiselect('Selecciona los meses para el reporte Abraham Torres', sub_fac2['Mes'].unique())
+		anio_si = st.selectbox('Selecciona el año para el reporte Abraham Torres', sub_fac2['Anio'].unique())
 	####################AÑO###########################
 		clas = clases.copy()
 		clas.columns = ['SKU','Categoria','Producto']
 		sub_fac2.columns = ['No_fac', 'Canal_cliente', 'sub_fac', 'Cant_surt', 'N_cred', 'Costo', 'Utilidad_mov', 'Margen', 'Anio', 'Mes',
 							'Dia', 'Producto', 'Cliente']
-		sub_fac2 = sub_fac2[sub_fac2['Anio']==act]
+		sub_fac2 = sub_fac2[sub_fac2['Anio']==anio_si]
 		objetivo_temp = objetivos.copy()
 		clas['Cve_prod'] = clas['SKU'].str.strip()
 		objetivo_temp['Cve_prod'] = objetivo_temp['Cve_prod'].str.strip()
@@ -595,7 +630,8 @@ def main():
 		clas2.columns = ['SKU','Categoria','Producto']
 		sub_fac2.columns = ['No_fac', 'Canal_cliente', 'sub_fac', 'Cant_surt', 'N_cred', 'Costo', 'Utilidad_mov', 'Margen', 'Anio', 'Mes',
 							'Dia', 'Producto', 'Cliente']					
-		sub_fac3 = sub_fac2[sub_fac2['Mes']==Mes_si]
+		#sub_fac3 = sub_fac2[sub_fac2['Mes']==Mes_si]
+		sub_fac3 = sub_fac2[sub_fac2['Mes'].isin(Mes_si)]
 		objetivo_temp = objetivos.copy()
 		clas2['Cve_prod'] = clas2['SKU'].str.strip()
 		objetivo_temp['Cve_prod'] = objetivo_temp['Cve_prod'].str.strip()
@@ -884,7 +920,11 @@ def main():
 	#st.write(avance_mes) # se muestra la tabla filtrando por mes actual
 
 	#Separamos en dos frames de lado izquiero los filtros
+	for i in range(len(df_ventas['Nom_cliente'])):
+		df_ventas.loc[i,'Nom_cliente'] = str(df_ventas.loc[i,'Nom_cliente'])
 	#De lado derecho imprimiremos la tabla filtrada
+
+
 	st.sidebar.title("Filtros")	
 	emp_list =	st.sidebar.multiselect("Empresa", df_ventas['Cve_factu'].unique())
 	ano_list =  st.sidebar.multiselect("Año", sorted(df_ventas['Anio'].unique()))
@@ -900,13 +940,14 @@ def main():
 		mes_list = df_ventas['Mes'].unique()
 	if not cte_list:
 		cte_list = df_ventas['Nom_cliente'].unique()	
- 
+ 	
 	df_filtered = df_ventas[
 			 (df_ventas['Cve_factu'].isin(emp_list)) & 
 			 (df_ventas['Anio'].isin(ano_list)) & 
 			 (df_ventas['Mes'].isin(mes_list)) &
 			 (df_ventas['Nom_cliente'].isin(cte_list))]
 	#Mes por letra 3 digitos
+	#st.write(mes_diccioanrio[10])
 	mes_letra = []
 	for i in range(len(mes_list)):
 		mes_letra.append(mes_diccioanrio[mes_list[i]])
@@ -1094,7 +1135,9 @@ def main():
 
 	#sub_fac = sub_fac[(sub_fac['Nom_cliente'].isin(cte_list))]
 	sub_fac4.columns = ['Anio','Mes', 'Categoria', 'Venta ($)','Venta (Pza)','Costo total','Utilidad','Margen (%)', 'Venta sin desc', 'Cantidad']
-	st.write(sub_fac4[sub_fac4['Anio']== anio].drop(columns=['Anio']))
+	sub_final4 = sub_fac4[sub_fac4['Anio']== anio].drop(columns=['Anio'])
+	st.write(sub_final4)
+	st.download_button(label="Descargar", data=sub_final4.to_csv(), mime="text/csv")
 
 	
 if __name__ == '__main__':
