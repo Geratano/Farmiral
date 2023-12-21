@@ -871,10 +871,10 @@ def main():
 			tabla, requisicion = st.columns([1,1])
 			with tabla:
 				st.write('Materiales por formula', pedir)
-				st.download_button(label="Descargar", data=pedir.to_csv(), mime="text/csv")
+				#st.download_button(label="Descargar", data=pedir.to_csv(), mime="text/csv")
 			with requisicion:
 				st.write('Requisición', requi)
-				st.download_button(label="Descargar", data=requi.to_csv(), mime="text/csv")
+				#st.download_button(label="Descargar", data=requi.to_csv(), mime="text/csv")
 				st.info(frase1)
 	if st.checkbox('Piezas faltantes Forecast'):
 		tabla, grafico = st.columns([1,1])
@@ -890,10 +890,10 @@ def main():
 			tabla, requisicion = st.columns([1,1])
 			with tabla:
 				st.write('Materiales por formula', pedir2)
-				st.download_button(label="Descargar", data=pedir2.to_csv(), mime="text/csv")
+				#st.download_button(label="Descargar", data=pedir2.to_csv(), mime="text/csv")
 			with requisicion:
 				st.write('Requisición', requi2)
-				st.download_button(label="Descargar", data=requi2.to_csv(), mime="text/csv")
+				#st.download_button(label="Descargar", data=requi2.to_csv(), mime="text/csv")
 				st.info(frase2)
 	#if st.checkbox('Piezas faltantes Forecast'):
 
@@ -976,14 +976,14 @@ def main():
 	df_group = df_group[['Cant_surt', 'Subt_fac', 'Utilidad_mov', 'Porcentaje']]
 	df_group.columns = ['Venta (PZA)', 'Venta ($)', 'Utilidad', 'Porcentaje']
 	st.write(df_group)
-	st.download_button(label="Descargar", data=df_group.to_csv(), mime="text/csv")
+	#st.download_button(label="Descargar", data=df_group.to_csv(), mime="text/csv")
 	###SELLOUTXPRODUCTO###
 	df_groups = df_sellout.groupby(['Producto']).agg({'Venta (pza)':'sum',
 													  'Venta ($)':'sum'}).sort_values(by=['Venta (pza)'],ascending=False)
 	df_groups = df_groups[(df_groups['Venta (pza)'] > 0)]
 	if st.checkbox('Sellout por producto'):
 		st.write(df_groups)
-		st.download_button(label="Descargar", data=df_groups.to_csv(), mime="text/csv")
+		#st.download_button(label="Descargar", data=df_groups.to_csv(), mime="text/csv")
 
 	#top, bottom=st.columns([10,10])
 	top, bottom=st.columns(2)
@@ -1038,14 +1038,14 @@ def main():
 	df_group = df_group[['Cant_surt', 'Subt_fac', 'Utilidad_mov', 'Porcentaje']]
 	df_group.columns = ['Venta (PZA)', 'Venta ($)', 'Utilidad', 'Porcentaje']
 	st.write(df_group)
-	st.download_button(label="Descargar", data=df_group.to_csv(), mime="text/csv")
+	#st.download_button(label="Descargar", data=df_group.to_csv(), mime="text/csv")
 	###SELLOUT POR CLIENTE###
 	df_groupsc = df_sellout.groupby(['Cliente']).agg({'Venta (pza)':'sum',
 													 'Venta ($)':'sum'}).sort_values(by=['Venta (pza)'],ascending=False)
 	df_groupsc = df_groupsc[(df_groupsc['Venta (pza)']>0)]
 	if st.checkbox('Sellout por cliente'):
 		st.write(df_groupsc)
-		st.download_button(label="Descargar", data=df_groupsc.to_csv(), mime="text/csv")
+		#st.download_button(label="Descargar", data=df_groupsc.to_csv(), mime="text/csv")
 	#top, bottom=st.columns([10,10])
 	top, bottom=st.columns(2)
 	with top:
@@ -1136,8 +1136,9 @@ def main():
 	#sub_fac = sub_fac[(sub_fac['Nom_cliente'].isin(cte_list))]
 	sub_fac4.columns = ['Anio','Mes', 'Categoria', 'Venta ($)','Venta (Pza)','Costo total','Utilidad','Margen (%)', 'Venta sin desc', 'Cantidad']
 	sub_final4 = sub_fac4[sub_fac4['Anio']== anio].drop(columns=['Anio'])
+	sub_final4 = sub_final4.fillna(0)
 	st.write(sub_final4)
-	st.download_button(label="Descargar", data=sub_final4.to_csv(), mime="text/csv")
+	#st.download_button(label="Descargar", data=sub_final4.to_csv(), mime="text/csv")
 
 	
 if __name__ == '__main__':
