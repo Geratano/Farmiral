@@ -158,10 +158,10 @@ def main():
 	
 	st.subheader('Venta ($)')
 	st.write(kpi_ventaspes)
-	st.download_button(label="Descargar", data=kpi_ventaspes.to_csv(), mime="text/csv")
+	
 	st.subheader('Venta (PZA)')
 	st.write(kpi_ventaspza)
-	st.download_button(label="Descargar", data=kpi_ventaspza.to_csv(), mime="text/csv")
+	
 
 
 	st.header('Propuesta 2')
