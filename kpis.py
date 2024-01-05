@@ -148,6 +148,28 @@ def main():
 	productos.columns = ['SKU', 'Producto', 'Unidad', 'Costo']
 	productos = productos.fillna(0)
 
+	#########FILTROS############
+	st.sidebar.title('Filtros')
+	canal_list   = st.sidebar.multiselect('Canal', ventas['Canal'].unique())
+	cliente_list = st.sidebar.multiselect('Cliente', ventas['Cliente'].unique())
+	sku_list     = st.sidebar.multiselect('SKU', ventas['Producto'].unique())
+
+	
+	if not canal_list:
+		canal_list = ventas['Canal'].unique()
+	if not cliente_list:
+		cliente_list = ventas['Cliente'].unique()
+	if not sku_list:
+		sku_list = ventas['Producto'].unique()
+
+	ventas = ventas[(ventas['Canal'].isin(canal_list)) 
+				   &(ventas['Cliente'].isin(cliente_list))
+				   &(ventas['Producto'].isin(sku_list))]
+	
+	if st.checkbox('Resumen anual'):
+		kpi_ventas_an_pes = pd.pivot_table(ventas, index=['Canal', 'Cliente', 'SKU'], values=['Venta ($)'], columns='Año', aggfunc='sum', margins=True).reset_index().fillna(0)
+		st.write(kpi_ventas_an_pes)
+
 	st.header('Propuesta 1')
 	anio = st.selectbox('Año', ventas.sort_values(by=['Año'])['Año'].unique())
 	ventas = ventas[ventas['Año']==anio].reset_index()
@@ -158,12 +180,12 @@ def main():
 	
 	st.subheader('Venta ($)')
 	st.write(kpi_ventaspes)
-	
+	kpi_ventaspestemp = pd.pivot_table(ventas, index=['Canal'], values=['Venta ($)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
+	st.write(kpi_ventaspestemp)
 	st.subheader('Venta (PZA)')
 	st.write(kpi_ventaspza)
 	
-
-
+	
 	st.header('Propuesta 2')
 	ventas2 = ventas.sort_values(by=['Mes'])
 	
