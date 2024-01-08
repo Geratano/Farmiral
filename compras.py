@@ -57,14 +57,17 @@ def main():
         base12 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/moq.csv',encoding='latin-1')
         return base12
     moq = moq()
+    @st.cache_resource
     def a1():
         base13 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/ingresosa1.csv',encoding='latin-1')
         return base13
     a1 = a1()
+    @st.cache_resource
     def cobranza():
         base14 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/cobranza.csv',encoding='latin-1')
         return base14
     cobranza = cobranza()
+    @st.cache_resource
     def porpagar():
         base15 = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/porpagar.csv',encoding='latin-1')
         return base15
