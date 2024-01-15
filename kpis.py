@@ -118,10 +118,12 @@ def main():
 	descuento['Fecha_desc'] = pd.to_datetime(descuento['Fecha_desc'], format='%d/%m/%Y')
 	descuento['Año'] = descuento['Fecha_desc'].dt.year
 	descuento['Mes'] = descuento['Fecha_desc'].dt.month
+	descuento['Mes2'] = pd.to_datetime(descuento['Fecha_desc'], format='%d/%m/%Y').dt.strftime('%Y-%m')
 	descuento = descuento.fillna(0)
-	descuento = descuento.groupby(['Año', 'Mes', 'Cve_cte', 'Cliente', 'Cve_ncre']).agg({'Descuento':'sum',
+	descuento = descuento.groupby(['Año', 'Mes', 'Mes2', 'Cve_cte', 'Cliente', 'Cve_ncre']).agg({'Descuento':'sum',
 															             	 'Subtotal':'sum'}).reset_index()
 	descuento = descuento.merge(tipo, on='Cve_ncre', how='left')
+
 	
 	#Tratamiento base devolucion
 	devolucion.columns = devolucion.columns.str.strip()
@@ -136,8 +138,9 @@ def main():
 	devolucion['Fecha_dev'] = pd.to_datetime(devolucion['Fecha_dev'], format='%d/%m/%Y')
 	devolucion['Año'] = devolucion['Fecha_dev'].dt.year
 	devolucion['Mes'] = devolucion['Fecha_dev'].dt.month
+	devolucion['Mes2'] = pd.to_datetime(devolucion['Fecha_dev'], format='%d/%m/%Y').dt.strftime('%Y-%m')
 	devolucion = devolucion.fillna(0)
-	devolucion = devolucion.groupby(['Año', 'Mes', 'Cve_cte', 'Cliente', 'Producto']).agg({'Devolucion':'sum',
+	devolucion = devolucion.groupby(['Año', 'Mes', 'Mes2', 'Cve_cte', 'Cliente', 'Producto']).agg({'Devolucion':'sum',
 																			               'Subtotal':'sum'}).reset_index()					  
 
 	#Tratamiento base productos
@@ -173,25 +176,50 @@ def main():
 	st.header('Propuesta 1')
 	anio = st.selectbox('Año', ventas.sort_values(by=['Año'])['Año'].unique())
 	ventas = ventas[ventas['Año']==anio].reset_index()
-	
-	
+	descuento = descuento[descuento['Año']==anio].reset_index(drop=True)
+	devolucion = devolucion[devolucion['Año']==anio].reset_index(drop=True)
+
 	kpi_ventaspes = pd.pivot_table(ventas, index=['Canal', 'Cliente', 'SKU'], values=['Venta ($)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
 	kpi_ventaspza = pd.pivot_table(ventas, index=['Canal', 'Cliente', 'SKU'], values=['Venta (PZA)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
+
 	
 	st.subheader('Venta ($)')
 	st.write(kpi_ventaspes)
-	kpi_ventaspestemp = pd.pivot_table(ventas, index=['Canal'], values=['Venta ($)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
-	st.write(kpi_ventaspestemp)
+	if st.checkbox('Resumen canal'):
+		kpi_ventaspestemp = pd.pivot_table(ventas, index=['Canal'], values=['Venta ($)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
+		st.write(kpi_ventaspestemp)
+	#st.write(kpi_ventaspestemp)
+	descuento = descuento.merge(canal, on='Cve_cte', how='left').reset_index(drop=True).fillna(0)
+	descuento = descuento[(descuento['Canal'].isin(canal_list))
+						 &(descuento['Cliente'].isin(cliente_list))]
+	kpi_descuento = pd.pivot_table(descuento, index=['Canal', 'Cliente'], values=['Descuento'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
+	devolucion = devolucion.merge(canal, on='Cve_cte', how='left').reset_index(drop=True).fillna(0)
+	devolucion = devolucion[(devolucion['Canal'].isin(canal_list))
+						 &(devolucion['Cliente'].isin(cliente_list))]
+	kpi_devolucion = pd.pivot_table(devolucion, index=['Canal', 'Cliente'], values=['Devolucion'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
+	st.subheader('Descuentos ($)')
+	st.write(kpi_descuento)
+	st.subheader('Devoluciones ($)')
+	st.write(kpi_devolucion)
+
+
 	st.subheader('Venta (PZA)')
 	st.write(kpi_ventaspza)
 	
 	
+	
+	
 	st.header('Propuesta 2')
 	ventas2 = ventas.sort_values(by=['Mes'])
-	
+	descuento2 = descuento.sort_values(by=['Mes'])
+	devolucion2 = devolucion.sort_values(by=['Mes'])
 	ventas2 = ventas2.groupby(['Mes', 'Canal', 'Cliente', 'SKU']).agg({'Venta ($)':'sum',
 																	   'Venta (PZA)':'sum',
 																	   'Cost_prom':'sum'}).reset_index()
+	descuento2 = descuento2.groupby(['Mes', 'Canal', 'Cliente']).agg({'Descuento':'sum'}).reset_index()
+	devolucion2 = devolucion2.groupby(['Mes', 'Canal', 'Cliente']).agg({'Devolucion':'sum'}).reset_index()
+	ventas2 = pd.merge(ventas2, descuento2, on=['Mes', 'Canal', 'Cliente'], how='left').reset_index(drop=True).fillna(0)
+	ventas2 = pd.merge(ventas2, devolucion2, on=['Mes', 'Canal', 'Cliente'], how='left').reset_index(drop=True).fillna(0)
 	ventas2['Utilidad ($)'] = ventas2['Venta ($)'] - ventas2['Cost_prom']
 	ventas2['Margen (%)'] = ventas2['Utilidad ($)'] / ventas2['Venta ($)']
 	st.write(ventas2)
