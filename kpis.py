@@ -71,6 +71,11 @@ def main():
 		prod = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/productos.csv',encoding='latin-1')
 		return prod
 	productos = Productos()
+	@st.cache_resource
+	def cobranza():
+		cxc = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/cobranza.csv',encoding='latin-1')
+		return cxc
+	cobranza = cobranza()
 
 
 	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
@@ -100,7 +105,26 @@ def main():
 	ventas = facturas.merge(canal, on='Cve_cte', how='left')
 	ventas['Cliente_c'] = ventas['Cliente_c'].fillna('OTROS DISTRIBUIDORES')
 	ventas['Canal'] = ventas['Canal'].fillna('OTROS DISTRIBUIDORES')
-	
+
+	#Tratamiento base cobranza
+	cobranza.columns = cobranza.columns.str.strip()
+	cobranza['Cve_factu'] = cobranza['Cve_factu'].str.strip()
+	cobranza['Nom_cte'] = cobranza['Nom_cte'].str.strip()
+	cobranza = cobranza[['Cve_factu', 'No_fac', 'Falta_fac', 'Cve_cte', 'Saldo_fac', 'Lim_cre', 'Dia_cre',
+						 'Fech_venci', 'Total_fac']]
+	cobranza.columns = ['Cve_factu', 'No_fac', 'Fecha', 'Cve_cte', 'Saldo cxc', 'Limite credito', 'Dias', 'Vencimiento', 'Total facturado']
+	cobranza['Fecha'] = pd.to_datetime(cobranza['Fecha'], format='%d/%m/%Y')
+	cobranza['Añof'] = cobranza['Fecha'].dt.year
+	cobranza['Mesf'] = cobranza['Fecha'].dt.month
+	cobranza['Mes2f'] = pd.to_datetime(cobranza['Fecha'], format='%d/%m/%Y').dt.strftime('%Y-%b')
+	cobranza = cobranza.fillna(0)
+	cobranza['Vencimiento'] = pd.to_datetime(cobranza['Vencimiento'], format='%d/%m/%Y')
+	cobranza['Año'] = cobranza['Vencimiento'].dt.year
+	cobranza['Mes'] = cobranza['Vencimiento'].dt.month
+	cobranza['Mesn'] = pd.to_datetime(cobranza['Vencimiento'], format='%d/%m/%Y').dt.strftime('%b')
+	cobranza['Semana'] = cobranza['Vencimiento'].dt.week
+	cobranza['Sem2'] = pd.to_datetime(cobranza['Vencimiento'], format='%d/%m/%Y').dt.strftime('%Y-%b-%V')
+
 	#Tratamiento base tipo
 	tipo.columns = tipo.columns.str.strip()
 	tipo['Cve_ncre'] = tipo['Cve_ncre'].str.strip()
@@ -156,7 +180,7 @@ def main():
 	canal_list   = st.sidebar.multiselect('Canal', ventas['Canal'].unique())
 	cliente_list = st.sidebar.multiselect('Cliente', ventas['Cliente'].unique())
 	sku_list     = st.sidebar.multiselect('SKU', ventas['Producto'].unique())
-
+	
 	
 	if not canal_list:
 		canal_list = ventas['Canal'].unique()
@@ -172,44 +196,47 @@ def main():
 	if st.checkbox('Resumen anual'):
 		kpi_ventas_an_pes = pd.pivot_table(ventas, index=['Canal', 'Cliente', 'SKU'], values=['Venta ($)'], columns='Año', aggfunc='sum', margins=True).reset_index().fillna(0)
 		st.write(kpi_ventas_an_pes)
-
-	st.header('Propuesta 1')
 	anio = st.selectbox('Año', ventas.sort_values(by=['Año'])['Año'].unique())
 	ventas = ventas[ventas['Año']==anio].reset_index()
 	descuento = descuento[descuento['Año']==anio].reset_index(drop=True)
 	devolucion = devolucion[devolucion['Año']==anio].reset_index(drop=True)
 
-	kpi_ventaspes = pd.pivot_table(ventas, index=['Canal', 'Cliente', 'SKU'], values=['Venta ($)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
-	kpi_ventaspza = pd.pivot_table(ventas, index=['Canal', 'Cliente', 'SKU'], values=['Venta (PZA)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
-
-	
-	st.subheader('Venta ($)')
-	st.write(kpi_ventaspes)
-	if st.checkbox('Resumen canal'):
-		kpi_ventaspestemp = pd.pivot_table(ventas, index=['Canal'], values=['Venta ($)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
-		st.write(kpi_ventaspestemp)
-	#st.write(kpi_ventaspestemp)
 	descuento = descuento.merge(canal, on='Cve_cte', how='left').reset_index(drop=True).fillna(0)
 	descuento = descuento[(descuento['Canal'].isin(canal_list))
 						 &(descuento['Cliente'].isin(cliente_list))]
-	kpi_descuento = pd.pivot_table(descuento, index=['Canal', 'Cliente'], values=['Descuento'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
 	devolucion = devolucion.merge(canal, on='Cve_cte', how='left').reset_index(drop=True).fillna(0)
 	devolucion = devolucion[(devolucion['Canal'].isin(canal_list))
 						 &(devolucion['Cliente'].isin(cliente_list))]
-	kpi_devolucion = pd.pivot_table(devolucion, index=['Canal', 'Cliente'], values=['Devolucion'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
-	st.subheader('Descuentos ($)')
-	st.write(kpi_descuento)
-	st.subheader('Devoluciones ($)')
-	st.write(kpi_devolucion)
+
+	kpi_ventaspes = pd.pivot_table(ventas, index=['Canal', 'Cliente', 'SKU'], values=['Venta ($)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
+	kpi_ventaspza = pd.pivot_table(ventas, index=['Canal', 'Cliente', 'SKU'], values=['Venta (PZA)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
+	
+	if st.checkbox('Propuesta 1'):
+		st.header('Propuesta 1')
+		st.subheader('Venta ($)')
+		st.write(kpi_ventaspes)
+		
+		if st.checkbox('Resumen canal'):
+			kpi_ventaspestemp = pd.pivot_table(ventas, index=['Canal'], values=['Venta ($)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
+			st.write(kpi_ventaspestemp)
+		#st.write(kpi_ventaspestemp)
+		
+		kpi_descuento = pd.pivot_table(descuento, index=['Canal', 'Cliente'], values=['Descuento'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
+		
+		kpi_devolucion = pd.pivot_table(devolucion, index=['Canal', 'Cliente'], values=['Devolucion'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
+		st.subheader('Descuentos ($)')
+		st.write(kpi_descuento)
+		st.subheader('Devoluciones ($)')
+		st.write(kpi_devolucion)
 
 
-	st.subheader('Venta (PZA)')
-	st.write(kpi_ventaspza)
+		st.subheader('Venta (PZA)')
+		st.write(kpi_ventaspza)
 	
 	
 	
 	
-	st.header('Propuesta 2')
+	st.header('Ventas')
 	ventas2 = ventas.sort_values(by=['Mes'])
 	descuento2 = descuento.sort_values(by=['Mes'])
 	devolucion2 = devolucion.sort_values(by=['Mes'])
@@ -225,6 +252,25 @@ def main():
 	st.write(ventas2)
 
 
+	st.header('CXC')
+	hoy = datetime.today()
+	cobranza['Estatus'] = cobranza['Cve_factu']
+	for i in range(len(cobranza['No_fac'])):
+		if cobranza.loc[i,'Vencimiento']<hoy:
+			cobranza.loc[i,'Estatus'] = 'Vencido'
+		else:
+			cobranza.loc[i,'Estatus'] = 'Corriente'
+	for i in range(len(cobranza['Estatus'])):
+		if cobranza.loc[i,'Estatus'] == 'Vencido':
+			cobranza.loc[i,'Semana'] = 'Vencido'
+	for i in range(len(cobranza['Estatus'])):
+		if cobranza.loc[i,'Estatus'] == 'Vencido':
+			cobranza.loc[i,'Mesn'] = 'Vencido'
+	cobranza_det = cobranza.copy()
+	#cobranza = cobranza.groupby(['Cve_cte', 'Año', 'Sem2']).agg({'Saldo cxc':'sum'})
+	kpi_cobranza = pd.pivot_table(cobranza, index=['Cve_cte'], values=['Saldo cxc'], columns=['Semana','Mesn'], aggfunc='sum', margins=True).reset_index().fillna(0)
+	
+	st.write(kpi_cobranza)	
 
 
 if __name__ == '__main__':
