@@ -122,7 +122,7 @@ def main():
 	cobranza['Año'] = cobranza['Vencimiento'].dt.year
 	cobranza['Mes'] = cobranza['Vencimiento'].dt.month
 	cobranza['Mesn'] = pd.to_datetime(cobranza['Vencimiento'], format='%d/%m/%Y').dt.strftime('%b')
-	cobranza['Semana'] = cobranza['Vencimiento'].dt.week
+	cobranza['Semana'] = cobranza['Vencimiento'].dt.isocalendar().week.astype('int')
 	cobranza['Sem2'] = pd.to_datetime(cobranza['Vencimiento'], format='%d/%m/%Y').dt.strftime('%Y-%b-%V')
 
 	#Tratamiento base tipo
@@ -270,7 +270,8 @@ def main():
 	#cobranza = cobranza.groupby(['Cve_cte', 'Año', 'Sem2']).agg({'Saldo cxc':'sum'})
 	kpi_cobranza = pd.pivot_table(cobranza, index=['Cve_cte'], values=['Saldo cxc'], columns=['Semana','Mesn'], aggfunc='sum', margins=True).reset_index().fillna(0)
 	
-	st.write(kpi_cobranza)	
+	st.write(kpi_cobranza)
+	#st.write(cobranza_det)
 
 
 if __name__ == '__main__':
