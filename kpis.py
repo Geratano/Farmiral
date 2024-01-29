@@ -94,6 +94,22 @@ def main():
 	facturas['Cve_prod'] = facturas['Cve_prod'].str.strip()
 	facturas['Nom_fac'] = facturas['Nom_fac'].str.strip()
 	facturas['Desc_prod'] = facturas['Desc_prod'].str.strip()
+
+	#Trabajo con base alterna para rescatar descuentos aplicados directamente a la factura
+	facturas_temp = facturas.copy()
+	facturas_temp = facturas_temp[['No_fac', 'Falta_fac', 'Descuento', 'Subt_fac', 'Total_fac', 'Cve_factu', 'Cve_prod', 'Valor_prod', 'Cant_surt', 'Cve_cte', 'Nom_fac', 
+						 'Desc_prod', 'Cost_prom']]
+	facturas_temp.columns = ['No_fac', 'Fecha', 'Descuento_dir', 'Venta ($)', 'Total_fac', 'Cve_factu', 'SKU', 'Precio', 'Venta (PZA)', 'Cve_cte', 'Cliente', 'Producto', 'Cost_prom']
+	facturas_temp['Fecha'] = pd.to_datetime(facturas_temp['Fecha'], format='%d/%m/%Y')
+	facturas_temp['Año'] = facturas_temp['Fecha'].dt.year
+	facturas_temp['Mes'] = facturas_temp['Fecha'].dt.month
+	facturas_temp['Mes2'] = pd.to_datetime(facturas_temp['Fecha'], format='%d/%m/%Y').dt.strftime('%Y-%m')
+	facturas_temp = facturas_temp.fillna(0)
+	ventas_temp = facturas_temp.merge(canal, on='Cve_cte', how='left')
+	ventas_temp['Cliente_c'] = ventas_temp['Cliente_c'].fillna('OTROS DISTRIBUIDORES')
+	ventas_temp['Canal'] = ventas_temp['Canal'].fillna('OTROS DISTRIBUIDORES')
+	###########################################################################################
+
 	facturas = facturas[['No_fac', 'Falta_fac', 'Subt_fac', 'Total_fac', 'Cve_factu', 'Cve_prod', 'Valor_prod', 'Cant_surt', 'Cve_cte', 'Nom_fac', 
 						 'Desc_prod', 'Cost_prom']]
 	facturas.columns = ['No_fac', 'Fecha', 'Venta ($)', 'Total_fac', 'Cve_factu', 'SKU', 'Precio', 'Venta (PZA)', 'Cve_cte', 'Cliente', 'Producto', 'Cost_prom']
@@ -113,6 +129,7 @@ def main():
 	cobranza = cobranza[['Cve_factu', 'No_fac', 'Falta_fac', 'Cve_cte', 'Saldo_fac', 'Lim_cre', 'Dia_cre',
 						 'Fech_venci', 'Total_fac']]
 	cobranza.columns = ['Cve_factu', 'No_fac', 'Fecha', 'Cve_cte', 'Saldo cxc', 'Limite credito', 'Dias', 'Vencimiento', 'Total facturado']
+	cobranza = cobranza.merge(canal, on='Cve_cte', how='left')
 	cobranza['Fecha'] = pd.to_datetime(cobranza['Fecha'], format='%d/%m/%Y')
 	cobranza['Añof'] = cobranza['Fecha'].dt.year
 	cobranza['Mesf'] = cobranza['Fecha'].dt.month
@@ -237,9 +254,11 @@ def main():
 	
 	
 	st.header('Ventas')
+	#####################SIN DESCUENTOS DIRECTOS"#############################################################
 	ventas2 = ventas.sort_values(by=['Mes'])
 	descuento2 = descuento.sort_values(by=['Mes'])
 	devolucion2 = devolucion.sort_values(by=['Mes'])
+	#st.write(ventas2)
 	ventas2 = ventas2.groupby(['Mes', 'Canal', 'Cliente', 'SKU']).agg({'Venta ($)':'sum',
 																	   'Venta (PZA)':'sum',
 																	   'Cost_prom':'sum'}).reset_index()
@@ -249,7 +268,32 @@ def main():
 	ventas2 = pd.merge(ventas2, devolucion2, on=['Mes', 'Canal', 'Cliente'], how='left').reset_index(drop=True).fillna(0)
 	ventas2['Utilidad ($)'] = ventas2['Venta ($)'] - ventas2['Cost_prom']
 	ventas2['Margen (%)'] = ventas2['Utilidad ($)'] / ventas2['Venta ($)']
-	st.write(ventas2)
+	###############################################################################################################
+	#####################CON DESCUENTOS DIRECTOS"#############################################################
+	productos_temp = productos[['SKU', 'Producto']]
+	productos_temp['SKU'] = productos_temp['SKU'].str.strip()
+	productos_temp['Producto'] = productos_temp['Producto'].str.strip()
+	#productos_temp.columns = ['SKU', 'Producto']
+	ventas2_temp = ventas_temp.sort_values(by=['Mes'])
+	descuento2 = descuento.sort_values(by=['Mes'])
+	devolucion2 = devolucion.sort_values(by=['Mes'])
+	for i in range(len(ventas2_temp['Descuento_dir'])):
+		ventas2_temp.loc[i,'Descuento_dir'] = float(ventas2_temp.loc[i,'Descuento_dir'])
+	#st.write(ventas2_temp)
+	ventas2_temp = ventas2_temp.groupby(['Mes', 'Canal', 'Cliente', 'SKU']).agg({'Venta ($)':'sum',
+																	   'Descuento_dir':'sum',
+																	   'Venta (PZA)':'sum',
+																	   'Cost_prom':'sum'}).reset_index()
+	descuento2 = descuento2.groupby(['Mes', 'Canal', 'Cliente']).agg({'Descuento':'sum'}).reset_index()
+	devolucion2 = devolucion2.groupby(['Mes', 'Canal', 'Cliente']).agg({'Devolucion':'sum'}).reset_index()
+	ventas2_temp = pd.merge(ventas2_temp, descuento2, on=['Mes', 'Canal', 'Cliente'], how='left').reset_index(drop=True).fillna(0)
+	ventas2_temp = pd.merge(ventas2_temp, devolucion2, on=['Mes', 'Canal', 'Cliente'], how='left').reset_index(drop=True).fillna(0)
+	ventas2_temp['Utilidad ($)'] = ventas2_temp['Venta ($)'] - ventas2_temp['Cost_prom']
+	ventas2_temp['Margen (%)'] = ventas2_temp['Utilidad ($)'] / ventas2_temp['Venta ($)']
+	ventas2_temp = pd.merge(ventas2_temp, productos_temp, on='SKU', how='left')
+	###############################################################################################################
+
+	st.write(ventas2_temp)
 
 
 	st.header('CXC')
@@ -268,7 +312,7 @@ def main():
 			cobranza.loc[i,'Mesn'] = 'Vencido'
 	cobranza_det = cobranza.copy()
 	#cobranza = cobranza.groupby(['Cve_cte', 'Año', 'Sem2']).agg({'Saldo cxc':'sum'})
-	kpi_cobranza = pd.pivot_table(cobranza, index=['Cve_cte'], values=['Saldo cxc'], columns=['Semana','Mesn'], aggfunc='sum', margins=True).reset_index().fillna(0)
+	kpi_cobranza = pd.pivot_table(cobranza, index=['Cliente_c'], values=['Saldo cxc'], columns=['Semana','Mesn'], aggfunc='sum', margins=True).reset_index().fillna(0)
 	
 	st.write(kpi_cobranza)
 	#st.write(cobranza_det)
