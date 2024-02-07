@@ -326,10 +326,10 @@ def main():
 	###############################################################################################################
 
 	st.write(ventas2_temp)
-
+	hoy = datetime.today()
 	if st.checkbox('CXC'):
 		st.header('CXC')
-		hoy = datetime.today()
+		
 		cobranza['Estatus'] = cobranza['Cve_factu']
 		for i in range(len(cobranza['No_fac'])):
 			if cobranza.loc[i,'Vencimiento']<hoy:
