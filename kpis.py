@@ -81,6 +81,12 @@ def main():
 		cxc = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/cobranza.csv',encoding='latin-1')
 		return cxc
 	cobranza = cobranza()
+	@st.cache_resource
+	def porpagar():
+		cxp = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/porpagar.csv',encoding='latin-1')
+		return cxp
+	porpagar = porpagar()
+
 
 
 	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
@@ -201,6 +207,18 @@ def main():
 	productos.columns = ['SKU', 'Producto', 'Unidad', 'Costo']
 	productos = productos.fillna(0)
 
+	#Tratamiento base por pagar
+	porpagar.columns = porpagar.columns.str.strip()
+	porpagar['Nom_prov'] = porpagar['Nom_prov'].str.strip()
+	porpagar = porpagar[['No_facc', 'Falta_fac', 'Cve_prov', 'Nom_prov', 'Saldo_fac', 'Dia_cre', 'Cve_mon', 'U_tip_cam', 'Fech_venci', 'Total_fac', 'Cve_iva']]
+	porpagar.columns = ['No_facc', 'Falta_fac', 'Cve_prov', 'Proveedor', 'Saldo_CXP', 'Dias_credito', 'Moneda', 'TC', 'Vencimiento', 'Total_facturado', 'Tipo_proveedor']
+	porpagar['Vencimiento'] = pd.to_datetime(porpagar['Vencimiento'], format='%d/%m/%Y')
+	porpagar['Año'] = porpagar['Vencimiento'].dt.year
+	porpagar['Mes'] = porpagar['Vencimiento'].dt.month
+	porpagar['Mesn'] = pd.to_datetime(porpagar['Vencimiento'], format='%d/%m/%Y').dt.strftime('%b')
+	porpagar['Semana'] = porpagar['Vencimiento'].dt.isocalendar().week.astype('int')
+	porpagar['Sem2'] = pd.to_datetime(porpagar['Vencimiento'], format='%d/%m/%Y').dt.strftime('%Y-%b-%V')
+	
 	#########FILTROS############
 	st.sidebar.title('Filtros')
 	canal_list   = st.sidebar.multiselect('Canal', ventas['Canal'].unique())
@@ -309,39 +327,61 @@ def main():
 
 	st.write(ventas2_temp)
 
-
-	st.header('CXC')
-	hoy = datetime.today()
-	cobranza['Estatus'] = cobranza['Cve_factu']
-	for i in range(len(cobranza['No_fac'])):
-		if cobranza.loc[i,'Vencimiento']<hoy:
-			cobranza.loc[i,'Estatus'] = 'Vencido'
-		else:
-			cobranza.loc[i,'Estatus'] = 'Corriente'
-	for i in range(len(cobranza['No_fac'])):
-		if cobranza.loc[i,'Año'] == 2025:
-			cobranza.loc[i,'Estatus'] = 'Futuro'
-	for i in range(len(cobranza['Estatus'])):
-		if cobranza.loc[i,'Estatus'] == 'Vencido':
-			cobranza.loc[i,'Semana'] = 'Vencido'
-		if cobranza.loc[i,'Estatus'] == 'Futuro':
-			cobranza.loc[i,'Semana'] = 'Futuro'
-	for i in range(len(cobranza['Estatus'])):
-		if cobranza.loc[i,'Estatus'] == 'Vencido':
-			cobranza.loc[i,'Mesn'] = 'Vencido'
-		if cobranza.loc[i,'Estatus'] == 'Futuro':
-			cobranza.loc[i,'Mesn'] = 'Futuro'
-	cobranza_det = cobranza.copy()
-	cobranza_det.columns = ['Cve_factu', 'No_fac', 'Fecha', 'Cve_cte', 'Saldo cxc', 'Limite credito', 'Dias', 'Vencimiento', 'Total facturado',
+	if st.checkbox('CXC'):
+		st.header('CXC')
+		hoy = datetime.today()
+		cobranza['Estatus'] = cobranza['Cve_factu']
+		for i in range(len(cobranza['No_fac'])):
+			if cobranza.loc[i,'Vencimiento']<hoy:
+				cobranza.loc[i,'Estatus'] = 'Vencido'
+			else:
+				cobranza.loc[i,'Estatus'] = 'Corriente'
+		for i in range(len(cobranza['No_fac'])):
+			if cobranza.loc[i,'Año'] == 2025:
+				cobranza.loc[i,'Estatus'] = 'Futuro'
+		for i in range(len(cobranza['Estatus'])):
+			if cobranza.loc[i,'Estatus'] == 'Vencido':
+				cobranza.loc[i,'Semana'] = 'Vencido'
+			if cobranza.loc[i,'Estatus'] == 'Futuro':
+				cobranza.loc[i,'Semana'] = 'Futuro'
+		for i in range(len(cobranza['Estatus'])):
+			if cobranza.loc[i,'Estatus'] == 'Vencido':
+				cobranza.loc[i,'Mesn'] = 'Vencido'
+			if cobranza.loc[i,'Estatus'] == 'Futuro':
+				cobranza.loc[i,'Mesn'] = 'Futuro'
+		cobranza_det = cobranza.copy()
+		cobranza_det.columns = ['Cve_factu', 'No_fac', 'Fecha', 'Cve_cte', 'Saldo cxc', 'Limite credito', 'Dias', 'Vencimiento', 'Total facturado',
 							'Cliente', 'Añof', 'Mesf', 'Mes2f', 'Año', 'Mes', 'Mesn', 'Semana', 'Sem2', 'Estatus']
-	#st.write(cobranza_det)
+		#st.write(cobranza_det)
 	
-	cobranza_det1 = cobranza_det.groupby(['Cve_cte', 'Cliente', 'Año', 'Sem2']).agg({'Saldo cxc':'sum'}).reset_index()
-	#st.write(cobranza_det)
-	kpi_cobranza = pd.pivot_table(cobranza_det, index=['Cliente'], values=['Saldo cxc'], columns=['Semana','Mesn'], aggfunc='sum', margins=True).reset_index().fillna(0)
+		cobranza_det1 = cobranza_det.groupby(['Cve_cte', 'Cliente', 'Año', 'Sem2']).agg({'Saldo cxc':'sum'}).reset_index()
+		#st.write(cobranza_det)
+		kpi_cobranza = pd.pivot_table(cobranza_det, index=['Cliente'], values=['Saldo cxc'], columns=['Semana','Mesn'], aggfunc='sum', margins=True).reset_index().fillna(0)
 	
-	st.write(kpi_cobranza)
-	#st.write(cobranza)
+		st.write(kpi_cobranza)
+	
+	if st.checkbox('CXP'):
+		st.header('CXP')
+		
+		porpagar['Estatus'] = porpagar['No_facc']
+		for i in range(len(porpagar['No_facc'])):
+			if porpagar.loc[i,'Moneda'] == 2:
+				porpagar.loc[i,'Saldo_CXP'] = porpagar.loc[i,'Saldo_CXP'] * porpagar.loc[i,'TC']
+		for i in range(len(porpagar['No_facc'])):
+			if porpagar.loc[i,'Vencimiento']<hoy:
+				porpagar.loc[i,'Estatus'] = 'Vencido'
+			else:
+				porpagar.loc[i,'Estatus'] = 'Corriente'
+		for i in range(len(porpagar['Estatus'])):
+			if porpagar.loc[i,'Estatus'] == 'Vencido':
+				porpagar.loc[i,'Semana']  = 'Vencido'
+		for i in range(len(porpagar['Estatus'])):
+			if porpagar.loc[i,'Estatus'] == 'Vencido':
+				porpagar.loc[i,'Mesn'] = 'Vencido'
+		porpagar = porpagar.fillna(0)
+
+		kpi_porpagar = pd.pivot_table(porpagar, index=['Proveedor'], values=['Saldo_CXP'], columns=['Semana', 'Mesn'], aggfunc='sum', margins=True).reset_index().fillna(0)
+		st.write(kpi_porpagar)
 
 
 if __name__ == '__main__':
