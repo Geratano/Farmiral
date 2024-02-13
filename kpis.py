@@ -341,6 +341,10 @@ def main():
 	###############################################################################################################
 	ventas3_temp = ventas3_temp.drop(columns=['Mes_y', 'Mes'])
 	ventas3_temp = ventas3_temp.rename(columns={'Mes_x':'Mes'})
+	for i in range(len(ventas3_temp['No_fac'])):
+		ventas3_temp.loc[i,'Descuento'] = (ventas3_temp.loc[i,'Descuento']/1.16)
+		ventas3_temp.loc[i,'Devolucion'] = (ventas3_temp.loc[i,'Devolucion']/1.16)
+	ventas3_temp = ventas3_temp.fillna(0) 
 	descuento_total_por_factura = ventas3_temp.groupby('No_fac')['Descuento'].mean()
 	total_factura = ventas3_temp.groupby('No_fac')['Venta ($)'].sum()
 	#st.write(total_factura)
