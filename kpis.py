@@ -169,17 +169,16 @@ def main():
 	descuento['No_nota'] = descuento['No_nota'].str.strip()
 	descuento['Nom_cte'] = descuento['Nom_cte'].str.strip()
 	descuento['Cve_ncre'] = descuento['Cve_ncre'].str.strip()
-	descuento = descuento[['No_nota', 'Fecha', 'Cve_factu', 'Tot_nota', 'Nom_cte', 'No_cliente', 'Subtotal', 'Cve_ncre']]
-	descuento.columns = ['No_nota', 'Fecha_desc', 'Cve_factu', 'Descuento', 'Cliente', 'Cve_cte', 'Subtotal', 'Cve_ncre']
+	descuento = descuento[['No_nota', 'Fecha', 'Cve_factu', 'No_fac', 'Tot_nota', 'Nom_cte', 'No_cliente', 'Subtotal', 'Cve_ncre']]
+	descuento.columns = ['No_nota', 'Fecha_desc', 'Cve_factu', 'No_fac', 'Descuento', 'Cliente', 'Cve_cte', 'Subtotal', 'Cve_ncre']
 	descuento['Fecha_desc'] = pd.to_datetime(descuento['Fecha_desc'], format='%d/%m/%Y')
 	descuento['Año'] = descuento['Fecha_desc'].dt.year
 	descuento['Mes'] = descuento['Fecha_desc'].dt.month
 	descuento['Mes2'] = pd.to_datetime(descuento['Fecha_desc'], format='%d/%m/%Y').dt.strftime('%Y-%m')
 	descuento = descuento.fillna(0)
-	descuento = descuento.groupby(['Año', 'Mes', 'Mes2', 'Cve_cte', 'Cliente', 'Cve_ncre']).agg({'Descuento':'sum',
+	descuento = descuento.groupby(['Año', 'Mes', 'Mes2', 'Cve_cte', 'Cliente', 'No_fac', 'Cve_ncre']).agg({'Descuento':'sum',
 															             	 'Subtotal':'sum'}).reset_index()
 	descuento = descuento.merge(tipo, on='Cve_ncre', how='left')
-
 	
 	#Tratamiento base devolucion
 	devolucion.columns = devolucion.columns.str.strip()
@@ -196,9 +195,9 @@ def main():
 	devolucion['Mes'] = devolucion['Fecha_dev'].dt.month
 	devolucion['Mes2'] = pd.to_datetime(devolucion['Fecha_dev'], format='%d/%m/%Y').dt.strftime('%Y-%m')
 	devolucion = devolucion.fillna(0)
-	devolucion = devolucion.groupby(['Año', 'Mes', 'Mes2', 'Cve_cte', 'Cliente', 'Producto']).agg({'Devolucion':'sum',
-																			               'Subtotal':'sum'}).reset_index()					  
-
+	devolucion = devolucion.groupby(['Año', 'Mes', 'Mes2', 'Cve_cte', 'Cliente', 'No_fac', 'SKU', 'Producto']).agg({'Devolucion':'sum',
+																			               'Subtotal':'sum'}).reset_index()
+	#st.write(devolucion)
 	#Tratamiento base productos
 	productos.columns = productos.columns.str.strip()
 	productos['Cve_prod'] = productos['Cve_prod'].str.strip()
@@ -212,7 +211,7 @@ def main():
 	porpagar['Nom_prov'] = porpagar['Nom_prov'].str.strip()
 	porpagar = porpagar[['No_facc', 'Falta_fac', 'Cve_prov', 'Nom_prov', 'Saldo_fac', 'Dia_cre', 'Cve_mon', 'U_tip_cam', 'Fech_venci', 'Total_fac', 'Cve_iva']]
 	porpagar.columns = ['No_facc', 'Falta_fac', 'Cve_prov', 'Proveedor', 'Saldo_CXP', 'Dias_credito', 'Moneda', 'TC', 'Vencimiento', 'Total_facturado', 'Tipo_proveedor']
-	porpagar['Vencimiento'] = pd.to_datetime(porpagar['Vencimiento'], format='%d/%m/%Y')
+	porpagar['Vencimiento'] = pd.to_datetime(porpagar['Vencimiento'], format='%d/%m/%Y').fillna(0)
 	porpagar['Año'] = porpagar['Vencimiento'].dt.year
 	porpagar['Mes'] = porpagar['Vencimiento'].dt.month
 	porpagar['Mesn'] = pd.to_datetime(porpagar['Vencimiento'], format='%d/%m/%Y').dt.strftime('%b')
@@ -244,20 +243,22 @@ def main():
 		kpi_ventas_an_pes = pd.pivot_table(ventas, index=['Canal', 'Cliente', 'SKU'], values=['Venta ($)'], columns='Año', aggfunc='sum', margins=True).reset_index().fillna(0)
 		st.write(kpi_ventas_an_pes)
 	anio = st.selectbox('Año', ventas.sort_values(by=['Año'])['Año'].unique())
-	
 	ventas = ventas[ventas['Año']==anio].reset_index()
 	ventas_temp = ventas_temp[ventas_temp['Año'] == anio].reset_index()
 
-	descuento = descuento[descuento['Año']==anio].reset_index(drop=True)
-	devolucion = devolucion[devolucion['Año']==anio].reset_index(drop=True)
-
+	#descuento = descuento[descuento['Año']==anio].reset_index(drop=True)
+	#devolucion = devolucion[devolucion['Año']==anio].reset_index(drop=True)
 	descuento = descuento.merge(canal, on='Cve_cte', how='left').reset_index(drop=True).fillna(0)
+	descuento = descuento.drop(columns=['Cliente'])
+	descuento = descuento.rename(columns={'Cliente_c':'Cliente'})
 	descuento = descuento[(descuento['Canal'].isin(canal_list))
 						 &(descuento['Cliente'].isin(cliente_list))]
+	#st.write(descuento)
 	devolucion = devolucion.merge(canal, on='Cve_cte', how='left').reset_index(drop=True).fillna(0)
+	devolucion = devolucion.drop(columns=['Cliente'])
+	devolucion = devolucion.rename(columns={'Cliente_c':'Cliente'})
 	devolucion = devolucion[(devolucion['Canal'].isin(canal_list))
 						 &(devolucion['Cliente'].isin(cliente_list))]
-
 	kpi_ventaspes = pd.pivot_table(ventas, index=['Canal', 'Cliente', 'SKU'], values=['Venta ($)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
 	kpi_ventaspza = pd.pivot_table(ventas, index=['Canal', 'Cliente', 'SKU'], values=['Venta (PZA)'], columns='Mes2', aggfunc='sum', margins=True).reset_index().fillna(0)
 	
@@ -295,6 +296,9 @@ def main():
 	ventas2 = ventas2.groupby(['Mes', 'Canal', 'Cliente', 'SKU']).agg({'Venta ($)':'sum',
 																	   'Venta (PZA)':'sum',
 																	   'Cost_prom':'sum'}).reset_index()
+	descuento3 = descuento2.groupby(['Mes', 'Canal', 'Cliente', 'No_fac']).agg({'Descuento':'sum'}).reset_index()
+	#st.write(descuento3)
+	devolucion3 = devolucion2.groupby(['Mes', 'Canal', 'Cliente', 'No_fac', 'SKU']).agg({'Devolucion':'sum'}).reset_index()
 	descuento2 = descuento2.groupby(['Mes', 'Canal', 'Cliente']).agg({'Descuento':'sum'}).reset_index()
 	devolucion2 = devolucion2.groupby(['Mes', 'Canal', 'Cliente']).agg({'Devolucion':'sum'}).reset_index()
 	ventas2 = pd.merge(ventas2, descuento2, on=['Mes', 'Canal', 'Cliente'], how='left').reset_index(drop=True).fillna(0)
@@ -312,6 +316,17 @@ def main():
 	devolucion2 = devolucion.sort_values(by=['Mes'])
 	for i in range(len(ventas2_temp['Descuento_dir'])):
 		ventas2_temp.loc[i,'Descuento_dir'] = float(ventas2_temp.loc[i,'Descuento_dir'])
+	ventas3_temp = ventas2_temp.groupby(['Mes', 'Canal', 'Cliente', 'No_fac', 'SKU']).agg({'Venta ($)':'sum',
+																						   'Descuento_dir':'sum',
+																						   'Venta (PZA)':'sum',
+																						   'Cost_prom':'sum'}).reset_index()
+	for i in range(len(ventas3_temp['No_fac'])):
+		ventas3_temp.loc[i,'No_fac'] = str(ventas3_temp.loc[i,'No_fac'])
+		ventas3_temp.loc[i,'No_fac'] = str(ventas3_temp.loc[i,'No_fac'])
+	ventas3_temp = pd.merge(ventas3_temp, devolucion3, on=['Canal', 'Cliente', 'No_fac', 'SKU'], how='left').reset_index(drop=True).fillna(0)
+	ventas3_temp = pd.merge(ventas3_temp, descuento3, on=['Canal', 'Cliente', 'No_fac'], how='left').reset_index(drop=True).fillna(0)
+	
+	
 	ventas2_temp = ventas2_temp.groupby(['Mes', 'Canal', 'Cliente', 'SKU']).agg({'Venta ($)':'sum',
 																	   'Descuento_dir':'sum',
 																	   'Venta (PZA)':'sum',
@@ -324,8 +339,22 @@ def main():
 	ventas2_temp['Margen (%)'] = ventas2_temp['Utilidad ($)'] / ventas2_temp['Venta ($)']
 	ventas2_temp = pd.merge(ventas2_temp, productos_temp, on='SKU', how='left')
 	###############################################################################################################
-
-	st.write(ventas2_temp)
+	ventas3_temp = ventas3_temp.drop(columns=['Mes_y', 'Mes'])
+	ventas3_temp = ventas3_temp.rename(columns={'Mes_x':'Mes'})
+	descuento_total_por_factura = ventas3_temp.groupby('No_fac')['Descuento'].mean()
+	total_factura = ventas3_temp.groupby('No_fac')['Venta ($)'].sum()
+	#st.write(total_factura)
+	#for i in range(len(descuento_total_por_factura)):
+	#	descuento_total_por_factura.loc[i,'No_fac'] = str(descuento_total_por_factura.loc[i,'No_fac'])
+	ventas3_temp['Proporcion_descuento'] = ventas3_temp.apply(lambda row: row['Venta ($)'] / total_factura[row['No_fac']], axis=1)
+	ventas3_temp['Descuento_proporcional'] = ventas3_temp['Proporcion_descuento'] * ventas3_temp['Descuento']
+	ventas3_temp['Venta_Neta'] = ventas3_temp['Venta ($)'] - ventas3_temp['Descuento_proporcional'] - ventas3_temp['Devolucion']
+	ventas3_temp['Utilidad ($)'] = ventas3_temp['Venta_Neta'] - ventas3_temp['Cost_prom']
+	ventas3_temp['Margen (%)'] = ventas3_temp['Utilidad ($)'] / ventas3_temp['Venta_Neta']
+	ventas3_temp = pd.merge(ventas3_temp, productos_temp, on='SKU', how='left')
+	st.write(ventas3_temp)
+	#st.write(ventas2_temp)
+	#st.download_button(label="Descargar", data=ventas2_temp.to_csv(), mime="text/csv")
 	hoy = datetime.today()
 	if st.checkbox('CXC'):
 		st.header('CXC')
