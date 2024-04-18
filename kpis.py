@@ -86,7 +86,11 @@ def main():
 		cxp = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/porpagar.csv',encoding='latin-1')
 		return cxp
 	porpagar = porpagar()
-
+	@st.cache_resource
+	def pagos_sem():
+		pagos = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/pagos_sem.csv',encoding='latin-1')
+		return pagos
+	pagos = pagos_sem()
 
 
 	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
@@ -218,6 +222,9 @@ def main():
 	porpagar['Semana'] = porpagar['Vencimiento'].dt.isocalendar().week.astype('int')
 	porpagar['Sem2'] = pd.to_datetime(porpagar['Vencimiento'], format='%d/%m/%Y').dt.strftime('%Y-%b-%V')
 	
+	#Tratamiento base pagos
+	pagos.columns = pagos.columns.str.strip()
+	pagos['Nom_cte'] = pagos['Nom_cte'].str.strip()
 	#########FILTROS############
 	st.sidebar.title('Filtros')
 	canal_list   = st.sidebar.multiselect('Canal', ventas['Canal'].unique())
@@ -319,7 +326,10 @@ def main():
 	ventas3_temp = ventas2_temp.groupby(['Mes', 'Canal', 'Cliente', 'No_fac', 'SKU']).agg({'Venta ($)':'sum',
 																						   'Descuento_dir':'sum',
 																						   'Venta (PZA)':'sum',
+	
 																						   'Cost_prom':'sum'}).reset_index()
+	descuento3 = descuento3.groupby(['Canal', 'Cliente', 'No_fac']).agg({'Descuento':'sum'}).reset_index()
+	#st.write(descuento3)
 	for i in range(len(ventas3_temp['No_fac'])):
 		ventas3_temp.loc[i,'No_fac'] = str(ventas3_temp.loc[i,'No_fac'])
 		ventas3_temp.loc[i,'No_fac'] = str(ventas3_temp.loc[i,'No_fac'])
@@ -339,8 +349,8 @@ def main():
 	ventas2_temp['Margen (%)'] = ventas2_temp['Utilidad ($)'] / ventas2_temp['Venta ($)']
 	ventas2_temp = pd.merge(ventas2_temp, productos_temp, on='SKU', how='left')
 	###############################################################################################################
-	ventas3_temp = ventas3_temp.drop(columns=['Mes_y', 'Mes'])
-	ventas3_temp = ventas3_temp.rename(columns={'Mes_x':'Mes'})
+	#ventas3_temp = ventas3_temp.drop(columns=['Mes_y', 'Mes'])
+	#ventas3_temp = ventas3_temp.rename(columns={'Mes_x':'Mes'})
 	for i in range(len(ventas3_temp['No_fac'])):
 		ventas3_temp.loc[i,'Descuento'] = (ventas3_temp.loc[i,'Descuento']/1.16)
 		ventas3_temp.loc[i,'Devolucion'] = (ventas3_temp.loc[i,'Devolucion']/1.16)
@@ -362,7 +372,6 @@ def main():
 	hoy = datetime.today()
 	if st.checkbox('CXC'):
 		st.header('CXC')
-		
 		cobranza['Estatus'] = cobranza['Cve_factu']
 		for i in range(len(cobranza['No_fac'])):
 			if cobranza.loc[i,'Vencimiento']<hoy:
