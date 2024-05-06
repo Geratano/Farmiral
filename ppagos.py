@@ -76,8 +76,8 @@ def main():
 		cantidades_pagar2 = f'cantidades_pagar2_{i}'
 		plantilla_pagos = f'plantilla_pagos2_{i}'
 		tabla_fin[plantilla_pagos] = prov[prov['Alias'] == provedores_selec.get(provedores_select)]
-		col_names = ['Secuencia', 'Tipo', 'Clabe', 'Importe', 'Iva', 'Tipo', 'Descripcion', 'Ref_Numerica', 'Referencia']	
-		df_temp = pd.DataFrame(tabla_fin, columns = col_names)
+		#col_names = ['Secuencia', 'Tipo', 'Clabe', 'Importe', 'Iva', 'Tipo', 'Descripcion', 'Ref_Numerica', 'Referencia']	
+		df_temp = pd.DataFrame(tabla_fin)
 	st.write(df_temp)
     #globals()[f'form_filter2_{i}'] = form_filter[form_filter['Producto'] == formulas_selec.get(nombres_formulas)]
     ####################PEDIR#####################################################
