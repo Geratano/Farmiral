@@ -305,13 +305,18 @@ def main():
 																	   'Cost_prom':'sum'}).reset_index()
 	descuento3 = descuento2.groupby(['Mes', 'Canal', 'Cliente', 'No_fac']).agg({'Descuento':'sum'}).reset_index()
 	#st.write(descuento3)
+
 	devolucion3 = devolucion2.groupby(['Mes', 'Canal', 'Cliente', 'No_fac', 'SKU']).agg({'Devolucion':'sum'}).reset_index()
 	descuento2 = descuento2.groupby(['Mes', 'Canal', 'Cliente']).agg({'Descuento':'sum'}).reset_index()
 	devolucion2 = devolucion2.groupby(['Mes', 'Canal', 'Cliente']).agg({'Devolucion':'sum'}).reset_index()
+
+
 	ventas2 = pd.merge(ventas2, descuento2, on=['Mes', 'Canal', 'Cliente'], how='left').reset_index(drop=True).fillna(0)
 	ventas2 = pd.merge(ventas2, devolucion2, on=['Mes', 'Canal', 'Cliente'], how='left').reset_index(drop=True).fillna(0)
+	
 	ventas2['Utilidad ($)'] = ventas2['Venta ($)'] - ventas2['Cost_prom']
 	ventas2['Margen (%)'] = ventas2['Utilidad ($)'] / ventas2['Venta ($)']
+
 	###############################################################################################################
 	#####################CON DESCUENTOS DIRECTOS"#############################################################
 	productos_temp = productos[['SKU', 'Producto']]
