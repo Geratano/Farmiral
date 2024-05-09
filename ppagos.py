@@ -47,6 +47,13 @@ def main():
 		return prov
 	prov = provcuentas()
 
+	colu={
+		'columna1':['none']* len(prov),
+		'clumna2':['none']* len(prov),
+		'columna3':['none']* len(prov)
+	}
+	prov=prov.assign(**colu)
+
 	for i in range(len(prov['Alias'])):
 		prov.loc[i,'Numero'] = str(prov.loc[i,'Numero'])
 
@@ -68,18 +75,36 @@ def main():
 		cantidades_pagar2 = f'cantidades_pagar2_{i}'
 		plantilla_pagos = f'plantilla_pagos2_{i}'
 		referenciap = f'referenciap_{i}'
+
 		provedores_selec[provedores_select] = st.selectbox('Elije al proveedor', prov['Alias'].sort_values().unique(), key=f'provedores_selec_{i}')
 		cantidades_pagar[cantidades_pagar2] = st.number_input('Cantidad a pagar en MXN', key=f'cantidades_pagar2_{i}', step=1)
 		referencia[referenciap] = st.text_input('Escribe el concepto de pago', key=f'referenciap_{i}')
+		
+
 	for i in range(cantidad_pagos):
 		provedores_select = f'provedores_select_{i}'
 		cantidades_pagar2 = f'cantidades_pagar2_{i}'
 		plantilla_pagos = f'plantilla_pagos2_{i}'
 		tabla_fin[plantilla_pagos] = prov[prov['Alias'] == provedores_selec.get(provedores_select)]
-		#col_names = ['Secuencia', 'Tipo', 'Clabe', 'Importe', 'Iva', 'Tipo', 'Descripcion', 'Ref_Numerica', 'Referencia']	
-		col_names = ['Proveedor', 'Correo', 'Clabe', 'RFC', 'Banco', 'Tipo']
-		df_temp = pd.DataFrame(tabla_fin, columns = col_names)
+
+	df_temp= pd.concat(tabla_fin.values(), ignore_index=True)
 	st.write(df_temp)
+	st.write(tabla_fin)
+	
+		#col_names = ['Secuencia', 'Tipo', 'Cuenta_Destino', 'Importe', 'IVA','Descripcion', 'Ref_Numerica','Referencia']
+		# Secuencia= i
+		# Tipo= 's'
+		# Cuenta_destino= Numero
+		# Importe= Cantidad a pagar en MXN
+		#Iva=0
+		#Descripcion= Escribe el concepto de pago
+		#Ref_Numerica=(crear un recuadro donde ingresen la fecha)
+		#Referencia=Alias
+  
+	#col_names = ['Proveedor', 'Correo', 'Clabe', 'RFC', 'Banco', 'Tipo']
+	#df_temp = pd.DataFrame(tabla_fin, columns = col_names)
+	#st.write(df_temp)
+
     #globals()[f'form_filter2_{i}'] = form_filter[form_filter['Producto'] == formulas_selec.get(nombres_formulas)]
     ####################PEDIR#####################################################
     # #st.write(bases_formulas.get('form_filter2_1')[bases_formulas.get('form_filter2_1')['Cve_prod'].str.startswith('M')].reset_index(drop=True))
@@ -121,15 +146,6 @@ def main():
     # concat_exp = concat_exp.merge(existeN_comp, on='SKU', how='left')
     # st.write(concat_exp)
     # st.download_button(label="Descargar", data=concat_exp.to_csv(), mime="text/csv")
-
-	st.write(tabla_fin)
-
-
-
-
-
-
-
 
 
 
