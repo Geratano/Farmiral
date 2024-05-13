@@ -47,12 +47,12 @@ def main():
 		return prov
 	prov = provcuentas()
 
-	colu={
-		'columna1':['none']* len(prov),
-		'clumna2':['none']* len(prov),
-		'columna3':['none']* len(prov)
-	}
-	prov=prov.assign(**colu)
+	#colu={
+	#	'columna1':['none']* len(prov),
+	#	'clumna2':['none']* len(prov),
+	#	'columna3':['none']* len(prov)
+	#}
+	#prov=prov.assign(**colu)
 
 	for i in range(len(prov['Alias'])):
 		prov.loc[i,'Numero'] = str(prov.loc[i,'Numero'])
@@ -64,7 +64,9 @@ def main():
 	referencia = {}
 	plantilla_pagos = {}
 	tabla_fin = {}
+	tabla_usu = {}
 	df_temp = {}
+	#tabla_dos = {}
     #base_me = {}
     #base_st = {}
     #bases_formulas = {}
@@ -85,11 +87,39 @@ def main():
 		provedores_select = f'provedores_select_{i}'
 		cantidades_pagar2 = f'cantidades_pagar2_{i}'
 		plantilla_pagos = f'plantilla_pagos2_{i}'
+		referenciap = f'referenciap_{i}'
 		tabla_fin[plantilla_pagos] = prov[prov['Alias'] == provedores_selec.get(provedores_select)]
-
+		tabla_usu[cantidades_pagar2] = [provedores_selec.get(provedores_select), cantidades_pagar.get(cantidades_pagar2), referencia.get(referenciap) ]
+	
+	
+	ref_num = st.text_input('Escribe la referencia numerica')
+	ref_str = st.text_input('Escribe la referencia de pagos')
 	df_temp= pd.concat(tabla_fin.values(), ignore_index=True)
-	st.write(df_temp)
-	st.write(tabla_fin)
+	df_temp = df_temp.rename(columns={'Alias':'Proveedor'})
+	df_usu = pd.DataFrame(tabla_usu.values(), columns = ['Proveedor', 'Cantidad', 'Descripcion'])
+	#st.write(df_usu)
+	df_base = df_temp.merge(df_usu, on='Proveedor', how='left')
+	col_names_banregio = ['Secuencia', 'Tipo', 'Cuenta_Destino', 'Importe', 'IVA', 'Descripcion', 'Ref_Numerica', 'Referencia']
+	n = len(df_base['Proveedor'])
+	sec = list(range(n))
+	tipo = ["s" for i in range(n)]
+	iva = [None]*n
+	ref = [ref_num for i in range(n)]
+	referencia = [ref_str for i in range(n)]
+	#df_validacion = df_validacion.groupby(['Proveedor'])
+	if st.checkbox('Plantilla Banregio'):
+		df_banregio = pd.DataFrame(list(zip(sec, tipo, df_base['Numero'], df_base['Cantidad'], iva, df_base['Descripcion'], ref, referencia)), columns=col_names_banregio)
+		st.write(df_banregio)
+		df_validacion = pd.DataFrame(list(zip(df_base['Proveedor'], df_base['Cantidad'])), columns=['Proveedor', 'Cantidad'])
+		df_validacion = df_validacion.groupby(['Proveedor']).agg({'Cantidad':'sum'}).reset_index()
+		if st.checkbox('Validacion'):
+			st.write(df_validacion)
+			monto_pago = df_validacion['Cantidad'].sum()
+			frase_val = 'Monto total de solicitud de pagos $ ' + str(round(monto_pago))
+			st.info(frase_val, icon='💵')
+			#st.write(frase_val)
+			#st.write(cant_usu)
+	#st.write(des_usu)
 	
 		#col_names = ['Secuencia', 'Tipo', 'Cuenta_Destino', 'Importe', 'IVA','Descripcion', 'Ref_Numerica','Referencia']
 		# Secuencia= i
