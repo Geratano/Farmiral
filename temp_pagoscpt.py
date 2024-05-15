@@ -63,11 +63,10 @@ def main():
     tc = st.number_input('Tipo de cambio', value=1.00, step=0.01)
     cantidades_pagar = cantidades_pagar*tc
     fact = st.text_input('Escribe el concepto de pago')
-    
     #col_names_banregio = ['Secuencia', 'Tipo', 'Cuenta_Destino', 'Importe', 'IVA', 'Descripcion', 'Ref_Numerica', 'Referencia']
     if st.button('Append Row'):
         # Construct a row from user input
-        new_row = {'Proveedor': provedores_selec, 'Monto': cantidades_pagar, 'Facturas': fact }
+        new_row = {'Proveedor': provedores_selec, 'Monto': cantidades_pagar, 'Facturas': fact, 'tc': tc, 'USD': cantidades_pagar/tc }
         
         # Append the new row to the DataFrame
         st.session_state.data = append_row(st.session_state.data, new_row)
@@ -80,12 +79,29 @@ def main():
     st.info(frase_val, icon='💵')
     #st.write(st.session_state.data['Proveedor'])
     df_temp = st.session_state.data.merge(prov, on='Proveedor', how='left')
+    
+     
+    if st.checkbox('Cargar base prellenada'):
+        try:
+            df_temp = st.file_uploader('Selecciona la base prellenada', type='csv')
+            df_temp = pd.read_csv(df_temp, dtype={'Numero':str}, encoding='latin-1')
+            df_temp = pd.DataFrame(df_temp)
+            st.write('Validacion:', df_temp)
+            monto_pago = df_temp['Monto'].sum()
+            frase_val = 'Monto total de solicitud de pagos $ ' + str(round(monto_pago))
+            st.info(frase_val, icon='💵')
+            #st.write(df_temp)
+            df_temp = df_temp.merge(prov, on='Proveedor', how='left')
+            #st.write(df_temp)
+        except ValueError:
+            st.warning('Carga una base')
     ref_num = st.text_input('Escribe la referencia numerica')
     ref_str = st.text_input('Escribe la referencia de pagos')
-    
+
     if st.checkbox('Plantilla Banregio'):
         col_names_banregio = ['Secuencia', 'Tipo', 'Cuenta_Destino', 'Importe', 'IVA', 'Descripcion', 'Ref_Numerica', 'Referencia']
-        n=len(st.session_state.data['Proveedor'])
+        #n=len(st.session_state.data['Proveedor'])
+        n=len(df_temp['Proveedor'])
         sec = list(range(n))
         tipo = ["s" for i in range(n)]
         iva = [0]*n
