@@ -4,8 +4,9 @@ from PIL import Image
 
 # Function to append row to DataFrame
 def append_row(df, row):
-    return df.append(row, ignore_index=True)
-
+    #return df.append(row, ignore_index=True)
+    row = pd.DataFrame([row])
+    return pd.concat([df, row], ignore_index=True)
 
 # Function to create initial DataFrame
 def create_initial_dataframe():
@@ -74,7 +75,6 @@ def main():
         st.success('Row appended successfully!')
 
     st.write('Validacion:', st.session_state.data)
-
     monto_pago = st.session_state.data['Monto'].sum()
     frase_val = 'Monto total de solicitud de pagos $ ' + str(round(monto_pago))
     st.info(frase_val, icon='💵')
