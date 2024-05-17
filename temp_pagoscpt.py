@@ -59,7 +59,7 @@ def main():
     
     # Collect user input for new row
     provedores_selec = st.selectbox('Elije al proveedor', prov['Proveedor'].sort_values().unique())
-    cantidades_pagar = st.number_input('Cantidad a pagar', step=1)
+    cantidades_pagar = st.number_input('Cantidad a pagar', step=0.01)
     tc = st.number_input('Tipo de cambio', value=1.00, step=0.01)
     cantidades_pagar = cantidades_pagar*tc
     fact = st.text_input('Escribe el concepto de pago')
@@ -110,7 +110,8 @@ def main():
         col_names_banregio = ['Secuencia', 'Tipo', 'Cuenta_Destino', 'Importe', 'IVA', 'Descripcion', 'Ref_Numerica', 'Referencia']
         data = list(zip(sec, tipo, df_temp['Clabe'], df_temp['Monto'], iva, df_temp['Facturas'], ref, referencia))
         df_banregio = pd.DataFrame(data, columns=col_names_banregio)
-        st.write(df_banregio)     
+        st.write(df_banregio)
+    
 
 if __name__ == '__main__':
     main()
