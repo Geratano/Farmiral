@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
 from PIL import Image
+#from io import StringIO
+#from openpyxl import Workbook
+from io import BytesIO
+import csv
+import base64
 
 # Function to append row to DataFrame
 def append_row(df, row):
@@ -50,7 +55,7 @@ def main():
     prov.columns = ['Proveedor', 'Correo', 'Clabe', 'RFC', 'Banco', 'Tipo']
     for i in range(len(prov['Proveedor'])):
         prov.loc[i,'Clabe'] = str(prov.loc[i,'Clabe'])
-
+    prov['Clabe'] = prov['Clabe'].astype(str)
     # Create or retrieve DataFrame from session_state
     if 'data' not in st.session_state:
         st.session_state.data = create_initial_dataframe()
@@ -59,7 +64,7 @@ def main():
     
     # Collect user input for new row
     provedores_selec = st.selectbox('Elije al proveedor', prov['Proveedor'].sort_values().unique())
-    cantidades_pagar = st.number_input('Cantidad a pagar', step=0.01)
+    cantidades_pagar = st.number_input('Cantidad a pagar', step=1)
     tc = st.number_input('Tipo de cambio', value=1.00, step=0.01)
     cantidades_pagar = cantidades_pagar*tc
     fact = st.text_input('Escribe el concepto de pago')
@@ -110,8 +115,27 @@ def main():
         col_names_banregio = ['Secuencia', 'Tipo', 'Cuenta_Destino', 'Importe', 'IVA', 'Descripcion', 'Ref_Numerica', 'Referencia']
         data = list(zip(sec, tipo, df_temp['Clabe'], df_temp['Monto'], iva, df_temp['Facturas'], ref, referencia))
         df_banregio = pd.DataFrame(data, columns=col_names_banregio)
-        st.write(df_banregio)
-    
+        df_banregio['Cuenta_Destino'] = df_banregio['Cuenta_Destino'].astype(str)
+        st.write(df_banregio)     
+        def to_excel(df):
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='Sheet1')
+            processed_data = output.getvalue()
+            return processed_data
+        def get_download_link(data, filename, text):
+            b64 = base64.b64encode(data).decode()
+            return f'<a href="data:application/octet-stream;base64,{b64}" download="{filename}">{text}</a>'
+        excel_data = to_excel(df_banregio)
+        st.markdown(get_download_link(excel_data, 'p_banregio.xlsx', 'Descargar plantilla Banregio'), unsafe_allow_html=True)
+        #def download_link(object_to_download, download_filename, download_link_text):
+        #    if isinstance(object_to_download, pd.DataFrame):
+        #        object_to_download = object_to_download.to_csv(index=False, quoting=csv.QUOTE_NONNUMERIC)
+        #    
+        #    b64 = base64.b64encode(object_to_download.encode()).decode()
+        #    return f'<a href="data:file/txt;base64,{b64}" download="{download_filename}">{download_link_text}</a>'
 
+        # Crear un enlace de descarga en Streamlit
+        #st.markdown(download_link(df_banregio, 'p_banregio.csv', 'Descargar Plantilla Banregio'), unsafe_allow_html=True)
 if __name__ == '__main__':
     main()
