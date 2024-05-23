@@ -1,6 +1,3 @@
 millify
 pytz
 matplotlib
-csv
-io
-base64
