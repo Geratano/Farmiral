@@ -65,7 +65,7 @@ def main():
     # Collect user input for new row
     provedores_selec = st.selectbox('Elije al proveedor', prov['Proveedor'].sort_values().unique())
     cantidades_pagar = st.number_input('Cantidad a pagar', step=1)
-    tc = st.number_input('Tipo de cambio', value=1.00, step=0.01)
+    tc = st.number_input('Tipo de cambio', value=1.0000, step=0.0001)
     cantidades_pagar = cantidades_pagar*tc
     fact = st.text_input('Escribe el concepto de pago')
     #col_names_banregio = ['Secuencia', 'Tipo', 'Cuenta_Destino', 'Importe', 'IVA', 'Descripcion', 'Ref_Numerica', 'Referencia']
