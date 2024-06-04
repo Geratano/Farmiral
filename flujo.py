@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from PIL import Image
 import re
+import altair as alt
 import numpy as np
 from io import BytesIO
 import csv
@@ -126,16 +127,42 @@ def main():
     with colu3:
         st.write("")
     
-    col1, col2= st.columns([10,18])
+    col1, col2, col3= st.columns([10,10,10])
     with col1:
-        st.write("Desglose flujo",df_tabla)
+        st.subheader('Desglose Flujo')
+        st.write(df_tabla)
     with col2:
+        st.subheader('Detalle concepto')
         seleccion = st.selectbox('Filtro', fl_filtro_sem['Concepto en presupuesto'].sort_values().unique())   
         filtro= fl_filtro_sem[fl_filtro_sem['Concepto en presupuesto']==seleccion]
-        st.write("Detalle",filtro)
+        #Eliminamos de la visualización algunas columnas
+        filtro = filtro[['Concepto', 'Estimado', 'Real', 'Seguimiento', 'Mes']]
+        total_est = filtro['Estimado'].sum()
+        total_real = filtro['Real'].sum()
+        frase_est = 'Estimado total $ ' + str(round(total_est))
+        frase_real = 'Real total $ ' + str(round(total_real))
+        st.write(filtro)
+        st.info(frase_est, icon='💵')
+        st.info(frase_real, icon='💵')
+    with col3:
+        st.subheader('Avance')
+        chart_data = {'Tipo': ['Estimado', 'Real'],
+                      'Monto': [total_est, total_real]}
+        chart_df = pd.DataFrame(chart_data)
+        total_monto = chart_df['Monto'].sum()
+        chart_df['Porcentaje'] = (chart_df['Monto']/total_monto) * 100
+        pie_bottom = alt.Chart(chart_df, title='Estimado vs Real').mark_arc().encode(
+        theta=alt.Theta(field='Monto', type="quantitative"),
+        color=alt.Color(field='Tipo', type="nominal", scale=alt.Scale(scheme='tableau10')), 
+        tooltip = [alt.Tooltip(field="Monto", type="quantitative"), 
+                   alt.Tooltip(field='Tipo', type='nominal'),
+                   alt.Tooltip(field='Porcentaje', type='quantitative', format=".2f")],
+
+        )
+        #Mostramos el objeto en streamlit
+        st.altair_chart(pie_bottom, use_container_width=True)
     
-    
-    
+    #scale=alt.Scale(scheme='tableau10')
 
 
 
