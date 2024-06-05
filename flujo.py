@@ -121,9 +121,17 @@ def main():
     saldo_final = pd.DataFrame({'Tipo':'Saldo Final','Estimado':[resultado_e],'Real':[resultado_r],'Seguimiento':[resultado_s]})
     df_suma = pd.concat([df_suma,saldo_final], ignore_index=True) # concateno a la tabla pivote
     
-        
+    # función para cambiar de color los numeros negativos
+    def color_negativo(val):
+        if isinstance(val, (int, float)):  # Asegurarse de que el valor es numérico
+            color = 'red' if val < 0 else '' # si el valor es menor a cero guardas rojo, de lo contrario no guardas nada
+            return f'color: {color}' # regresa un estilo css con el color establecido
+        return '' # en caso de que el valor sea str no regresa nada
+    
+
     with colu2:
-        st.write("Saldos",df_suma)
+        st.write("Saldos",df_suma.style.applymap(color_negativo)) # imprimimos la tabla agregando el estilo de la funcion color_negativo
+        
     with colu3:
         st.write("")
     
