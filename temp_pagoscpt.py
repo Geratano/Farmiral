@@ -85,6 +85,9 @@ def main():
     cantidades_pagar = cantidades_pagar*tc
     fact = st.text_input('Escribe el concepto de pago')
     #col_names_banregio = ['Secuencia', 'Tipo', 'Cuenta_Destino', 'Importe', 'IVA', 'Descripcion', 'Ref_Numerica', 'Referencia']
+
+#--------------------------------------------------BOTÓN PARA AGREGAR FILA-------------------------------------------------------------------------#
+
     if st.button('Append Row'):
         # Construct a row from user input
         new_row = {'Proveedor': provedores_selec, 'Monto': cantidades_pagar, 'Facturas': fact, 'tc': tc, 'USD': cantidades_pagar/tc }
@@ -107,8 +110,9 @@ def main():
     st.info(frase_val, icon='💵')
     #st.write(st.session_state.data['Proveedor'])
     df_temp = st.session_state.data.merge(prov, on='Proveedor', how='left')
-    
-     
+
+#--------------------------------------------------CARGAR BASE-------------------------------------------------------------------------#
+
     if st.checkbox('Cargar base prellenada'):
         try:
             df_temp = st.file_uploader('Selecciona la base prellenada', type='csv')
@@ -129,6 +133,7 @@ def main():
     ref_num = st.text_input('Escribe la referencia numerica')
     ref_str = st.text_input('Escribe la referencia de pagos')
 
+#--------------------------------------------------PLANTILLA BANREGIO-------------------------------------------------------------------------#
     if st.checkbox('Plantilla Banregio'):
         try:
             col_names_banregio = ['Secuencia', 'Tipo', 'Cuenta_Destino', 'Importe', 'IVA', 'Descripcion', 'Ref_Numerica', 'Referencia']
@@ -161,7 +166,8 @@ def main():
             st.warning("Cargando base...")
         except KeyError:
             st.error("⚠️LA BASE CARGADA NO ES COMPATIBLE.⚠️")
-    
+
+# ----------------------------------------BANCO BASE--------------------------------------------------------------#
     if st.checkbox('Plantilla Banco Base'):
         try:
             
@@ -190,6 +196,41 @@ def main():
                     b64 = base64.b64encode(text.encode()).decode()
                     return f'<a href="data:file/txt;base64,{b64}" download="{filename}">{text_link}</a>'
                 st.markdown(get_text_download_link(cadena_str, 'Banco_Base.txt', 'Descargar Plantilla'), unsafe_allow_html=True)
+        except KeyError:
+            st.error("⚠️LA BASE CARGADA NO ES COMPATIBLE.⚠️ ")
+        except TypeError:
+            st.warning("Cargando base...")
+#--------------------------------------------------PLANTILLA NUEVA-------------------------------------------------------------------------#
+
+    if st.checkbox("Nueva"):
+        st.write("Trabajando...")
+        try:
+            
+           
+            if len(df_temp) > 0:
+
+                cadena_lista_nueva = []
+                for index, row in df_temp.iterrows():
+                    cadena_lista_nueva.append("SP|"+ row['Proveedor'].replace(" ", "")+"|"+row['Clave'].replace(" ", "")+"|MXN|"+row['Id_banco'].replace(" ", "")+"|"+ row['Persona_tipo'].replace(" ", "")+"|||"+row['Proveedor'].replace(" ", "")+"|"+row['RFC'].replace(" ", "")+"||"+row['Correo'].replace(" ", "")+"||")
+                st.write(cadena_lista_nueva)
+
+                cadena_str3 = "\n".join(cadena_lista_nueva)
+                def get_text_download_link(text, filename, text_link):
+                    b64 = base64.b64encode(text.encode()).decode()
+                    return f'<a href="data:file/txt;base64,{b64}" download="{filename}">{text_link}</a>'
+                st.markdown(get_text_download_link(cadena_str3, 'Banco_nuevo.txt', 'Descargar Plantilla'), unsafe_allow_html=True)
+
+            else:
+                cadena_nueva = []
+                for index, row in st.session_state.filtered_data.iterrows():
+                    cadena_nueva.append("SP|"+ row['Proveedor'].replace(" ", "")+"|"+row['Clave'].replace(" ", "")+"|MXN|"+row['Id_banco'].replace(" ", "")+"|"+ row['Persona_tipo'].replace(" ", "")+"|||"+row['Proveedor'].replace(" ", "")+"|"+row['RFC'].replace(" ", "")+"||"+row['Correo'].replace(" ", "")+"||")
+                st.write(cadena_nueva)
+
+                cadena_str4 = "\n".join(cadena_nueva)
+                def get_text_download_link(text, filename, text_link):
+                    b64 = base64.b64encode(text.encode()).decode()
+                    return f'<a href="data:file/txt;base64,{b64}" download="{filename}">{text_link}</a>'
+                st.markdown(get_text_download_link(cadena_str4, 'Banco_nuevo.txt', 'Descargar Plantilla'), unsafe_allow_html=True)
         except KeyError:
             st.error("⚠️LA BASE CARGADA NO ES COMPATIBLE.⚠️ ")
         except TypeError:
