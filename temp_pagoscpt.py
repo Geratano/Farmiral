@@ -171,12 +171,12 @@ def main():
     if st.checkbox('Plantilla Banco Base'):
         try:
             
-           
+           # si la base cargada contiene datos se utiliza para la plantilla
             if len(df_temp) > 0:
 
                 cadena_lista = []
                 for index, row in df_temp.iterrows():
-                    cadena_lista.append("SP|"+ row['Proveedor'].replace(" ", "")+"|"+row['Clave'].replace(" ", "")+"|MXN|"+row['Id_banco'].replace(" ", "")+"|"+ row['Persona_tipo'].replace(" ", "")+"|||"+row['Proveedor'].replace(" ", "")+"|"+row['RFC'].replace(" ", "")+"||"+row['Correo'].replace(" ", "")+"||")
+                    cadena_lista.append("SP|"+ row['Proveedor'].strip()+"|"+row['Clave'].replace(" ", "")+"|MXN|"+row['Id_banco'].replace(" ", "")+"|"+ row['Persona_tipo'].replace(" ", "")+"||||"+row['Proveedor'].strip()+"|"+row['RFC'].replace(" ", "")+"||"+row['Correo'].replace(" ", "")+"||")
                 st.write(cadena_lista)
 
                 cadena_str2 = "\n".join(cadena_lista)
@@ -184,11 +184,11 @@ def main():
                     b64 = base64.b64encode(text.encode()).decode()
                     return f'<a href="data:file/txt;base64,{b64}" download="{filename}">{text_link}</a>'
                 st.markdown(get_text_download_link(cadena_str2, 'Banco_Base.txt', 'Descargar Plantilla'), unsafe_allow_html=True)
-
+        # en caso que la base cargada no tenga datos se va a ejecutar el siguiente bloque de código
             else:
                 cadena = []
                 for index, row in st.session_state.filtered_data.iterrows():
-                    cadena.append("SP|"+ row['Proveedor'].replace(" ", "")+"|"+row['Clave'].replace(" ", "")+"|MXN|"+row['Id_banco'].replace(" ", "")+"|"+ row['Persona_tipo'].replace(" ", "")+"|||"+row['Proveedor'].replace(" ", "")+"|"+row['RFC'].replace(" ", "")+"||"+row['Correo'].replace(" ", "")+"||")
+                    cadena.append("SP|"+ row['Proveedor'].strip()+"|"+row['Clave'].replace(" ", "")+"|MXN|"+row['Id_banco'].replace(" ", "")+"|"+ row['Persona_tipo'].replace(" ", "")+"||||"+row['Proveedor'].strip()+"|"+row['RFC'].replace(" ", "")+"||"+row['Correo'].replace(" ", "")+"||")
                 st.write(cadena)
 
                 cadena_str = "\n".join(cadena)
