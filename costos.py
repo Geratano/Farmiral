@@ -7,6 +7,15 @@ from datetime import datetime
 import re
 st.set_page_config(layout="wide")
 
+#funcion para agregar nueva fila
+def agregar_fila(df, row):
+    row = pd.DataFrame([row])
+    return pd.concat([df, row], ignore_index=True)
+
+# Funcion para crear un dataframe inical 
+def inicializador():
+    return pd.DataFrame(columns=['Materia prima', 'Cantidad','Unidad','Costo'])  
+
 def main():
     img = Image.open('logo_farmiral.jpg')
     col1, col2, col3 = st.columns([5,10,1])
@@ -37,7 +46,7 @@ def main():
     #Filtramos solo las columnas que necesitamos de cada base
     df_formulas = df_formulas[['Cve_copr', 'Cve_prod', 'Can_copr', 'Tip_copr', 'New_med', 'New_copr', 'Partida', 'Undfor', 
                                 'Desc_prod', 'Cve_mon', 'Cve_tial', 'Tipcam', 'Tip_cam', 'Ren_copr', 'Cto_ent', 'Uncfor']]
-    df_productos = df_productos[['Cve_prod', 'Desc_prod', 'Uni_med', 'Cto_ent', 'Cve_tial']]
+    df_productos = df_productos[['Cve_prod', 'Desc_prod', 'Uni_med', 'Cto_ent', 'Cve_tial','Fec_ent','Cve_monc']]
 
     #Quitamos los posibles espacios sobrantes de cada columna
     df_formulas['Cve_prod'] = df_formulas['Cve_prod'].str.strip()    
@@ -50,6 +59,9 @@ def main():
     df_productos['Cve_prod'] = df_productos['Cve_prod'].str.strip()
     df_productos['Desc_prod'] = df_productos['Desc_prod'].str.strip()
     df_productos['Uni_med'] = df_productos['Uni_med'].str.strip()
+    df_productos['Fec_ent'] = df_productos['Fec_ent'].str.strip()
+  
+    
 
      # convertimos la cantidad de KG a GR multiplicandola por 1000
     @st.cache_resource
@@ -175,90 +187,9 @@ def main():
         st.download_button(label="Descargar", data=pprint.to_csv(), mime="text/csv")
         #st.write(semt)
 
+    
     if st.checkbox('Formulador'):
-        #st.warning('Formulador en construcción')
         nombre_producto = st.text_input('Nombre del producto a formular')
-        materias_lista = st.multiselect('Materia Prima ALPHA', df_productos['Desc_prod'].sort_values().unique())
-        df_filtered = df_productos[df_productos['Desc_prod'].isin(materias_lista)].reset_index()
-        df_formulador = df_filtered[['Cve_prod', 'Desc_prod', 'Uni_med', 'Cto_ent']]
-        df_formulador.columns = ['SKU','Materia prima','Unidad','Costo']
-        duplist = df_productos[df_productos.duplicated('Desc_prod')]
-        cantidades_lista = st.text_input('Ingresa las cantidades necesarias por unidad en orden separados por una coma (,)')
-        c_lista = re.split(",",cantidades_lista)
-
-        mm = pd.Series(materias_lista)
-        
-
-        ###
-        temp_lista=[]
-        if len(cantidades_lista) != 0:
-           for i in range(len(materias_lista)):
-               n = float(c_lista[i])
-               temp_lista.append(n)
-
-        if len(temp_lista) !=0:
-            cc = pd.Series(temp_lista)
-            datamc = {'Materia prima': mm, 'Cantidad':cc}
-            inter = pd.DataFrame(datamc)
-            cantidad_total = inter['Cantidad'].sum()
-            inter['Porcentaje (%)'] = round(((inter['Cantidad'])/cantidad_total)*100,2)
-            inter_temp = inter.merge(df_formulador, on='Materia prima', how='left')
-            inter_temp = inter_temp[['Materia prima', 'Cantidad', 'Porcentaje (%)', 'Unidad', 'Costo']]
-            st.write(inter_temp)
-
-            ###
-            df_formulador = inter.merge(df_formulador, on='Materia prima', how='left')
-            
-        sku=[]
-        m_lista=[]
-        u_lista=[]
-        c2_lista=[]
-        c3_lista=[]
-        if st.checkbox('Ingresar materias primas nuevas'):     
-            materias_nuevas = st.text_input('(MPN) Ingresa los nombres de las materias primas nuevas separados por una coma (,)')
-            unidad_nueva = st.text_input('(MPN) Ingresa las unidades por orden separados por una coma (,)')
-            costo_nuevo = st.text_input('(MPN) Ingresa el costo por orden separado por una coma (,)')
-            cantidad_nueva = st.text_input('(MPN) Ingresa las cantidades de las nuevas materias en orden separados po una coma (,)')
-            
-            
-
-            if len(materias_nuevas) != 0:
-                materias_nuevas = re.split(",",materias_nuevas)
-                for i in range(len(materias_nuevas)):
-                    m = materias_nuevas[i]
-                    m_lista.append(m)
-                    sku = list(range(len(m_lista)))
-            if len(unidad_nueva) != 0:
-                unidad_nueva = re.split(",",unidad_nueva)
-                for i in range(len(unidad_nueva)):
-                    u = unidad_nueva[i]
-                    u_lista.append(u)
-            if len(costo_nuevo) != 0:
-                costo_nuevo = re.split(",",costo_nuevo)
-                for i in range(len(costo_nuevo)):
-                    c3 = float(costo_nuevo[i])
-                    c3_lista.append(c3)
-            if len(cantidad_nueva) != 0:
-                cantidad_nueva = re.split(",",cantidad_nueva)
-                for i in range(len(cantidad_nueva)):
-                    c = float(cantidad_nueva[i])
-                    c2_lista.append(c)
-
-            mmn = pd.Series(m_lista)
-            uun = pd.Series(u_lista)
-            ccn = pd.Series(c3_lista)
-            c2n = pd.Series(c2_lista)
-            datanc = {'Materia prima nueva': mmn, 'Unidad':uun, 'Costo':ccn, 'Cantidad':c2n}
-            inter2 = pd.DataFrame(datanc)
-            st.write(inter2)
-
-        skus = pd.Series(sku) 
-        mm_lista = pd.Series(m_lista)
-        uu_lista = pd.Series(u_lista)
-        c3c_lista = pd.Series(c3_lista)
-        c2c_lista = pd.Series(c2_lista)
-        d = {'SKU':skus, 'Materia prima':mm_lista, 'Unidad':uu_lista, 'Costo':c3c_lista, 'Cantidad':c2c_lista}
-        df = pd.DataFrame(data=d)
         unidad_base = st.text_input('Ingresa la unidad base del producto a formular')
         unidad_caja = st.text_input('Cuantas unidades contiene la presentación')
         if len(unidad_caja) != 0: 
@@ -269,17 +200,56 @@ def main():
         #margen = st.text_input('Cual será el margen de costo para el precio')
         margen = st.select_slider('Selecciona margen de costo',
                     options=[25,50,75,90,100])
-        #if len(margen) != 0:
-        #    margen = float(margen)
-        n_lista=[]
-        if len(cantidades_lista) != 0:
-           for i in range(len(materias_lista)):
-               n = float(c_lista[i])
-               n_lista.append(n)
+
+        # Si no existe el dataframe se crea uno atemporal
+        if 'data' not in st.session_state:
+            st.session_state.data = inicializador()
+
+        #st.warning('Formulador en construcción')
+        
+        materias_lista = st.selectbox('Materia Prima ALPHA', df_productos['Desc_prod'].sort_values().unique())
+        cantidades_lista = st.number_input(f'Ingresa la cantidad para: **{materias_lista}** ',value=1.00, step=1e-4, format="%.4f")
+        Unidad = df_productos[ df_productos['Desc_prod']==materias_lista]
+    
+        if st.button('Agregar fila'):
+            # contador que acumula el todal de la columna cantidad
+            contador= float(cantidades_lista)
+            for elemento in st.session_state.data['Cantidad']:
+                contador += float(elemento)
+            # creacion de la fila nueva
+            new_row = {'SKU': Unidad['Cve_prod'].values[0],'Materia prima': materias_lista, 'Cantidad': cantidades_lista, 'Porcentaje (%)': "", 'Unidad': Unidad['Uni_med'].values[0], 'Costo': Unidad['Cto_ent'].values[0], 'Fecha': Unidad['Fec_ent'].values[0],'Moneda': Unidad['Cve_monc'].values[0]   }
+           # se agrega la fila nueva al df usando la funcion agregar_fila 
+            st.session_state.data = agregar_fila(st.session_state.data, new_row)
+            # se calcua el porcentaje y de agrega a la columna porcentaje (%) 
+            for cantidad in st.session_state.data['Cantidad']:
+                st.session_state.data['Porcentaje (%)'] =  round(float((cantidad)/contador)*100,4)
+        st.write(st.session_state.data)
+       
+        if 'nuevas' not in st.session_state:
+            st.session_state.nuevas = inicializador()
+
+        if st.checkbox('Ingresar materias primas nuevas'):     
+            materias_nuevas = st.text_input('(MPN) Ingresa el nombre de la nueva materia prima')
+            unidad_nueva = st.text_input('(MPN) Ingresa la unidad')
+            costo_nuevo = st.number_input(f'(MPN) Ingresa el costo para: **{materias_nuevas}**',value=1.00, step=1e-4, format="%.4f")
+            cantidad_nueva = st.number_input(f'(MPN) Ingresa la cantidad para: **{materias_nuevas}**',value=1.00, step=1e-4, format="%.4f")
+            cont = 0
+            if st.button('Agregar Fila'):
+                
+                cont +=int(cont) + 1
+                 
+                nueva_fila = {'SKU': cont,'Materia prima': materias_nuevas, 'Cantidad': cantidad_nueva, 'Unidad': unidad_nueva, 'Costo': costo_nuevo }
+                # se agrega la fila nueva al df usando la funcion agregar_fila 
+                st.session_state.nuevas = agregar_fila(st.session_state.nuevas, nueva_fila)
+
+
             
+            st.write(st.session_state.nuevas)  
+
+        n_lista = st.session_state.data['Cantidad'].tolist()
         if len(n_lista) !=0:    
-            df_formulador['Cantidad'] = n_lista
-            df_formulador = pd.concat([df_formulador,df]).reset_index(drop=True)
+            st.session_state.data['Cantidad'] = n_lista
+            df_formulador = pd.concat([st.session_state.data,st.session_state.nuevas]).reset_index(drop=True)
             df_formulador['Costo unitario'] = df_formulador['Costo'] * df_formulador['Cantidad']
             df_formulador['Porcentaje (%)'] = round(((df_formulador['Costo unitario'])/(df_formulador['Costo unitario'].sum()))*100,2)
             if unidad_caja != 0:
