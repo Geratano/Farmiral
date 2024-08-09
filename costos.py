@@ -61,38 +61,17 @@ def main():
     df_productos['Uni_med'] = df_productos['Uni_med'].str.strip()
     df_productos['Fec_ent'] = df_productos['Fec_ent'].str.strip()
   
-    
+    # # conversión de kilos a gramos 
+    # df_formulas['Can_copr']= np.where(df_formulas['Undfor']=='KG',df_formulas['Can_copr'] * 1000,df_formulas['Can_copr'])
+    # df_formulas['Cto_ent']= np.where(df_formulas['Undfor']=='KG',df_formulas['Cto_ent'] / 1000,df_formulas['Cto_ent'])
+    # df_formulas['Undfor']= np.where(df_formulas['Undfor']=='KG','GR',df_formulas['Undfor'])
 
-     # convertimos la cantidad de KG a GR multiplicandola por 1000
-    @st.cache_resource
-    def gramos():
-        gramos = df_formulas[['Can_copr','Undfor','Cto_ent']] # filto por cantidad y unidad de componente
-        for i in range(len(df_formulas['Can_copr'])): # creo un for que recorra una columna entera, en este  caso la de cantidad 
-            if gramos['Undfor'][i] == "KG": # if donde evalua, en la iteracion actual, si en la columna unidad_componente hay un KG
-                 gramos['Can_copr'][i] = (gramos['Can_copr'][i])*1000 # Si lo anterior se cumple, se multiplica por 1000 la columna Cantidad en la iteracion actual
-                 gramos['Undfor'][i]="GR" # Se reemplaza lo que hay en la columna Unidad_componente por el string GR
-                 gramos['Cto_ent'][i]=  ( gramos['Cto_ent'][i])/1000
-            else:
-                gramos['Can_copr'][i] = gramos['Can_copr'][i]  # si no se cumple se deja tal cual
-                gramos['Undfor'][i]=gramos['Undfor'][i]
-                gramos['Cto_ent'][i]= gramos['Cto_ent'][i]
-        return gramos
-        #fin for
-    df_formulas[['Can_copr','Undfor','Cto_ent']] = gramos() # una vez termindo el proceso se reemplazan los nuevos datos en df_formulas_n
+    # # Conversion de kilos a gramos en las columnas unid_med y cto_ent
+    # df_productos['Cto_ent'] = np.where(df_productos['Uni_med']== 'KG',(df_productos['Cto_ent']/1000),df_productos['Cto_ent'])
+    # df_productos['Uni_med'] = np.where(df_productos['Uni_med']== 'KG','GR',df_productos['Uni_med'])
+   
 
-    @st.cache_resource
-    def gramos2():
-        gramform = df_productos[['Uni_med', 'Cto_ent']] # Filtro las columnas correspondientes a cantidad y Unidad componente
-        for i in range (len(df_productos['Uni_med'])): # recorro la una columna entera 
-            if  gramform['Uni_med'][i] == "KG": # si en el recorrido encuentra un KG
-                gramform['Uni_med'][i] = "GR" # lo reemplaza por "GR"
-                gramform['Cto_ent'][i]=(gramform['Cto_ent'][i])/1000 # divido entre 1000
-            else:
-                gramform['Uni_med'][i]=gramform['Uni_med'][i] # en caso que no coinsida queda talcual
-                gramform['Cto_ent'][i] = gramform['Cto_ent'][i]
-        return gramform
-        #fin for   
-    df_productos[['Uni_med', 'Cto_ent']] = gramos2()
+
 
 
     st.title('Costos Farmiral')
@@ -102,9 +81,7 @@ def main():
     #Hacemos merge con los nombres de las formulas para facilitar la busqueda del producto a costear
         df_formulas_n = df_formulas.merge(df_productos.rename({'Desc_prod':'Formula'},axis=1), left_on='Cve_copr', 
             right_on='Cve_prod', how='left')
-        df_formulas_n.columns = ['SKU', 'Componente', 'Cantidad', 'Tipo', 'Atributo', 'Version pt', 'Partida', 'Unidad_componente'
-                                    , 'Nombre', 'Cve_mon', 'Tipo_x', 'Tipcam','Tip_cam', 'Rendimiento','Costo', 'Unidad'
-                                    , 'Cve_prod_y', 'Formula', 'Unidad pt', 'Cto_ent_y', 'Tipo_prod']
+        df_formulas_n.columns = ['SKU', 'Componente', 'Cantidad', 'Tipo', 'Atributo', 'Version pt', 'Partida', 'Unidad_componente', 'Nombre', 'Cve_mon', 'Tipo_x', 'Tipcam','Tip_cam', 'Rendimiento','Costo', 'Unidad', 'Cve_prod_y', 'Formula', 'Unidad pt', 'Cto_ent_y', 'Tipo_prod','Uni_med','Fec_ent']
 
     
         #Eliminamos las versiones V1, V2, V3 y V4
@@ -187,7 +164,8 @@ def main():
         st.download_button(label="Descargar", data=pprint.to_csv(), mime="text/csv")
         #st.write(semt)
 
-    
+#------------------------------------------------------------- FORMULADOR ------------------------------------------------------------------------
+#     
     if st.checkbox('Formulador'):
         nombre_producto = st.text_input('Nombre del producto a formular')
         unidad_base = st.text_input('Ingresa la unidad base del producto a formular')
@@ -228,6 +206,8 @@ def main():
         if 'nuevas' not in st.session_state:
             st.session_state.nuevas = inicializador()
 
+#--------------------------------------------------------- INGRESAR NUEVAS MATERIAS  --------------------------------------------------------------------------------------------
+
         if st.checkbox('Ingresar materias primas nuevas'):     
             materias_nuevas = st.text_input('(MPN) Ingresa el nombre de la nueva materia prima')
             unidad_nueva = st.text_input('(MPN) Ingresa la unidad')
@@ -237,8 +217,8 @@ def main():
             if st.button('Agregar Fila'):
                 
                 cont +=int(cont) + 1
-                 
-                nueva_fila = {'SKU': cont,'Materia prima': materias_nuevas, 'Cantidad': cantidad_nueva, 'Unidad': unidad_nueva, 'Costo': costo_nuevo }
+                fecha_hoy = datetime.today().date()
+                nueva_fila = {'SKU': cont,'Materia prima': materias_nuevas, 'Cantidad': cantidad_nueva, 'Unidad': unidad_nueva, 'Costo': costo_nuevo,'Fecha': fecha_hoy.strftime('%d/%m/%Y'), 'Moneda': 1 }
                 # se agrega la fila nueva al df usando la funcion agregar_fila 
                 st.session_state.nuevas = agregar_fila(st.session_state.nuevas, nueva_fila)
 
@@ -246,6 +226,7 @@ def main():
             
             st.write(st.session_state.nuevas)  
 
+#----------------------------------------------------------------- CONCATENAR BASES -------------------------------------------------------------------
         n_lista = st.session_state.data['Cantidad'].tolist()
         if len(n_lista) !=0:    
             st.session_state.data['Cantidad'] = n_lista
@@ -288,7 +269,7 @@ def main():
                     costo_lote = df_formulador['Costo lote'].sum()
                     st.write('Costo por lote: $' , round(costo_lote,2))
             df_formulador = df_formulador[['Materia prima', 'Cantidad', 'SKU', 'Unidad', 'Costo', 'Costo unitario', 'Porcentaje (%)'
-                                        ,'Costo caja', 'Costo lote']]
+                                        ,'Costo caja', 'Costo lote','Fecha','Moneda']]
             
             st.write(df_formulador)
             # converir primeros tres encabezados en dataframe para poder descargarlos 
@@ -309,7 +290,7 @@ def main():
 
             nuevo=pd.concat([df_formulador,espacio,titu,convert,titu2,convert2], axis=1,) # concatenamos todos los dataframe en uno solo 
           
-            st.download_button(label="Descargar", data=nuevo.to_csv(), mime="text/csv") # creamos el boton para descargar el nuevo dataframe con los datos
+            st.download_button(label="Descargar ", data=nuevo.to_csv(), mime="text/csv") # creamos el boton para descargar el nuevo dataframe con los datos
             st.altair_chart(pie_formulador, use_container_width=True)  
 
 
