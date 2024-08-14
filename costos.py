@@ -167,6 +167,7 @@ def main():
 #------------------------------------------------------------- FORMULADOR ------------------------------------------------------------------------
 #     
     if st.checkbox('Formulador'):
+        tipo_cambio = st.number_input('Tipo de moneda',value=1.00, step=1e-4, format="%.4f")
         nombre_producto = st.text_input('Nombre del producto a formular')
         unidad_base = st.text_input('Ingresa la unidad base del producto a formular')
         unidad_caja = st.text_input('Cuantas unidades contiene la presentación')
@@ -188,8 +189,10 @@ def main():
         materias_lista = st.selectbox('Materia Prima ALPHA', df_productos['Desc_prod'].sort_values().unique())
         cantidades_lista = st.number_input(f'Ingresa la cantidad para: **{materias_lista}** ',value=1.00, step=1e-4, format="%.4f")
         Unidad = df_productos[ df_productos['Desc_prod']==materias_lista]
-    
+       # cálculo costo por tipo cambio
+        Unidad['Cto_ent']= np.where(Unidad['Cve_monc']== 2 ,Unidad['Cto_ent'] * tipo_cambio, Unidad['Cto_ent'])
         if st.button('Agregar fila'):
+           
             # contador que acumula el todal de la columna cantidad
             contador= float(cantidades_lista)
             for elemento in st.session_state.data['Cantidad']:
@@ -201,6 +204,7 @@ def main():
             # se calcua el porcentaje y de agrega a la columna porcentaje (%) 
             for cantidad in st.session_state.data['Cantidad']:
                 st.session_state.data['Porcentaje (%)'] =  round(float((cantidad)/contador)*100,4)
+          
         st.write(st.session_state.data)
        
         if 'nuevas' not in st.session_state:
@@ -212,19 +216,27 @@ def main():
             materias_nuevas = st.text_input('(MPN) Ingresa el nombre de la nueva materia prima')
             unidad_nueva = st.text_input('(MPN) Ingresa la unidad')
             costo_nuevo = st.number_input(f'(MPN) Ingresa el costo para: **{materias_nuevas}**',value=1.00, step=1e-4, format="%.4f")
+            moneda = st.selectbox('Elige el tipo de moneda',( 'MXN','USD'))
             cantidad_nueva = st.number_input(f'(MPN) Ingresa la cantidad para: **{materias_nuevas}**',value=1.00, step=1e-4, format="%.4f")
+            # si el tipo de moneda es mxicana dejar igual, en caso contrario multiplicar por tipo_cambio
+            if moneda == 'MXN':
+                moneda = 1
+                conversion = costo_nuevo
+            else:
+                moneda = 2
+                conversion = costo_nuevo * tipo_cambio
+    
+
             cont = 0
             if st.button('Agregar Fila'):
                 
-                cont +=int(cont) + 1
+                cont += int(cont) + 1
                 fecha_hoy = datetime.today().date()
-                nueva_fila = {'SKU': cont,'Materia prima': materias_nuevas, 'Cantidad': cantidad_nueva, 'Unidad': unidad_nueva, 'Costo': costo_nuevo,'Fecha': fecha_hoy.strftime('%d/%m/%Y'), 'Moneda': 1 }
+                nueva_fila = {'SKU': cont,'Materia prima': materias_nuevas, 'Cantidad': cantidad_nueva, 'Unidad': unidad_nueva, 'Costo': conversion,'Fecha': fecha_hoy.strftime('%d/%m/%Y'), 'Moneda': moneda }
                 # se agrega la fila nueva al df usando la funcion agregar_fila 
                 st.session_state.nuevas = agregar_fila(st.session_state.nuevas, nueva_fila)
-
-
-            
-            st.write(st.session_state.nuevas)  
+           
+        st.write(st.session_state.nuevas)  
 
 #----------------------------------------------------------------- CONCATENAR BASES -------------------------------------------------------------------
         n_lista = st.session_state.data['Cantidad'].tolist()
