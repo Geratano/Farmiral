@@ -15,7 +15,8 @@ def agregar_fila(df, row):
 # Funcion para crear un dataframe inical 
 def inicializador():
     return pd.DataFrame(columns=['Materia prima', 'Cantidad','Unidad','Costo'])  
-
+def eliminar_fila(df, index):
+    return df.drop(index).reset_index(drop=True)
 def main():
     img = Image.open('logo_farmiral.jpg')
     col1, col2, col3 = st.columns([5,10,1])
@@ -199,9 +200,22 @@ def main():
             # se calcua el porcentaje y de agrega a la columna porcentaje (%) 
             for cantidad in st.session_state.data['Cantidad']:
                 st.session_state.data['Porcentaje (%)'] =  round(float((cantidad)/contador)*100,4)
-          
-        st.write(st.session_state.data)
-       
+    #------------------- Botón eliminar --------------------------------------------------            
+        iz,der = st.columns([37,63])
+        with iz:
+            # seleccionas el indice a eliminar
+            indice= st.session_state.data.index
+            selec = st.selectbox('Selecciona el indice a eliminar', indice.sort_values().unique())
+            #si se presiona e boton se ejecuta la funcion eliminar
+            if st.button('Eliminar fila'):
+                st.session_state.data = eliminar_fila(st.session_state.data,selec)
+                st.success(f"Fila con índice {selec} eliminada.")
+        with der:
+            st.write(st.session_state.data)
+         
+        
+        
+                 
         if 'nuevas' not in st.session_state:
             st.session_state.nuevas = inicializador()
 
@@ -229,7 +243,18 @@ def main():
                 # se agrega la fila nueva al df usando la funcion agregar_fila 
                 st.session_state.nuevas = agregar_fila(st.session_state.nuevas, nueva_fila)
            
-        st.write(st.session_state.nuevas)  
+            #------------------- Botón eliminar --------------------------------------------------            
+            iz,der = st.columns([37,63])
+            with iz:
+                # seleccionas el indice a eliminar
+                indice= st.session_state.nuevas.index
+                selec2 = st.selectbox('Selecciona el indice a eliminar ', indice.sort_values().unique())
+                #si se presiona e boton se ejecuta la funcion eliminar
+                if st.button('Eliminar fila '):
+                    st.session_state.nuevas = eliminar_fila(st.session_state.nuevas,selec2)
+                    st.success(f"Fila con índice {selec2} eliminada.")
+            with der:
+                st.write(st.session_state.nuevas) 
 
 #----------------------------------------------------------------- CONCATENAR BASES -------------------------------------------------------------------
         n_lista = st.session_state.data['Cantidad'].tolist()
