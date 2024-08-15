@@ -183,7 +183,6 @@ def main():
 
         #st.warning('Formulador en construcción')
         materias_lista = st.selectbox('Materia Prima ALPHA', df_productos['Desc_prod'].sort_values().unique())
-        st.write(df_productos)
         cantidades_lista = st.number_input(f"Ingresa la cantidad para: **{materias_lista}** en {df_productos['Uni_med'].values[0]}",value=1.00, step=1e-10, format="%.10f")
         Unidad = df_productos[ df_productos['Desc_prod']==materias_lista]
        # cálculo costo por tipo cambio
