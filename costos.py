@@ -183,7 +183,8 @@ def main():
 
         #st.warning('Formulador en construcción')
         materias_lista = st.selectbox('Materia Prima ALPHA', df_productos['Desc_prod'].sort_values().unique())
-        cantidades_lista = st.number_input(f'Ingresa la cantidad para: **{materias_lista}** en {df_productos['Uni_med'].values[0]}',value=1.00, step=1e-10, format="%.10f")
+        st.write(df_productos)
+        cantidades_lista = st.number_input(f"Ingresa la cantidad para: **{materias_lista}** en {df_productos['Uni_med'].values[0]}",value=1.00, step=1e-10, format="%.10f")
         Unidad = df_productos[ df_productos['Desc_prod']==materias_lista]
        # cálculo costo por tipo cambio
         Unidad['Cto_ent']= np.where(Unidad['Cve_monc']== 2 ,Unidad['Cto_ent'] * tipo_cambio, Unidad['Cto_ent'])
@@ -200,6 +201,7 @@ def main():
             # se calcua el porcentaje y de agrega a la columna porcentaje (%) 
             for cantidad in st.session_state.data['Cantidad']:
                 st.session_state.data['Porcentaje (%)'] =  round(float((cantidad)/contador)*100,4)
+
     #------------------- Botón eliminar --------------------------------------------------            
         iz,der = st.columns([37,63])
         with iz:
@@ -212,8 +214,6 @@ def main():
                 st.success(f"Fila con índice {selec} eliminada.")
         with der:
             st.write(st.session_state.data)
-         
-        
         
                  
         if 'nuevas' not in st.session_state:
