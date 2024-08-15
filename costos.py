@@ -61,18 +61,14 @@ def main():
     df_productos['Uni_med'] = df_productos['Uni_med'].str.strip()
     df_productos['Fec_ent'] = df_productos['Fec_ent'].str.strip()
   
-    # # conversión de kilos a gramos 
-    # df_formulas['Can_copr']= np.where(df_formulas['Undfor']=='KG',df_formulas['Can_copr'] * 1000,df_formulas['Can_copr'])
-    # df_formulas['Cto_ent']= np.where(df_formulas['Undfor']=='KG',df_formulas['Cto_ent'] / 1000,df_formulas['Cto_ent'])
-    # df_formulas['Undfor']= np.where(df_formulas['Undfor']=='KG','GR',df_formulas['Undfor'])
+    # conversión de kilos a gramos 
+    df_formulas['Can_copr']= np.where(df_formulas['Undfor']=='KG',df_formulas['Can_copr'] * 1000,df_formulas['Can_copr'])
+    df_formulas['Cto_ent']= np.where(df_formulas['Undfor']=='KG',df_formulas['Cto_ent'] / 1000,df_formulas['Cto_ent'])
+    df_formulas['Undfor']= np.where(df_formulas['Undfor']=='KG','GR',df_formulas['Undfor'])
 
-    # # Conversion de kilos a gramos en las columnas unid_med y cto_ent
-    # df_productos['Cto_ent'] = np.where(df_productos['Uni_med']== 'KG',(df_productos['Cto_ent']/1000),df_productos['Cto_ent'])
-    # df_productos['Uni_med'] = np.where(df_productos['Uni_med']== 'KG','GR',df_productos['Uni_med'])
-   
-
-
-
+    # Conversion de kilos a gramos en las columnas unid_med y cto_ent
+    df_productos['Cto_ent'] = np.where(df_productos['Uni_med']== 'KG',(df_productos['Cto_ent']/1000),df_productos['Cto_ent'])
+    df_productos['Uni_med'] = np.where(df_productos['Uni_med']== 'KG','GR',df_productos['Uni_med'])
 
     st.title('Costos Farmiral')
 
@@ -167,7 +163,7 @@ def main():
 #------------------------------------------------------------- FORMULADOR ------------------------------------------------------------------------
 #     
     if st.checkbox('Formulador'):
-        tipo_cambio = st.number_input('Tipo de moneda',value=1.00, step=1e-4, format="%.4f")
+        tipo_cambio = st.number_input('Tipo de cambio',value=1.00, step=1e-4, format="%.4f")
         nombre_producto = st.text_input('Nombre del producto a formular')
         unidad_base = st.text_input('Ingresa la unidad base del producto a formular')
         unidad_caja = st.text_input('Cuantas unidades contiene la presentación')
@@ -185,9 +181,8 @@ def main():
             st.session_state.data = inicializador()
 
         #st.warning('Formulador en construcción')
-        
         materias_lista = st.selectbox('Materia Prima ALPHA', df_productos['Desc_prod'].sort_values().unique())
-        cantidades_lista = st.number_input(f'Ingresa la cantidad para: **{materias_lista}** ',value=1.00, step=1e-4, format="%.4f")
+        cantidades_lista = st.number_input(f'Ingresa la cantidad para: **{materias_lista}** en {df_productos['Uni_med'].values[0]}',value=1.00, step=1e-10, format="%.10f")
         Unidad = df_productos[ df_productos['Desc_prod']==materias_lista]
        # cálculo costo por tipo cambio
         Unidad['Cto_ent']= np.where(Unidad['Cve_monc']== 2 ,Unidad['Cto_ent'] * tipo_cambio, Unidad['Cto_ent'])
@@ -217,7 +212,7 @@ def main():
             unidad_nueva = st.text_input('(MPN) Ingresa la unidad')
             costo_nuevo = st.number_input(f'(MPN) Ingresa el costo para: **{materias_nuevas}**',value=1.00, step=1e-4, format="%.4f")
             moneda = st.selectbox('Elige el tipo de moneda',( 'MXN','USD'))
-            cantidad_nueva = st.number_input(f'(MPN) Ingresa la cantidad para: **{materias_nuevas}**',value=1.00, step=1e-4, format="%.4f")
+            cantidad_nueva = st.number_input(f'(MPN) Ingresa la cantidad para: **{materias_nuevas}**',value=1.00, step=1e-10, format="%.10f")
             # si el tipo de moneda es mxicana dejar igual, en caso contrario multiplicar por tipo_cambio
             if moneda == 'MXN':
                 moneda = 1
@@ -225,8 +220,6 @@ def main():
             else:
                 moneda = 2
                 conversion = costo_nuevo * tipo_cambio
-    
-
             cont = 0
             if st.button('Agregar Fila'):
                 
@@ -303,7 +296,8 @@ def main():
             nuevo=pd.concat([df_formulador,espacio,titu,convert,titu2,convert2], axis=1,) # concatenamos todos los dataframe en uno solo 
           
             st.download_button(label="Descargar ", data=nuevo.to_csv(), mime="text/csv") # creamos el boton para descargar el nuevo dataframe con los datos
-            st.altair_chart(pie_formulador, use_container_width=True)  
+            st.altair_chart(pie_formulador, use_container_width=True)
+      
 
 
 
