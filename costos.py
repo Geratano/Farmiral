@@ -180,11 +180,12 @@ def main():
         # Si no existe el dataframe se crea uno atemporal
         if 'data' not in st.session_state:
             st.session_state.data = inicializador()
-
+        
+      
         #st.warning('Formulador en construcción')
         materias_lista = st.selectbox('Materia Prima ALPHA', df_productos['Desc_prod'].sort_values().unique())
-        cantidades_lista = st.number_input(f"Ingresa la cantidad para: **{materias_lista}** en {df_productos['Uni_med'].values[0]}",value=1.00, step=1e-10, format="%.10f")
         Unidad = df_productos[ df_productos['Desc_prod']==materias_lista]
+        cantidades_lista = st.number_input(f"Ingresa la cantidad para: **{materias_lista}** en {Unidad['Uni_med'].values[0]}",value=1.00, step=1e-10, format="%.10f")
        # cálculo costo por tipo cambio
         Unidad['Cto_ent']= np.where(Unidad['Cve_monc']== 2 ,Unidad['Cto_ent'] * tipo_cambio, Unidad['Cto_ent'])
         if st.button('Agregar fila'):
