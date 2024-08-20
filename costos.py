@@ -70,28 +70,28 @@ def main():
     # Conversion de kilos a gramos en las columnas unid_med y cto_ent
     df_productos['Cto_ent'] = np.where(df_productos['Uni_med']== 'KG',(df_productos['Cto_ent']/1000),df_productos['Cto_ent'])
     df_productos['Uni_med'] = np.where(df_productos['Uni_med']== 'KG','GR',df_productos['Uni_med'])
-
+#
     st.title('Costos Farmiral')
-
     #Seleccionar si se va a consultar costos desglosados o costear
     if st.checkbox("Costos desglosados"):
     #Hacemos merge con los nombres de las formulas para facilitar la busqueda del producto a costear
         df_formulas_n = df_formulas.merge(df_productos.rename({'Desc_prod':'Formula'},axis=1), left_on='Cve_copr', 
             right_on='Cve_prod', how='left')
         df_formulas_n.columns = ['SKU', 'Componente', 'Cantidad', 'Tipo', 'Atributo', 'Version pt', 'Partida', 'Unidad_componente', 'Nombre', 'Cve_mon', 'Tipo_x', 'Tipcam','Tip_cam', 'Rendimiento','Costo', 'Unidad', 'Cve_prod_y', 'Formula', 'Unidad pt', 'Cto_ent_y', 'Tipo_prod','Uni_med','Fec_ent']
-
     
         #Eliminamos las versiones V1, V2, V3 y V4
         df_formulas_n = df_formulas_n.loc[(df_formulas_n['Version pt']!='V1') & (df_formulas_n['Version pt']!='V2') & (df_formulas_n['Version pt']!='V3') & (df_formulas_n['Version pt']!='V4')]
         
         #Creamos el filtro para seleccionar la formula a análizar
         df_formulas_prueba = df_formulas_n[df_formulas_n.SKU.str.startswith('51')].reset_index()
+        tipo_cambio1= st.number_input('Tipo de cambio',value=1.00, step=1e-4, format="%.4f")
         formula = st.selectbox('Formula', df_formulas_prueba['Formula'].sort_values().unique())        
         #Esta tabla nos da todo lo que contiene la formula "51"
         pt = df_formulas_n[df_formulas_n.Formula == formula]
         pt = pt[pt.SKU.str.startswith('51')].reset_index()
         #Nos quedamos solo con las columnas necesarias de la base
-        pt = pt[['SKU','Componente','Nombre','Cantidad','Costo','Unidad_componente','Rendimiento','Unidad pt']]
+        pt = pt[['SKU','Componente','Nombre','Cantidad','Costo','Unidad_componente','Rendimiento','Unidad pt','Cve_mon']]
+        pt['Costo']=np.where(pt['Cve_mon']==2,pt['Costo']*tipo_cambio1,pt['Costo'])
         #Calculamos cantidades y costos unitarios
         pt['Cantidad'] = pt['Cantidad']/pt['Rendimiento']
         pt['Costo total'] = pt['Cantidad'] * pt['Costo']
@@ -101,9 +101,11 @@ def main():
         semt = semt.iloc[0]['Nombre']
         semit = df_formulas_n[df_formulas_n.Formula == semt]
         semit = semit[semit.SKU.str.startswith('41')].reset_index()
-        semit = semit[['SKU','Componente','Nombre','Cantidad','Costo','Unidad_componente','Rendimiento','Unidad pt']]
+        semit = semit[['SKU','Componente','Nombre','Cantidad','Costo','Unidad_componente','Rendimiento','Unidad pt','Cve_mon']]
+        semit['Costo']=np.where(semit['Cve_mon']==2,semit['Costo']*tipo_cambio1,semit['Costo'])
         semit['Cantidad'] = semit['Cantidad']/semit['Rendimiento']
         semit['Costo total'] = semit['Cantidad'] * semit['Costo']
+
         st.subheader('Costos')
         col1, col2 = st.columns([15,15])
         with col1:
@@ -160,22 +162,22 @@ def main():
         pprint = pd.concat([pt, semit])
         st.download_button(label="Descargar", data=pprint.to_csv(), mime="text/csv")
         #st.write(semt)
-
+    
 #------------------------------------------------------------- FORMULADOR ------------------------------------------------------------------------
 #     
     if st.checkbox('Formulador'):
         tipo_cambio = st.number_input('Tipo de cambio',value=1.00, step=1e-4, format="%.4f")
         nombre_producto = st.text_input('Nombre del producto a formular')
         unidad_base = st.text_input('Ingresa la unidad base del producto a formular')
-        unidad_caja = st.text_input('Cuantas unidades contiene la presentación')
-        if len(unidad_caja) != 0: 
-            unidad_caja = float(unidad_caja)
-        unidad_lote = st.text_input('Cuantas unidades contiene el lote de producción')
+        # unidad_caja = st.text_input('Cuantas unidades contiene la presentación')
+        # if len(unidad_caja) != 0: 
+        #     unidad_caja = float(unidad_caja)
+        unidad_lote = st.text_input('Cuantas piezas contiene el lote de producción')
         if len(unidad_lote) != 0:
             unidad_lote = float(unidad_lote)
         #margen = st.text_input('Cual será el margen de costo para el precio')
-        margen = st.select_slider('Selecciona margen de costo',
-                    options=[25,50,75,90,100])
+        # margen = st.select_slider('Selecciona margen de costo',
+        #             options=[25,50,75,90,100])
 
         # Si no existe el dataframe se crea uno atemporal
         if 'data' not in st.session_state:
@@ -183,13 +185,14 @@ def main():
         
       
         #st.warning('Formulador en construcción')
+        st.subheader('DOSIS')
         materias_lista = st.selectbox('Materia Prima ALPHA', df_productos['Desc_prod'].sort_values().unique())
         Unidad = df_productos[ df_productos['Desc_prod']==materias_lista]
         cantidades_lista = st.number_input(f"Ingresa la cantidad para: **{materias_lista}** en {Unidad['Uni_med'].values[0]}",value=1.00, step=1e-10, format="%.10f")
        # cálculo costo por tipo cambio
         Unidad['Cto_ent']= np.where(Unidad['Cve_monc']== 2 ,Unidad['Cto_ent'] * tipo_cambio, Unidad['Cto_ent'])
         if st.button('Agregar fila'):
-           
+
             # contador que acumula el todal de la columna cantidad
             contador= float(cantidades_lista)
             for elemento in st.session_state.data['Cantidad']:
@@ -215,7 +218,6 @@ def main():
         with der:
             st.write(st.session_state.data)
         
-                 
         if 'nuevas' not in st.session_state:
             st.session_state.nuevas = inicializador()
 
@@ -263,16 +265,15 @@ def main():
             df_formulador = pd.concat([st.session_state.data,st.session_state.nuevas]).reset_index(drop=True)
             df_formulador['Costo unitario'] = df_formulador['Costo'] * df_formulador['Cantidad']
             df_formulador['Porcentaje (%)'] = round(((df_formulador['Costo unitario'])/(df_formulador['Costo unitario'].sum()))*100,2)
-            if unidad_caja != 0:
-                df_formulador['Costo caja'] = [i * unidad_caja for i in df_formulador['Costo unitario']]
-            else:
-                df_formulador['Costo caja'] = [0] * len(df_formulador['Materia prima'])
+            # if unidad_caja != 0:
+            #     df_formulador['Costo caja'] = [i * unidad_caja for i in df_formulador['Costo unitario']]
+            # else:
+            #     df_formulador['Costo caja'] = [0] * len(df_formulador['Materia prima'])
             if unidad_lote != 0:    
                 df_formulador['Costo lote'] = [i * unidad_lote for i in df_formulador['Costo unitario']]
             else:
                 df_formulador['Costo lote'] = [0] * len(df_formulador['Materia prima'])
             #Agregamos las materias nuevas a los dataframes
-
 
             #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
             alt.data_transformers.enable('default', max_rows=None)
@@ -287,20 +288,22 @@ def main():
             with col1:
                 st.write('Rendimiento: ' ,unidad_lote)
                 st.write('Unidad Base: ' ,unidad_base)
-                st.write('Precio sugerido: $', (df_formulador['Costo unitario'].sum())*(1+(margen/100))) 
+                #st.write('Precio sugerido: $', (df_formulador['Costo unitario'].sum())*(1+(margen/100))) 
             with col2:
                 costo_unitario = df_formulador['Costo unitario'].sum()
-                precio = costo_unitario*(1+margen) 
+               # precio = costo_unitario*(1+ margen) 
+                precio = costo_unitario  
                 st.write('Costo unitario: $' ,round(costo_unitario ,2))
-                if unidad_caja != 0:
-                    costo_caja = df_formulador['Costo caja'].sum()
-                    st.write('Costo por caja: $' , round(costo_caja,2))
+                # if unidad_caja != 0:
+                #     costo_caja = df_formulador['Costo caja'].sum()
+                #     #st.write('Costo por caja: $' , round(costo_caja,2))
                 if unidad_lote != 0:
                     costo_lote = df_formulador['Costo lote'].sum()
                     st.write('Costo por lote: $' , round(costo_lote,2))
             df_formulador = df_formulador[['Materia prima', 'Cantidad', 'SKU', 'Unidad', 'Costo', 'Costo unitario', 'Porcentaje (%)'
-                                        ,'Costo caja', 'Costo lote','Fecha','Moneda']]
+                                        , 'Costo lote','Fecha','Moneda']]
             
+           
             st.write(df_formulador)
             # converir primeros tres encabezados en dataframe para poder descargarlos 
             diccionario = [unidad_lote, unidad_base,precio] #en la variable diccionario mando a llamr a los datos Rendimiento, aunidad base y precio sugerido 
@@ -309,7 +312,8 @@ def main():
             titu= pd.DataFrame(['Rendimiento: ','Unidad Base: ', 'Precio sugerido: $']) # creamos otro dataframe que va a servir de encavezados
             titu.columns=[' '] # renombro en blanco para que no enumere la columna 
             #convertir los ultimos 3 ecabezados en dataframe 
-            diccionario2=[costo_unitario,costo_caja,costo_lote] # en la variable diccionario2 mando a llamar los datos de costo unitario, costo por caja y costo por lote
+            #diccionario2=[costo_unitario,costo_caja,costo_lote] # en la variable diccionario2 mando a llamar los datos de costo unitario, costo por caja y costo por lote
+            diccionario2=[costo_unitario,costo_lote] # en la variable diccionario2 mando a llamar los datos de costo unitario, costo por caja y costo por lote
             convert2=pd.DataFrame(data=diccionario2) # Converto a dataframe
             convert2.columns=[' Data'] # renombro la columna
             titu2 = pd.DataFrame(['Costo unitario: $', 'Costo por caja: $', 'Costo por lote: $'])#creamos dataframe con los encabezados
@@ -323,10 +327,6 @@ def main():
             st.download_button(label="Descargar ", data=nuevo.to_csv(), mime="text/csv") # creamos el boton para descargar el nuevo dataframe con los datos
             st.altair_chart(pie_formulador, use_container_width=True)
       
-
-
-
-
 if __name__ == '__main__':
     main()
   
