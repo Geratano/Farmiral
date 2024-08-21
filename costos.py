@@ -148,21 +148,21 @@ def main():
         with right:
             #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
             alt.data_transformers.enable('default', max_rows=None)
-            chart_st = semit.groupby(['Componente','Nombre']).agg({'Costo total':'sum'}).reset_index()
+            chart_st = semit.groupby(['Componente','Nombre']).agg({'Costo total nuvo':'sum'}).reset_index()
             pie_st = alt.Chart(chart_st, title='Costos st').mark_arc().encode(
                                 theta=alt.Theta(field='Costo total', type="quantitative"),
                                 color=alt.Color(field='Nombre', type="nominal"),
                                 tooltip = ['Nombre','Costo total']
                                 )
             #Mostramos el objeto en streamlit
-            st.altair_chart(pie_st, use_container_width=True)
+            st.altair_chart(pie_st, use_container_width =True)
 
-        st.subheader('Materiales Producto Terminado por unidad')
+        st.subheader('Materiales Producto Terminado por unidad nuvo')
         st.write(pt)
-        st.subheader('Materiales Semiterminado por unidad')
+        st.subheader('Materiales Semiterminado por unidad nuvo')
         st.write(semit)
         pprint = pd.concat([pt, semit])
-        st.download_button(label="Descargar", data=pprint.to_csv(), mime="text/csv")
+        st.download_button(label="Descargar", data=pprint.to_csv(), mime="text/csv nuvo")
         #st.write(semt)
     
 #------------------------------------------------------------- FORMULADOR ------------------------------------------------------------------------
@@ -307,6 +307,93 @@ def main():
             
            
             st.write(df_formulador)
+            ######################################### Aqui ##################################
+                        ##########PIEZAS######################3
+        st.subheader('PIEZAS')
+        dosis = st.number_input("Cuantas dosis contiene la presentación ",value=1.00, step=1e-10, format="%.10f")
+        if 'pza' not in st.session_state:
+            st.session_state.pza = inicializador()
+        unidad_lote_pza = st.text_input('Cuantas piezas contiene el lote de pt')
+        if len(unidad_lote_pza) != 0:
+            unidad_lote_pza = float(unidad_lote_pza)
+        
+        margen = st.text_input('Cual será el margen de costo para el precio')
+        margen = st.select_slider('Selecciona margen de costo', options=[25,50,75,90,100])
+
+
+        materias_lista_pza = st.selectbox('Materia Prima ALPHA pt', df_productos['Desc_prod'].sort_values().unique())
+        Unidad_pza = df_productos[ df_productos['Desc_prod']==materias_lista]
+        cantidades_lista_pza = st.number_input(f"Ingresa la cantidad para pt: **{materias_lista_pza}** en {Unidad_pza['Uni_med'].values[0]}",value=1.00, step=1e-10, format="%.10f")
+        # cálculo costo por tipo cambio
+        Unidad_pza['Cto_ent']= np.where(Unidad_pza['Cve_monc']== 2 ,Unidad_pza['Cto_ent'] * tipo_cambio, Unidad_pza['Cto_ent'])
+        if st.button('Agregar fila pt'):
+        # contador que acumula el todal de la columna cantidad
+            contador = float(cantidades_lista_pza)
+            for elemento in st.session_state.pza['Cantidad']:
+                contador += float(elemento)
+            # creacion de la fila nueva
+            new_row_pza = {'SKU': Unidad_pza['Cve_prod'].values[0],'Materia prima': materias_lista_pza, 'Cantidad': cantidades_lista_pza, 'Porcentaje (%)': "", 'Unidad': Unidad_pza['Uni_med'].values[0], 'Costo': Unidad_pza['Cto_ent'].values[0], 'Fecha': Unidad_pza['Fec_ent'].values[0],'Moneda': Unidad_pza['Cve_monc'].values[0]   }
+           # se agrega la fila nueva al df usando la funcion agregar_fila 
+            st.session_state.pza = agregar_fila(st.session_state.pza, new_row_pza)
+            # se calcua el porcentaje y de agrega a la columna porcentaje (%) 
+            for cantidad in st.session_state.pza['Cantidad']:
+                st.session_state.pza['Porcentaje (%)'] =  round(float((cantidad)/contador)*100,4)
+
+    #------------------- Botón eliminar --------------------------------------------------            
+        iz,der = st.columns([37,63])
+        with iz:
+            # seleccionas el indice a eliminar
+            indice= st.session_state.pza.index
+            selec = st.selectbox('Selecciona el indice a eliminar pt', indice.sort_values().unique())
+            #si se presiona e boton se ejecuta la funcion eliminar
+            if st.button('Eliminar fila pt'):
+                st.session_state.pza = eliminar_fila(st.session_state.pza,selec)
+                st.success(f"Fila con índice {selec} eliminada.")
+        with der:
+            st.write(st.session_state.pza)
+        
+        if 'pzanuevas' not in st.session_state:
+            st.session_state.pzanuevas = inicializador()
+
+#--------------------------------------------------------- INGRESAR NUEVAS MATERIAS  --------------------------------------------------------------------------------------------
+
+        if st.checkbox('Ingresar materias primas nuevas pt'):     
+            materias_nuevas_pza = st.text_input('(MPN) Ingresa el nombre de la nueva materia prima pt')
+            unidad_nueva_pza = st.text_input('(MPN) Ingresa la unidad pt')
+            costo_nuevo_pza = st.number_input(f'(MPN) Ingresa el costo para pt: **{materias_nuevas_pza}**',value=1.00, step=1e-4, format="%.4f")
+            moneda_pza = st.selectbox('Elige el tipo de moneda pt',( 'MXN','USD'))
+            cantidad_nueva_pza = st.number_input(f'(MPN) Ingresa la cantidad para pt: **{materias_nuevas_pza}**',value=1.00, step=1e-10, format="%.10f")
+            # si el tipo de moneda es mxicana dejar igual, en caso contrario multiplicar por tipo_cambio
+            if moneda == 'MXN':
+                moneda = 1
+                conversion = costo_nuevo
+            else:
+                moneda = 2
+                conversion = costo_nuevo * tipo_cambio
+            cont = 0
+            if st.button('Agregar Fila pt'):
+                
+                cont += int(cont) + 1
+                fecha_hoy = datetime.today().date()
+                nueva_fila_pza = {'SKU': cont,'Materia prima': materias_nuevas_pza, 'Cantidad': cantidad_nueva_pza, 'Unidad': unidad_nueva_pza, 'Costo': conversion,'Fecha': fecha_hoy.strftime('%d/%m/%Y'), 'Moneda': moneda }
+                # se agrega la fila nueva al df usando la funcion agregar_fila 
+                st.session_state.pzanuevas = agregar_fila(st.session_state.pzanuevas, nueva_fila_pza)
+           
+            #------------------- Botón eliminar --------------------------------------------------            
+            iz,der = st.columns([37,63])
+            with iz:
+                # seleccionas el indice a eliminar
+                indice= st.session_state.pzanuevas.index
+                selec2 = st.selectbox('Selecciona el indice a eliminar pt ', indice.sort_values().unique())
+                #si se presiona e boton se ejecuta la funcion eliminar
+                if st.button('Eliminar fila pt '):
+                    st.session_state.pzanuevas = eliminar_fila(st.session_state.pzanuevas,selec2)
+                    st.success(f"Fila con índice {selec2} eliminada.")
+            with der:
+                st.write(st.session_state.pzanuevas)
+
+                ###################################################################
+
             # converir primeros tres encabezados en dataframe para poder descargarlos 
             diccionario = [unidad_lote, unidad_base,precio] #en la variable diccionario mando a llamr a los datos Rendimiento, aunidad base y precio sugerido 
             convert= pd.DataFrame(data=diccionario)# convierto los tados a un data frame
