@@ -43,12 +43,13 @@ def main():
     #Quitamos espacios a los nombres de las columnas
     df_formulas.columns = df_formulas.columns.str.strip()
     df_productos.columns = df_productos.columns.str.strip()
+   
 
     #Filtramos solo las columnas que necesitamos de cada base
     df_formulas = df_formulas[['Cve_copr', 'Cve_prod', 'Can_copr', 'Tip_copr', 'New_med', 'New_copr', 'Partida', 'Undfor', 
                                 'Desc_prod', 'Cve_mon', 'Cve_tial', 'Tipcam', 'Tip_cam', 'Ren_copr', 'Cto_ent', 'Uncfor']]
-    df_productos = df_productos[['Cve_prod', 'Desc_prod', 'Uni_med', 'Cto_ent', 'Cve_tial','Fec_ent','Cve_monc']]
-
+    df_productos = df_productos[['Cve_prod', 'Desc_prod', 'Uni_med', 'Cto_ent', 'Cve_tial','Fec_ent','Cve_monc','Prov_std']]
+    
     #Quitamos los posibles espacios sobrantes de cada columna
     df_formulas['Cve_prod'] = df_formulas['Cve_prod'].str.strip()    
     df_formulas['Cve_copr'] = df_formulas['Cve_copr'].str.strip()
@@ -61,6 +62,7 @@ def main():
     df_productos['Desc_prod'] = df_productos['Desc_prod'].str.strip()
     df_productos['Uni_med'] = df_productos['Uni_med'].str.strip()
     df_productos['Fec_ent'] = df_productos['Fec_ent'].str.strip()
+    
   
     # conversión de kilos a gramos 
     df_formulas['Can_copr']= np.where(df_formulas['Undfor']=='KG',df_formulas['Can_copr'] * 1000,df_formulas['Can_copr'])
@@ -172,6 +174,7 @@ def main():
         # unidad_caja = st.text_input('Cuantas unidades contiene la presentación')
         # if len(unidad_caja) != 0: 
         #     unidad_caja = float(unidad_caja)
+        st.subheader('DOSIS')
         unidad_lote = st.text_input('Cuantas piezas contiene el lote de producción')
         if len(unidad_lote) != 0:
             unidad_lote = float(unidad_lote)
@@ -182,12 +185,11 @@ def main():
         # Si no existe el dataframe se crea uno atemporal
         if 'data' not in st.session_state:
             st.session_state.data = inicializador()
-        
-      
         #st.warning('Formulador en construcción')
-        st.subheader('DOSIS')
+        
         materias_lista = st.selectbox('Materia Prima ALPHA', df_productos['Desc_prod'].sort_values().unique())
         Unidad = df_productos[ df_productos['Desc_prod']==materias_lista]
+        
         cantidades_lista = st.number_input(f"Ingresa la cantidad para: **{materias_lista}** en {Unidad['Uni_med'].values[0]}",value=1.00, step=1e-10, format="%.10f")
        # cálculo costo por tipo cambio
         Unidad['Cto_ent']= np.where(Unidad['Cve_monc']== 2 ,Unidad['Cto_ent'] * tipo_cambio, Unidad['Cto_ent'])
@@ -198,7 +200,7 @@ def main():
             for elemento in st.session_state.data['Cantidad']:
                 contador += float(elemento)
             # creacion de la fila nueva
-            new_row = {'SKU': Unidad['Cve_prod'].values[0],'Materia prima': materias_lista, 'Cantidad': cantidades_lista, 'Porcentaje (%)': "", 'Unidad': Unidad['Uni_med'].values[0], 'Costo': Unidad['Cto_ent'].values[0], 'Fecha': Unidad['Fec_ent'].values[0],'Moneda': Unidad['Cve_monc'].values[0]   }
+            new_row = {'SKU': Unidad['Cve_prod'].values[0],'Materia prima': materias_lista, 'Cantidad': cantidades_lista, 'Porcentaje (%)': "", 'Unidad': Unidad['Uni_med'].values[0], 'Costo': Unidad['Cto_ent'].values[0], 'Fecha': Unidad['Fec_ent'].values[0],'Moneda': Unidad['Cve_monc'].values[0],'Proveedor': Unidad['Prov_std'].values[0]   }
            # se agrega la fila nueva al df usando la funcion agregar_fila 
             st.session_state.data = agregar_fila(st.session_state.data, new_row)
             # se calcua el porcentaje y de agrega a la columna porcentaje (%) 
@@ -301,7 +303,7 @@ def main():
                     costo_lote = df_formulador['Costo lote'].sum()
                     st.write('Costo por lote: $' , round(costo_lote,2))
             df_formulador = df_formulador[['Materia prima', 'Cantidad', 'SKU', 'Unidad', 'Costo', 'Costo unitario', 'Porcentaje (%)'
-                                        , 'Costo lote','Fecha','Moneda']]
+                                        , 'Costo lote','Fecha','Moneda','Proveedor']]
             
            
             st.write(df_formulador)
