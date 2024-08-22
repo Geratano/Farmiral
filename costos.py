@@ -79,7 +79,7 @@ def main():
     #Hacemos merge con los nombres de las formulas para facilitar la busqueda del producto a costear
         df_formulas_n = df_formulas.merge(df_productos.rename({'Desc_prod':'Formula'},axis=1), left_on='Cve_copr', 
             right_on='Cve_prod', how='left')
-        df_formulas_n.columns = ['SKU', 'Componente', 'Cantidad', 'Tipo', 'Atributo', 'Version pt', 'Partida', 'Unidad_componente', 'Nombre', 'Cve_mon', 'Tipo_x', 'Tipcam','Tip_cam', 'Rendimiento','Costo', 'Unidad', 'Cve_prod_y', 'Formula', 'Unidad pt', 'Cto_ent_y', 'Tipo_prod','Uni_med','Fec_ent']
+        df_formulas_n.columns = ['SKU', 'Componente', 'Cantidad', 'Tipo', 'Atributo', 'Version pt', 'Partida', 'Unidad_componente', 'Nombre', 'Cve_mon', 'Tipo_x', 'Tipcam','Tip_cam', 'Rendimiento','Costo', 'Unidad', 'Cve_prod_y', 'Formula', 'Unidad pt', 'Cto_ent_y', 'Tipo_prod','Uni_med','Fec_ent','Prov_std']
     
         #Eliminamos las versiones V1, V2, V3 y V4
         df_formulas_n = df_formulas_n.loc[(df_formulas_n['Version pt']!='V1') & (df_formulas_n['Version pt']!='V2') & (df_formulas_n['Version pt']!='V3') & (df_formulas_n['Version pt']!='V4')]
@@ -148,7 +148,7 @@ def main():
         with right:
             #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
             alt.data_transformers.enable('default', max_rows=None)
-            chart_st = semit.groupby(['Componente','Nombre']).agg({'Costo total nuvo':'sum'}).reset_index()
+            chart_st = semit.groupby(['Componente','Nombre']).agg({'Costo total':'sum'}).reset_index()
             pie_st = alt.Chart(chart_st, title='Costos st').mark_arc().encode(
                                 theta=alt.Theta(field='Costo total', type="quantitative"),
                                 color=alt.Color(field='Nombre', type="nominal"),
@@ -157,12 +157,12 @@ def main():
             #Mostramos el objeto en streamlit
             st.altair_chart(pie_st, use_container_width =True)
 
-        st.subheader('Materiales Producto Terminado por unidad nuvo')
+        st.subheader('Materiales Producto Terminado por unidad')
         st.write(pt)
-        st.subheader('Materiales Semiterminado por unidad nuvo')
+        st.subheader('Materiales Semiterminado por unidad')
         st.write(semit)
         pprint = pd.concat([pt, semit])
-        st.download_button(label="Descargar", data=pprint.to_csv(), mime="text/csv nuvo")
+        st.download_button(label="Descargar", data=pprint.to_csv(), mime="text/csv")
         #st.write(semt)
     
 #------------------------------------------------------------- FORMULADOR ------------------------------------------------------------------------
