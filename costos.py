@@ -544,6 +544,8 @@ def main():
             st.altair_chart(pie_formulador_final, use_container_width=True)
         except UnboundLocalError:
             st.write("")
+        except KeyError:
+            st.write("")
       
 if __name__ == '__main__':
     main()
