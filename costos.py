@@ -91,11 +91,12 @@ def main():
     df_productos['Uni_med'] = np.where(df_productos['Uni_med']== 'KG','GR',df_productos['Uni_med'])
 
     # reemplazo los valores en los códigos cuando los encuentre en la base del drive poniendo prioridad lo que se encuentre en el drive
-    for i in range(len(df_drive['CODIGO'])):
-        df_productos['Cve_prod']=np.where( df_productos['Cve_prod']==df_drive['CODIGO'][i],df_drive['CODIGO'][i],df_productos['Cve_prod'])
-        df_productos['Cto_ent']=np.where( df_productos['Cve_prod']==df_drive['CODIGO'][i],df_drive['COSTO'][i],df_productos['Cto_ent'])
-        df_productos['Cve_monc']=np.where( df_productos['Cve_prod']==df_drive['CODIGO'][i],df_drive['MONEDA'][i],df_productos['Cve_monc'])
-        df_productos['Prov_std']=np.where( df_productos['Cve_prod']==df_drive['CODIGO'][i],df_drive['PROVEEDOR'][i],df_productos['Prov_std'])
+    #se guarda en la columna elegida Prov_std = sleccionamos la columan a buscar la coincidencia Cve_prod, con el .map le decimos que el
+    #  indice va ser CODIGO y seleccionamos la columna la cual vamos a traer el valor PROVEEDOR, cuando encuentre una coincidencia entre
+    #  el indice CODIGO Y Cve_prod, traerá el dato PROVEEDOR y lo reemplazará en Prov_std
+    df_productos['Prov_std'] = df_productos['Cve_prod'].map(df_drive.set_index('CODIGO')['PROVEEDOR']).fillna(df_productos['Prov_std'])
+    df_productos['Cve_monc'] = df_productos['Cve_prod'].map(df_drive.set_index('CODIGO')['MONEDA']).fillna(df_productos['Cve_monc'])
+    df_productos['Cto_ent'] = df_productos['Cve_prod'].map(df_drive.set_index('CODIGO')['COSTO']).fillna(df_productos['Cto_ent'])
 
    
     st.title('Costos Farmiral')
