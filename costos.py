@@ -219,19 +219,21 @@ def main():
         cantidades_lista = st.number_input(f"Ingresa la cantidad para: **{materias_lista}** en {Unidad['Uni_med'].values[0]}",value=1.00, step=1e-10, format="%.10f")
        # cálculo costo por tipo cambio
         Unidad['Cto_ent']= np.where(Unidad['Cve_monc']== 2 ,Unidad['Cto_ent'] * tipo_cambio, Unidad['Cto_ent'])
+
         if st.button('Agregar fila'):
 
             # contador que acumula el todal de la columna cantidad
             contador= float(cantidades_lista)
             for elemento in st.session_state.data['Cantidad']:
                 contador += float(elemento)
+                
             # creacion de la fila nueva
             new_row = {'SKU': Unidad['Cve_prod'].values[0],'Materia prima': materias_lista, 'Cantidad': cantidades_lista, 'Porcentaje (%)': "", 'Unidad': Unidad['Uni_med'].values[0], 'Costo': Unidad['Cto_ent'].values[0], 'Fecha': Unidad['Fec_ent'].values[0],'Moneda': Unidad['Cve_monc'].values[0],'Proveedor': Unidad['Prov_std'].values[0]   }
            # se agrega la fila nueva al df usando la funcion agregar_fila 
             st.session_state.data = agregar_fila(st.session_state.data, new_row)
             # se calcua el porcentaje y de agrega a la columna porcentaje (%) 
-            for cantidad in st.session_state.data['Cantidad']:
-                st.session_state.data['Porcentaje (%)'] =  round(float((cantidad)/contador)*100,4)
+            for i in range(len(st.session_state.data['Cantidad'])):
+                st.session_state.data['Porcentaje (%)'][i] =  round(float((st.session_state.data['Cantidad'][i])/contador)*100,4)
 
     #------------------- Botón eliminar --------------------------------------------------            
         iz,der = st.columns([37,63])
@@ -243,6 +245,11 @@ def main():
             if st.button('Eliminar fila'):
                 st.session_state.data = eliminar_fila(st.session_state.data,selec)
                 st.success(f"Fila con índice {selec} eliminada.")
+                suma = st.session_state.data['Cantidad'].sum()
+                for i in range(len(st.session_state.data['Cantidad'])):
+                    st.session_state.data['Porcentaje (%)'][i] =  round(float((st.session_state.data['Cantidad'][i])/suma)*100,4)
+
+                
         with der:
             st.write(st.session_state.data)
         
@@ -253,25 +260,35 @@ def main():
 
         if st.checkbox('Ingresar materias primas nuevas'):     
             materias_nuevas = st.text_input('(MPN) Ingresa el nombre de la nueva materia prima')
+            proveedor_nuevo = st.text_input('(MPN) Ingresa el nombre del proveedor  de la nueva materia prima')
             unidad_nueva = st.text_input('(MPN) Ingresa la unidad')
             costo_nuevo = st.number_input(f'(MPN) Ingresa el costo para: **{materias_nuevas}**',value=1.00, step=1e-4, format="%.4f")
             moneda = st.selectbox('Elige el tipo de moneda',( 'MXN','USD'))
             cantidad_nueva = st.number_input(f'(MPN) Ingresa la cantidad para: **{materias_nuevas}**',value=1.00, step=1e-10, format="%.10f")
             # si el tipo de moneda es mxicana dejar igual, en caso contrario multiplicar por tipo_cambio
+
+            
+            # contador que acumula el todal de la columna cantidad
+            contador2= float(cantidad_nueva)
+            for elemento in st.session_state.nuevas['Cantidad']:
+                contador2 += float(elemento)
+
             if moneda == 'MXN':
                 moneda = 1
                 conversion = costo_nuevo
             else:
                 moneda = 2
                 conversion = costo_nuevo * tipo_cambio
-            cont = 0
+
             if st.button('Agregar Fila'):
                 
-                cont += int(cont) + 1
+                
                 fecha_hoy = datetime.today().date()
-                nueva_fila = {'SKU': cont,'Materia prima': materias_nuevas, 'Cantidad': cantidad_nueva, 'Unidad': unidad_nueva, 'Costo': conversion,'Fecha': fecha_hoy.strftime('%d/%m/%Y'), 'Moneda': moneda }
+                nueva_fila = {'SKU': 1,'Materia prima': materias_nuevas, 'Cantidad': cantidad_nueva,'Porcentaje (%)': "", 'Unidad': unidad_nueva, 'Costo': conversion,'Fecha': fecha_hoy.strftime('%d/%m/%Y'), 'Moneda': moneda,'Proveedor': proveedor_nuevo }
                 # se agrega la fila nueva al df usando la funcion agregar_fila 
                 st.session_state.nuevas = agregar_fila(st.session_state.nuevas, nueva_fila)
+                for i in range (len(st.session_state.nuevas['Cantidad'])):
+                    st.session_state.nuevas['Porcentaje (%)'][i] =  round(float((st.session_state.nuevas['Cantidad'][i])/contador2)*100,4)
            
             #------------------- Botón eliminar --------------------------------------------------            
             iz,der = st.columns([37,63])
@@ -283,6 +300,9 @@ def main():
                 if st.button('Eliminar fila '):
                     st.session_state.nuevas = eliminar_fila(st.session_state.nuevas,selec2)
                     st.success(f"Fila con índice {selec2} eliminada.")
+                    suma2= st.session_state.nuevas['Cantidad'].sum()
+                    for i in range(len(st.session_state.nuevas['Cantidad'])):
+                        st.session_state.nuevas['Porcentaje (%)'][i] =  round(float(( st.session_state.nuevas['Cantidad'][i])/suma2)*100,4)
             with der:
                 st.write(st.session_state.nuevas) 
 
@@ -303,14 +323,14 @@ def main():
                 df_formulador['Costo lote'] = [0] * len(df_formulador['Materia prima'])
             #Agregamos las materias nuevas a los dataframes
 
-            #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
-            alt.data_transformers.enable('default', max_rows=None)
-            chart_formulador = df_formulador.groupby(['SKU','Materia prima']).agg({'Costo unitario':'sum', 'Porcentaje (%)':'sum'}).reset_index()
-            pie_formulador = alt.Chart(chart_formulador, title=nombre_producto).mark_arc().encode(
-                                theta=alt.Theta(field='Costo unitario', type="quantitative"),
-                                color=alt.Color(field='Materia prima', type="nominal"),
-                                tooltip = ['Materia prima','Costo unitario','Porcentaje (%)']
-                                ).interactive()
+            # #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
+            # alt.data_transformers.enable('default', max_rows=None)
+            # chart_formulador = df_formulador.groupby(['SKU','Materia prima']).agg({'Costo unitario':'sum', 'Porcentaje (%)':'sum'}).reset_index()
+            # pie_formulador = alt.Chart(chart_formulador, title=nombre_producto).mark_arc().encode(
+            #                     theta=alt.Theta(field='Costo unitario', type="quantitative"),
+            #                     color=alt.Color(field='Materia prima', type="nominal"),
+            #                     tooltip = ['Materia prima','Costo unitario','Porcentaje (%)']
+            #                     ).interactive()
 
             #col1, col2 = st.columns([15,15])
             #with col1:
@@ -364,8 +384,8 @@ def main():
            # se agrega la fila nueva al df usando la funcion agregar_fila 
             st.session_state.pza = agregar_fila(st.session_state.pza, new_row_pza)
             # se calcua el porcentaje y de agrega a la columna porcentaje (%) 
-            for cantidad in st.session_state.pza['Cantidad']:
-                st.session_state.pza['Porcentaje (%)'] =  round(float((cantidad)/contador)*100,4)
+            for i in range(len(st.session_state.pza['Cantidad'])):
+                st.session_state.pza['Porcentaje (%)'][i] =  round(float((st.session_state.pza['Cantidad'][i])/contador)*100,4)
 
     #------------------- Botón eliminar --------------------------------------------------            
         iz,der = st.columns([37,63])
@@ -377,6 +397,9 @@ def main():
             if st.button('Eliminar fila pt'):
                 st.session_state.pza = eliminar_fila(st.session_state.pza,selec)
                 st.success(f"Fila con índice {selec} eliminada.")
+                suma3=st.session_state.pza['Cantidad'].sum()
+                for i in range(len(st.session_state.pza['Cantidad'])):
+                    st.session_state.pza['Porcentaje (%)'][i] =  round(float((st.session_state.pza['Cantidad'][i])/suma3)*100,4)
         with der:
             st.write(st.session_state.pza)
         
@@ -387,25 +410,32 @@ def main():
 
         if st.checkbox('Ingresar materias primas nuevas pt'):     
             materias_nuevas_pza = st.text_input('(MPN) Ingresa el nombre de la nueva materia prima pt')
+            proveedor_nuevas_pza = st.text_input('(MPN) Ingresa el nombre del proveedor de la nueva materia prima pt')
             unidad_nueva_pza = st.text_input('(MPN) Ingresa la unidad pt')
             costo_nuevo_pza = st.number_input(f'(MPN) Ingresa el costo para pt: **{materias_nuevas_pza}**',value=1.00, step=1e-4, format="%.4f")
             moneda_pza = st.selectbox('Elige el tipo de moneda pt',( 'MXN','USD'))
             cantidad_nueva_pza = st.number_input(f'(MPN) Ingresa la cantidad para pt: **{materias_nuevas_pza}**',value=1.00, step=1e-10, format="%.10f")
             # si el tipo de moneda es mxicana dejar igual, en caso contrario multiplicar por tipo_cambio
+            contador = float(cantidad_nueva_pza)
+            for elemento in st.session_state.pzanuevas['Cantidad']:
+                contador += float(elemento)
+
             if moneda == 'MXN':
                 moneda = 1
                 conversion = costo_nuevo
             else:
                 moneda = 2
                 conversion = costo_nuevo * tipo_cambio
-            cont = 0
+        
             if st.button('Agregar Fila pt'):
                 
-                cont += int(cont) + 1
                 fecha_hoy = datetime.today().date()
-                nueva_fila_pza = {'SKU': cont,'Materia prima': materias_nuevas_pza, 'Cantidad': cantidad_nueva_pza, 'Unidad': unidad_nueva_pza, 'Costo': conversion,'Fecha': fecha_hoy.strftime('%d/%m/%Y'), 'Moneda': moneda }
+                nueva_fila_pza = {'SKU': 1,'Materia prima': materias_nuevas_pza, 'Cantidad': cantidad_nueva_pza,'Porcentaje (%)': "", 'Unidad': unidad_nueva_pza, 'Costo': conversion,'Fecha': fecha_hoy.strftime('%d/%m/%Y'), 'Moneda': moneda,'Proveedor': proveedor_nuevas_pza}
                 # se agrega la fila nueva al df usando la funcion agregar_fila 
                 st.session_state.pzanuevas = agregar_fila(st.session_state.pzanuevas, nueva_fila_pza)
+
+                for i in range(len(st.session_state.pzanuevas['Cantidad'])):
+                    st.session_state.pzanuevas['Porcentaje (%)'][i] =  round(float((st.session_state.pzanuevas['Cantidad'][i])/contador)*100,4)
            
             #------------------- Botón eliminar --------------------------------------------------            
             iz,der = st.columns([37,63])
@@ -417,6 +447,9 @@ def main():
                 if st.button('Eliminar fila pt '):
                     st.session_state.pzanuevas = eliminar_fila(st.session_state.pzanuevas,selec2)
                     st.success(f"Fila con índice {selec2} eliminada.")
+                    suma4=st.session_state.pzanuevas['Cantidad'].sum()
+                    for i in range(len(st.session_state.pzanuevas['Cantidad'])):
+                        st.session_state.pzanuevas['Porcentaje (%)'][i] =  round(float((st.session_state.pzanuevas['Cantidad'][i])/suma4)*100,4)
             with der:
                 st.write(st.session_state.pzanuevas)
 
@@ -450,13 +483,13 @@ def main():
                 #Agregamos las materias nuevas a los dataframes
 
                 #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
-                alt.data_transformers.enable('default', max_rows=None)
-                chart_formulador_pt = df_formulador_pt.groupby(['SKU','Materia prima']).agg({'Costo unitario':'sum', 'Porcentaje (%)':'sum'}).reset_index()
-                pie_formulador_pt = alt.Chart(chart_formulador_pt, title=nombre_producto).mark_arc().encode(
-                                    theta=alt.Theta(field='Costo unitario', type="quantitative"),
-                                    color=alt.Color(field='Materia prima', type="nominal"),
-                                    tooltip = ['Materia prima','Costo unitario','Porcentaje (%)']
-                                    ).interactive()
+                # alt.data_transformers.enable('default', max_rows=None)
+                # chart_formulador_pt = df_formulador_pt.groupby(['SKU','Materia prima']).agg({'Costo unitario':'sum', 'Porcentaje (%)':'sum'}).reset_index()
+                # pie_formulador_pt = alt.Chart(chart_formulador_pt, title=nombre_producto).mark_arc().encode(
+                #                     theta=alt.Theta(field='Costo unitario', type="quantitative"),
+                #                     color=alt.Color(field='Materia prima', type="nominal"),
+                #                     tooltip = ['Materia prima','Costo unitario','Porcentaje (%)']
+                #                     ).interactive()
 
                 #col1, col2 = st.columns([15,15])
                 #with col1:
@@ -486,16 +519,24 @@ def main():
             ###########################CONCATENAR BASES PT Y ST#####################################################
 
             df_final = pd.concat([df_st,df_pt]).reset_index(drop=True)
+            # calculo de porcentaje para df_final
+            total=df_final['Cantidad'].sum()
+            for i in range(len(df_final['Cantidad'])):
+                df_final['Porcentaje (%)'][i] = round((float(df_final['Cantidad'][i])/total)*100,4)
+
             st.write(df_final)
 
             #Con esta instrucción permitimos a altair mostrar la gráfica aunque tenga mas de 5000 renglones
             alt.data_transformers.enable('default', max_rows=None)
+
             chart_formulador_final = df_final.groupby(['SKU','Materia prima']).agg({'Costo unitario':'sum', 'Porcentaje (%)':'sum'}).reset_index()
+
             pie_formulador_final = alt.Chart(chart_formulador_final, title=nombre_producto).mark_arc().encode(
                                 theta=alt.Theta(field='Costo unitario', type="quantitative"),
                                 color=alt.Color(field='Materia prima', type="nominal"),
                                 tooltip = ['Materia prima','Costo unitario','Porcentaje (%)']
                                 ).interactive()
+            
 
             col1, col2 = st.columns([15,15])
             with col1:
@@ -519,7 +560,6 @@ def main():
                 st.write('Costo por lote pt: $', round(costo_lote_final, 2))                
                 #        st.write('Costo por lote: $' , round(costo_lote,2))
             ########################################################################################################
-
 
 
             # converir primeros tres encabezados en dataframe para poder descargarlos 
