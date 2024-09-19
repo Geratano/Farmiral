@@ -52,7 +52,11 @@ def main():
             s= s.replace(',','') # eliminar comas
             s= s.replace('$','') # eliminar sinos de pesos
         return s 
-    df_drive.columns= ['CODIGO','DESCRIPCION','PROVEEDOR','TIPO','COSTO','MONEDA','MOQ','UMB','TIMPOS DE ENTREGA','COMENTARIOS','SIN NOMBRE'] # renombrar columnas para que no haya problemas si se cambia el nombre an la original
+    df_drive.columns = df_drive.columns.str.strip()
+    columnas= {'CODIGO':'CODIGO','DESCRIPCION':'DESCRIPCION','PROVEEDOR':'PROVEEDOR','Tipo':'TIPO','COSTO':'COSTO','MONEDA':'MONEDA','MOQ':'MOQ','UMB':'UMB','TEIMPOS DE ENTREGA':'TEIMPOS DE ENTREGA','COMENTARIOS':'COMENTARIOS'} # renombrar columnas para que no haya problemas si se cambia el nombre an la original
+    selec=['CODIGO','DESCRIPCION','PROVEEDOR','TIPO','COSTO','MONEDA','MOQ','UMB','TIEMPOS DE ENTREGA','COMENTARIOS']
+    df_drive.rename(columns=columnas, inplace=True)
+    df_drive = df_drive[selec]
     df_drive['COSTO']=df_drive['COSTO'].apply(limpiar) # se aplica la funcion limpiar
     df_drive['COSTO']=pd.to_numeric(df_drive['COSTO'],errors='coerce') # se convierte a numeros
     df_drive['CODIGO']= df_drive['CODIGO'].str.strip()
