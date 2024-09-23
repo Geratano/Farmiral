@@ -94,12 +94,25 @@ df_cobranza['FACTURA']=df_cobranza['FACTURA'].astype(str) # convierto la columna
 df_bitacora_costos['FACTURA'] = df_bitacora_costos['FACTURA'].fillna(0) # si hay vacio se pone un 0
 df_bitacora_costos['FACTURA'] = df_bitacora_costos['FACTURA'].astype(int) # convierto en entero para quitar el .00 en los registros 
 df_bitacora_costos['FACTURA'] = df_bitacora_costos['FACTURA'].astype(str) # convierto a str para hacer merge
-todo = pd.merge( df_bitacora_costos,df_cobranza, how= 'inner', on= 'FACTURA') # junto las 2 bases con merge
-todo['FECHA DE ENTREGA'] = pd.to_datetime(todo['FECHA DE ENTREGA']).dt.date # la fecha de entrega esta com str, la convierto a fecha 
-todo['FECHA VENCIMIENTO']= todo['FECHA DE ENTREGA'] + pd.to_timedelta(todo['Dia_cre'], unit='D') # hago la suma de la fecha de entrega mas los días de credito
-st.write(todo)
-todo = todo[['Nom_cte','FACTURA','Saldo_fac','Falta_fac','FECHA DE ENTREGA','FECHA VENCIMIENTO']]
-st.write("todo",todo)
+df_todo = pd.merge( df_bitacora_costos,df_cobranza, how= 'inner', on= 'FACTURA') # junto las 2 bases con merge
+df_todo['FECHA DE ENTREGA'] = pd.to_datetime(df_todo['FECHA DE ENTREGA']).dt.date # la fecha de entrega esta com str, la convierto a fecha 
+df_todo['FECHA VENCIMIENTO']= df_todo['FECHA DE ENTREGA'] + pd.to_timedelta(df_todo['Dia_cre'], unit='D') # hago la suma de la fecha de entrega mas los días de credito
+df_todo = df_todo[['Nom_cte','FACTURA','Saldo_fac','Falta_fac','FECHA DE ENTREGA','FECHA VENCIMIENTO']]
+df_todo['FECHA DE ENTREGA'] = df_todo['FECHA DE ENTREGA'].fillna('POR ENTREGAR')
+df_todo['FECHA VENCIMIENTO'] = df_todo['FECHA VENCIMIENTO'].fillna('POR ENTREGAR')
+
+
+st.write("todo",df_todo)
+
+tabla = df_todo.pivot_table(
+    index=["FACTURA","Falta_fac"], # columna por la que se agrega el indice
+    columns=["Nom_cte"],# esto convertirá los campos en columna
+    values=["Saldo_fac"], # valores que se están agregando
+    aggfunc="sum", # metodo de agregación que indica la accion va realizar la tabla, por ejemplo suma 
+    fill_value=0
+)
+
+st.write("pivote",tabla)
 
 col1,col2,col3 = st.columns([5,5,5])
 with col1:
