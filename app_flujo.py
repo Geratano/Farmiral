@@ -97,17 +97,22 @@ df_bitacora_costos['FACTURA'] = df_bitacora_costos['FACTURA'].astype(str) # conv
 df_todo = pd.merge( df_bitacora_costos,df_cobranza, how= 'inner', on= 'FACTURA') # junto las 2 bases con merge
 df_todo['FECHA DE ENTREGA'] = pd.to_datetime(df_todo['FECHA DE ENTREGA']).dt.date # la fecha de entrega esta com str, la convierto a fecha 
 df_todo['FECHA VENCIMIENTO']= df_todo['FECHA DE ENTREGA'] + pd.to_timedelta(df_todo['Dia_cre'], unit='D') # hago la suma de la fecha de entrega mas los días de credito
-df_todo = df_todo[['Nom_cte','FACTURA','Saldo_fac','Falta_fac','FECHA DE ENTREGA','FECHA VENCIMIENTO']]
-df_todo['FECHA DE ENTREGA'] = df_todo['FECHA DE ENTREGA'].fillna('POR ENTREGAR')
+df_todo = df_todo[['Nom_cte','FACTURA','Saldo_fac','Falta_fac','FECHA DE ENTREGA','FECHA VENCIMIENTO']] # selecciono las columnas que voy a necesitar
+df_todo['FECHA VENCIMIENTO']= pd.to_datetime(df_todo['FECHA VENCIMIENTO'], errors='coerce') # convierto el tipo de dato de la columna fecha vencimiento a fecha en pandas
+df_todo['SEMANA']=df_todo['FECHA VENCIMIENTO'].dt.isocalendar().week # creo la columna semana y me traigo la semana del año
+df_todo['FECHA VENCIMIENTO'] = df_todo['FECHA VENCIMIENTO'].dt.date # indico que solo muestre la fecha sin cosas de mas
+df_todo['FECHA DE ENTREGA'] = df_todo['FECHA DE ENTREGA'].fillna('POR ENTREGAR') # reemplazo lo que tenga vacío y pongo POR ENTREGAR
 df_todo['FECHA VENCIMIENTO'] = df_todo['FECHA VENCIMIENTO'].fillna('POR ENTREGAR')
 
+ #convierto la fecha indicando que inician por el día
 
 st.write("todo",df_todo)
 
+
 tabla = df_todo.pivot_table(
     index=["FACTURA","Falta_fac"], # columna por la que se agrega el indice
-    columns=["Nom_cte"],# esto convertirá los campos en columna
-    values=["Saldo_fac"], # valores que se están agregando
+    # columns=["SEMANA"],# esto convertirá los campos en columna
+    values=["Saldo_fac","SEMANA"], # valores que se están agregando
     aggfunc="sum", # metodo de agregación que indica la accion va realizar la tabla, por ejemplo suma 
     fill_value=0
 )
