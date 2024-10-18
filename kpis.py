@@ -91,6 +91,10 @@ def main():
 		pagos = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/pagos_sem.csv',encoding='latin-1')
 		return pagos
 	pagos = pagos_sem()
+	porpagar = porpagar.dropna(how='all')  # Esto elimina las filas que están completamente vacías
+	porpagar = porpagar.dropna(axis=1, how='all')
+
+
 
 
 	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
