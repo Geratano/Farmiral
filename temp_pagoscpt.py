@@ -6,6 +6,7 @@ from PIL import Image
 from io import BytesIO
 import csv
 import base64
+import re
 
 # Function to append row to DataFrame
 def append_row(df, row):
@@ -18,6 +19,16 @@ def create_initial_dataframe():
     return pd.DataFrame(columns=['Proveedor', 'Monto', 'Facturas'])  # Update column names as needed
 def initial_dataframe():
     return pd.DataFrame(columns=['Proveedor', 'Correo', 'Clave', 'RFC', 'Banco', 'Tipo','Persona_tipo','Id_banco'])
+
+def limpiar(s):
+    if isinstance(s, str):  # Si los datos son de tipo string
+        s = s.strip()  # Eliminar espacios al inicio y al final
+        if s in ["-", "$-"]:  # Si el dato es un signo menos o $-
+            return "0"  # Reemplazar por "0" (como cadena, para evitar problemas al convertir a float más tarde)
+        s = re.sub(r'\s+', '', s)  # Eliminar todos los espacios en blanco
+        s = s.replace(',', '')  # Eliminar las comas  
+        s = s.replace('$', '') 
+    return s 
 
 st.set_page_config(layout="wide")
 
@@ -118,6 +129,11 @@ def main():
             df_temp = st.file_uploader('Selecciona la base prellenada', type='csv')
             df_temp = pd.read_csv(df_temp, dtype={'Numero':str}, encoding='latin-1')
             df_temp = pd.DataFrame(df_temp)
+            df_temp.columns=df_temp.columns.str.strip()
+            df_temp['Monto']=df_temp['Monto'].apply(limpiar)
+            df_temp['Monto']=pd.to_numeric(df_temp['Monto'])
+            df_temp['USD']=df_temp['USD'].apply(limpiar)
+            df_temp['USD']=pd.to_numeric(df_temp['USD'])
             st.write('Validacion:', df_temp)
             monto_pago = df_temp['Monto'].sum()
             frase_val = 'Monto total de solicitud de pagos $ ' + str(round(monto_pago))
