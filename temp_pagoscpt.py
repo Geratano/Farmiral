@@ -126,8 +126,8 @@ def main():
 
     if st.checkbox('Cargar base prellenada'):
         try:
-            df_temp = st.file_uploader('Selecciona la base prellenada', type='csv')
-            df_temp = pd.read_csv(df_temp, dtype={'Numero':str}, encoding='latin-1')
+            df_temp = st.file_uploader('Selecciona la base prellenada', type='csv',)
+            df_temp = pd.read_csv(df_temp, dtype={'Numero':str}, encoding='UTF-8')
             df_temp = pd.DataFrame(df_temp)
             df_temp.columns=df_temp.columns.str.strip()
             df_temp['Monto']=df_temp['Monto'].apply(limpiar)
