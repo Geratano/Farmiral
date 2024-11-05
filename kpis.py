@@ -5,9 +5,9 @@ from PIL import Image
 import altair as alt
 from datetime import datetime, timedelta, date
 #import streamlit_card as st_card
-import millify
-from millify import millify
-from millify import prettify
+# import millify
+# from millify import millify
+# from millify import prettify
 #from zoneinfo import ZoneInfo
 import pytz
 
