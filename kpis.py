@@ -121,10 +121,12 @@ def main():
 	#Trabajo con base alterna para rescatar descuentos aplicados directamente a la factura
 	facturas_temp = facturas.copy()
 	facturas_temp = facturas_temp[['No_fac', 'Falta_fac', 'Descuento', 'Subt_fac', 'Total_fac', 'Cve_factu', 'Cve_prod', 'Valor_prod', 'Cant_surt', 'Cve_cte', 'Nom_fac', 
-						 'Desc_prod', 'Cost_prom']]
+						 'Desc_prod', 'Cost_prom']].dropna()
 	facturas_temp.columns = ['No_fac', 'Fecha', 'Descuento_dir', 'Venta ($)', 'Total_fac', 'Cve_factu', 'SKU', 'Precio', 'Venta (PZA)', 'Cve_cte', 'Cliente', 'Producto', 'Cost_prom']
+	
 	facturas_temp['Fecha'] = pd.to_datetime(facturas_temp['Fecha'], format='%d/%m/%Y')
 	facturas_temp['Año'] = facturas_temp['Fecha'].dt.year
+	
 	facturas_temp['Mes'] = facturas_temp['Fecha'].dt.month
 	facturas_temp['Mes2'] = pd.to_datetime(facturas_temp['Fecha'], format='%d/%m/%Y').dt.strftime('%Y-%m')
 	facturas_temp = facturas_temp.fillna(0)
@@ -134,7 +136,7 @@ def main():
 	###########################################################################################
 
 	facturas = facturas[['No_fac', 'Falta_fac', 'Subt_fac', 'Total_fac', 'Cve_factu', 'Cve_prod', 'Valor_prod', 'Cant_surt', 'Cve_cte', 'Nom_fac', 
-						 'Desc_prod', 'Cost_prom']]
+						 'Desc_prod', 'Cost_prom']].dropna()
 	facturas.columns = ['No_fac', 'Fecha', 'Venta ($)', 'Total_fac', 'Cve_factu', 'SKU', 'Precio', 'Venta (PZA)', 'Cve_cte', 'Cliente', 'Producto', 'Cost_prom']
 	facturas['Fecha'] = pd.to_datetime(facturas['Fecha'], format='%d/%m/%Y')
 	facturas['Año'] = facturas['Fecha'].dt.year
