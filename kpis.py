@@ -5,9 +5,9 @@ from PIL import Image
 import altair as alt
 from datetime import datetime, timedelta, date
 #import streamlit_card as st_card
-# import millify
-# from millify import millify
-# from millify import prettify
+import millify
+from millify import millify
+from millify import prettify
 #from zoneinfo import ZoneInfo
 import pytz
 
@@ -91,10 +91,21 @@ def main():
 		pagos = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/pagos_sem.csv',encoding='latin-1')
 		return pagos
 	pagos = pagos_sem()
-	porpagar = porpagar.dropna(how='all')  # Esto elimina las filas que están completamente vacías
-	porpagar = porpagar.dropna(axis=1, how='all')
-
-
+	@st.cache_resource
+	def CXP():
+		cxp = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/CXP.csv',encoding='latin-1')
+		return cxp
+	cxp = CXP()
+	@st.cache_resource
+	def CXC():
+		cxc = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/CXC.csv',encoding='latin-1')
+		return cxc
+	cxc = CXC()
+	@st.cache_resource
+	def Inventariosgral():
+		Inventarios = pd.read_csv('https://raw.githubusercontent.com/Geratano/Farmiral/main/Inventarios.csv',encoding='latin-1')
+		return Inventarios
+	Inventarios = Inventariosgral()
 
 
 	mes_diccioanrio = { 1:'ene', 2:'feb', 3:'mar', 4:'abr', 5:'may',6:'jun',
@@ -121,12 +132,10 @@ def main():
 	#Trabajo con base alterna para rescatar descuentos aplicados directamente a la factura
 	facturas_temp = facturas.copy()
 	facturas_temp = facturas_temp[['No_fac', 'Falta_fac', 'Descuento', 'Subt_fac', 'Total_fac', 'Cve_factu', 'Cve_prod', 'Valor_prod', 'Cant_surt', 'Cve_cte', 'Nom_fac', 
-						 'Desc_prod', 'Cost_prom']].dropna()
+						 'Desc_prod', 'Cost_prom']]
 	facturas_temp.columns = ['No_fac', 'Fecha', 'Descuento_dir', 'Venta ($)', 'Total_fac', 'Cve_factu', 'SKU', 'Precio', 'Venta (PZA)', 'Cve_cte', 'Cliente', 'Producto', 'Cost_prom']
-	
 	facturas_temp['Fecha'] = pd.to_datetime(facturas_temp['Fecha'], format='%d/%m/%Y')
 	facturas_temp['Año'] = facturas_temp['Fecha'].dt.year
-	
 	facturas_temp['Mes'] = facturas_temp['Fecha'].dt.month
 	facturas_temp['Mes2'] = pd.to_datetime(facturas_temp['Fecha'], format='%d/%m/%Y').dt.strftime('%Y-%m')
 	facturas_temp = facturas_temp.fillna(0)
@@ -136,7 +145,7 @@ def main():
 	###########################################################################################
 
 	facturas = facturas[['No_fac', 'Falta_fac', 'Subt_fac', 'Total_fac', 'Cve_factu', 'Cve_prod', 'Valor_prod', 'Cant_surt', 'Cve_cte', 'Nom_fac', 
-						 'Desc_prod', 'Cost_prom']].dropna()
+						 'Desc_prod', 'Cost_prom']]
 	facturas.columns = ['No_fac', 'Fecha', 'Venta ($)', 'Total_fac', 'Cve_factu', 'SKU', 'Precio', 'Venta (PZA)', 'Cve_cte', 'Cliente', 'Producto', 'Cost_prom']
 	facturas['Fecha'] = pd.to_datetime(facturas['Fecha'], format='%d/%m/%Y')
 	facturas['Año'] = facturas['Fecha'].dt.year
